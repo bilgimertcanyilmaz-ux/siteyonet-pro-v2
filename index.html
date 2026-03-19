@@ -273,9 +273,14 @@ img{display:block;max-width:100%;}
   padding:8px 4px;
   overflow:hidden;
   gap:0;
+  font-size:0;
 }
 #sb.collapsed .ni::before{display:none;}
-#sb.collapsed .nico{margin:0;flex-shrink:0;}
+#sb.collapsed .nico{
+  margin:0;flex-shrink:0;
+  width:32px;height:32px;
+}
+#sb.collapsed .nico svg{width:15px;height:15px;}
 #sb.collapsed .sb-logo{
   justify-content:center;
   padding:16px 8px 14px;
