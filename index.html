@@ -124,92 +124,97 @@ img{display:block;max-width:100%;}
 /* ── SIDEBAR ─────────────────────────────────── */
 #sb{
   width:var(--sb-w);min-width:var(--sb-w);
-  background:var(--ink);
+  background:#ffffff;
+  border-right:1px solid var(--border);
   display:flex;flex-direction:column;
   height:100vh;
   overflow-y:auto;overflow-x:hidden;
   z-index:300;
-  transition:transform .28s cubic-bezier(.4,0,.2,1);
+  transition:width .25s cubic-bezier(.4,0,.2,1), min-width .25s cubic-bezier(.4,0,.2,1), transform .28s cubic-bezier(.4,0,.2,1);
   flex-shrink:0;
+  box-shadow:var(--sh-sm);
 }
 #sb::-webkit-scrollbar{width:3px;}
-#sb::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:10px;}
+#sb::-webkit-scrollbar-thumb{background:var(--border-h);border-radius:10px;}
 
 /* Logo */
 .sb-logo{
-  padding:18px 16px 15px;
-  display:flex;align-items:center;gap:11px;
-  border-bottom:1px solid rgba(255,255,255,.07);
-  flex-shrink:0;
+  padding:16px 14px 14px;
+  display:flex;align-items:center;gap:10px;
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;overflow:hidden;
 }
 .sb-logo-ico{
-  width:36px;height:36px;
+  width:36px;height:36px;min-width:36px;
   border-radius:10px;
   background:linear-gradient(135deg,var(--brand) 0%,#4f46e5 100%);
   display:flex;align-items:center;justify-content:center;
-  box-shadow:0 4px 14px rgba(26,86,219,.4);
+  box-shadow:0 4px 14px rgba(26,86,219,.3);
   flex-shrink:0;
 }
 .sb-logo-ico svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
 .sb-logo-name{
   font-family:'Playfair Display',serif;
   font-size:15px;font-weight:700;
-  color:#fff;line-height:1.2;letter-spacing:-.2px;
+  color:var(--tx);line-height:1.2;letter-spacing:-.2px;
+  white-space:nowrap;
 }
-.sb-logo-tag{font-size:9.5px;color:rgba(255,255,255,.38);margin-top:2px;letter-spacing:.3px;}
+.sb-logo-tag{font-size:9.5px;color:var(--tx-4);margin-top:2px;letter-spacing:.3px;white-space:nowrap;}
 
 /* Section labels */
-.sb-sec{padding:22px 12px 4px;}
+.sb-sec{padding:20px 10px 4px;}
 .sb-sec-lbl{
   font-size:8.5px;font-weight:700;letter-spacing:2px;
-  text-transform:uppercase;color:rgba(255,255,255,.25);
+  text-transform:uppercase;color:var(--tx-4);
   padding:0 6px 8px;
   display:flex;align-items:center;gap:8px;
+  white-space:nowrap;overflow:hidden;
 }
-.sb-sec-lbl::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.07);}
+.sb-sec-lbl::after{content:'';flex:1;height:1px;background:var(--border);}
 
 /* Nav items */
 .ni{
   display:flex;align-items:center;gap:10px;
-  padding:8px 10px;margin:1px 4px;
+  padding:7px 8px;margin:1px 4px;
   border-radius:var(--r6);
   cursor:pointer;
   font-size:13px;font-weight:500;
-  color:rgba(255,255,255,.5);
+  color:var(--tx-2);
   transition:all .15s;
   user-select:none;position:relative;
+  white-space:nowrap;overflow:hidden;
 }
-.ni:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.85);}
-.ni:hover .nico{background:rgba(255,255,255,.12);}
-.ni:hover .nico svg{stroke:rgba(255,255,255,.85);}
+.ni:hover{background:var(--s3);color:var(--tx);}
+.ni:hover .nico{background:var(--brand-10);}
+.ni:hover .nico svg{stroke:var(--brand);}
 .ni.on{
-  background:linear-gradient(135deg,rgba(26,86,219,.6),rgba(79,70,229,.4));
-  color:#fff;font-weight:600;
-  box-shadow:0 2px 10px rgba(26,86,219,.25);
+  background:linear-gradient(135deg,var(--brand-20),rgba(79,70,229,.08));
+  color:var(--brand);font-weight:600;
+  box-shadow:none;
 }
 .ni.on .nico{
   background:var(--brand);
-  box-shadow:0 3px 10px rgba(26,86,219,.4);
+  box-shadow:0 3px 10px rgba(26,86,219,.3);
 }
 .ni.on .nico svg{stroke:#fff;}
 .ni.on::before{
   content:'';position:absolute;
-  right:-4px;top:25%;bottom:25%;
-  width:3px;border-radius:3px 0 0 3px;
-  background:var(--accent);
+  left:0;top:20%;bottom:20%;
+  width:3px;border-radius:0 3px 3px 0;
+  background:var(--brand);
 }
 
 /* Nav icon */
 .nico{
-  width:28px;height:28px;
+  width:28px;height:28px;min-width:28px;
   border-radius:7px;
-  background:rgba(255,255,255,.07);
+  background:var(--s3);
   display:flex;align-items:center;justify-content:center;
   flex-shrink:0;transition:all .15s;
 }
 .nico svg{
   width:13px;height:13px;
-  stroke:rgba(255,255,255,.4);
+  stroke:var(--tx-3);
   fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;
   transition:stroke .15s;
 }
@@ -221,6 +226,7 @@ img{display:block;max-width:100%;}
   font-size:9px;font-weight:700;
   padding:2px 6px;border-radius:20px;
   min-width:18px;text-align:center;
+  flex-shrink:0;
 }
 .nbadge.am{background:var(--warn);}
 .nbadge.rd{background:var(--err);}
@@ -228,26 +234,70 @@ img{display:block;max-width:100%;}
 /* Sidebar footer */
 .sb-foot{
   margin-top:auto;padding:10px 12px;
-  border-top:1px solid rgba(255,255,255,.07);
-  flex-shrink:0;
+  border-top:1px solid var(--border);
+  flex-shrink:0;overflow:hidden;
 }
 .sb-user{
   display:flex;align-items:center;gap:10px;
-  padding:10px 11px;border-radius:var(--r8);
-  background:rgba(255,255,255,.06);
-  border:1px solid rgba(255,255,255,.08);
-  cursor:default;
+  padding:9px 10px;border-radius:var(--r8);
+  background:var(--s2);
+  border:1px solid var(--border);
+  cursor:default;overflow:hidden;
 }
 .sb-av{
-  width:32px;height:32px;border-radius:8px;
+  width:32px;height:32px;min-width:32px;border-radius:8px;
   background:linear-gradient(135deg,var(--brand),#4f46e5);
   display:flex;align-items:center;justify-content:center;
   font-size:11px;font-weight:700;color:#fff;
   flex-shrink:0;
-  box-shadow:0 3px 8px rgba(26,86,219,.35);
+  box-shadow:0 3px 8px rgba(26,86,219,.25);
 }
-.sb-un{font-size:12.5px;font-weight:600;color:#fff;}
-.sb-ur{font-size:10.5px;color:rgba(255,255,255,.38);}
+.sb-un{font-size:12.5px;font-weight:600;color:var(--tx);white-space:nowrap;}
+.sb-ur{font-size:10.5px;color:var(--tx-4);white-space:nowrap;}
+
+/* ── SIDEBAR COLLAPSED ───────────────────────── */
+#sb.collapsed{
+  width:64px;min-width:64px;
+}
+#sb.collapsed .sb-logo-name,
+#sb.collapsed .sb-logo-tag,
+#sb.collapsed .sb-sec-lbl,
+#sb.collapsed .nbadge,
+#sb.collapsed .sb-un,
+#sb.collapsed .sb-ur{
+  display:none;
+}
+#sb.collapsed .ni{
+  justify-content:center;
+  padding:8px 4px;
+  overflow:visible;
+}
+#sb.collapsed .ni::before{display:none;}
+#sb.collapsed .nico{margin:0;}
+#sb.collapsed .sb-logo{
+  justify-content:center;
+  padding:16px 8px 14px;
+  gap:0;
+}
+#sb.collapsed .sb-sec{padding:16px 4px 4px;}
+#sb.collapsed .sb-sec-lbl::after{display:none;}
+#sb.collapsed .sb-user{
+  justify-content:center;
+  padding:8px 4px;
+  gap:0;
+}
+#sb.collapsed .sb-foot{padding:10px 8px;}
+
+/* Tooltip on hover when collapsed */
+#sb.collapsed .ni{position:relative;}
+#sb.collapsed .ni[data-p]:hover::after{
+  content:attr(data-tip);
+  position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);
+  background:var(--ink);color:#fff;
+  font-size:11.5px;font-weight:500;
+  padding:5px 10px;border-radius:6px;white-space:nowrap;
+  box-shadow:var(--sh-md);z-index:9999;pointer-events:none;
+}
 
 /* ── MAIN ────────────────────────────────────── */
 #main{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;min-width:0;}
@@ -263,7 +313,7 @@ img{display:block;max-width:100%;}
   flex-shrink:0;
 }
 #hamburger{
-  display:none;
+  display:flex;
   width:34px;height:34px;
   border:1px solid var(--border);
   border-radius:var(--r6);
@@ -926,8 +976,6 @@ select.fi,select.fs{
     box-shadow:var(--sh-xl);
   }
 
-  #hamburger{display:flex;}
-
   #main{width:100%;min-width:0;}
 
   #topbar{padding:0 14px;gap:10px;}
@@ -1276,43 +1324,43 @@ select.fi,select.fs{
   </div>
   <div class="sb-sec">
     <div class="sb-sec-lbl">Genel</div>
-    <div class="ni on" data-p="dashboard" data-role="yonetici sakin superadmin"><div class="nico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>Anasayfa</div>
-    <div class="ni" data-p="apartmanlar" data-role="yonetici superadmin"><div class="nico"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-4h6v4M9 11h1m5 0h-1M9 15h1m5 0h-1"/></svg></div>Apartmanlar<span class="nbadge" id="bdg-apt">0</span></div>
-    <div class="ni" data-p="karar" data-role="yonetici sakin"><div class="nico"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>Karar Metni</div>
-    <div class="ni" data-p="isletme" data-role="yonetici"><div class="nico"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg></div>İşletme Projesi</div>
+    <div class="ni on" data-p="dashboard" data-role="yonetici sakin superadmin" data-tip="Anasayfa"><div class="nico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>Anasayfa</div>
+    <div class="ni" data-p="apartmanlar" data-role="yonetici superadmin" data-tip="Apartmanlar"><div class="nico"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-4h6v4M9 11h1m5 0h-1M9 15h1m5 0h-1"/></svg></div>Apartmanlar<span class="nbadge" id="bdg-apt">0</span></div>
+    <div class="ni" data-p="karar" data-role="yonetici sakin" data-tip="Karar Metni"><div class="nico"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>Karar Metni</div>
+    <div class="ni" data-p="isletme" data-role="yonetici" data-tip="İşletme Projesi"><div class="nico"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg></div>İşletme Projesi</div>
   </div>
   <div class="sb-sec">
     <div class="sb-sec-lbl">Operasyon</div>
-    <div class="ni" data-p="denetim" data-role="yonetici"><div class="nico"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></div>Denetim Raporları<span class="nbadge rd" id="bdg-den" style="display:none">!</span></div>
-    <div class="ni" data-p="asansor" data-role="yonetici"><div class="nico"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 10l3-3 3 3M9 14l3 3 3-3"/></svg></div>Asansör Etiket<span class="nbadge rd" id="bdg-asan" style="display:none">0</span></div>
-    <div class="ni" data-p="teklifler" data-role="yonetici"><div class="nico"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>Teklifler<span class="nbadge am" id="bdg-tek" style="display:none">0</span></div>
-    <div class="ni" data-p="gorevler" data-role="yonetici"><div class="nico"><svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>Görev Yönetimi<span class="nbadge am" id="bdg-gov">0</span></div>
-    <div class="ni" data-p="icra" data-role="yonetici"><div class="nico"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></div>İcra Listesi<span class="nbadge rd" id="bdg-icra" style="display:none">0</span></div>
+    <div class="ni" data-p="denetim" data-role="yonetici" data-tip="Denetim Raporları"><div class="nico"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></div>Denetim Raporları<span class="nbadge rd" id="bdg-den" style="display:none">!</span></div>
+    <div class="ni" data-p="asansor" data-role="yonetici" data-tip="Asansör Etiket"><div class="nico"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 10l3-3 3 3M9 14l3 3 3-3"/></svg></div>Asansör Etiket<span class="nbadge rd" id="bdg-asan" style="display:none">0</span></div>
+    <div class="ni" data-p="teklifler" data-role="yonetici" data-tip="Teklifler"><div class="nico"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>Teklifler<span class="nbadge am" id="bdg-tek" style="display:none">0</span></div>
+    <div class="ni" data-p="gorevler" data-role="yonetici" data-tip="Görev Yönetimi"><div class="nico"><svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>Görev Yönetimi<span class="nbadge am" id="bdg-gov">0</span></div>
+    <div class="ni" data-p="icra" data-role="yonetici" data-tip="İcra Listesi"><div class="nico"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></div>İcra Listesi<span class="nbadge rd" id="bdg-icra" style="display:none">0</span></div>
   </div>
   <div class="sb-sec">
     <div class="sb-sec-lbl">Yönetim</div>
-    <div class="ni" data-p="sakinler" data-role="yonetici"><div class="nico"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>Sakinler<span class="nbadge" id="bdg-sakin" style="display:none">0</span></div>
-    <div class="ni" data-p="personel" data-role="yonetici"><div class="nico"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>Personel<span class="nbadge" id="bdg-per" style="display:none">0</span></div>
-    <div class="ni" data-p="duyurular" data-role="yonetici sakin"><div class="nico"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>Duyurular<span class="nbadge am" id="bdg-duy" style="display:none">0</span></div>
-    <div class="ni" data-p="ariza" data-role="yonetici sakin"><div class="nico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>Arıza & Bakım<span class="nbadge rd" id="bdg-ariza" style="display:none">0</span></div>
+    <div class="ni" data-p="sakinler" data-role="yonetici" data-tip="Sakinler"><div class="nico"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>Sakinler<span class="nbadge" id="bdg-sakin" style="display:none">0</span></div>
+    <div class="ni" data-p="personel" data-role="yonetici" data-tip="Personel"><div class="nico"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>Personel<span class="nbadge" id="bdg-per" style="display:none">0</span></div>
+    <div class="ni" data-p="duyurular" data-role="yonetici sakin" data-tip="Duyurular"><div class="nico"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>Duyurular<span class="nbadge am" id="bdg-duy" style="display:none">0</span></div>
+    <div class="ni" data-p="ariza" data-role="yonetici sakin" data-tip="Arıza &amp; Bakım"><div class="nico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>Arıza & Bakım<span class="nbadge rd" id="bdg-ariza" style="display:none">0</span></div>
   </div>
   <div class="sb-sec">
     <div class="sb-sec-lbl">Finans & Raporlar</div>
-    <div class="ni" data-p="tahsilat" data-role="yonetici"><div class="nico"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg></div>Tahsilat & Borç<span class="nbadge rd" id="bdg-borc" style="display:none">0</span></div>
-    <div class="ni" data-p="finans" data-role="yonetici sakin"><div class="nico"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>Gelir/Gider<span class="nbadge" id="bdg-fin" style="display:none">!</span></div>
-    <div class="ni" data-p="raporlar" data-role="yonetici"><div class="nico"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>Raporlar & Analiz</div>
-    <div class="ni" data-p="ai-asistan" data-role="yonetici"><div class="nico"><svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 0 2h-1v1a2 2 0 0 1-2 2v1a1 1 0 0 1-2 0v-1H7v1a1 1 0 0 1-2 0v-1a2 2 0 0 1-2-2v-1H2a1 1 0 0 1 0-2h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2zM9 14a1 1 0 1 0 2 0 1 1 0 0 0-2 0zm4 0a1 1 0 1 0 2 0 1 1 0 0 0-2 0z"/></svg></div>AI Asistan</div>
+    <div class="ni" data-p="tahsilat" data-role="yonetici" data-tip="Tahsilat &amp; Borç"><div class="nico"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg></div>Tahsilat & Borç<span class="nbadge rd" id="bdg-borc" style="display:none">0</span></div>
+    <div class="ni" data-p="finans" data-role="yonetici sakin" data-tip="Gelir/Gider"><div class="nico"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>Gelir/Gider<span class="nbadge" id="bdg-fin" style="display:none">!</span></div>
+    <div class="ni" data-p="raporlar" data-role="yonetici" data-tip="Raporlar &amp; Analiz"><div class="nico"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>Raporlar & Analiz</div>
+    <div class="ni" data-p="ai-asistan" data-role="yonetici" data-tip="AI Asistan"><div class="nico"><svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 0 2h-1v1a2 2 0 0 1-2 2v1a1 1 0 0 1-2 0v-1H7v1a1 1 0 0 1-2 0v-1a2 2 0 0 1-2-2v-1H2a1 1 0 0 1 0-2h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2zM9 14a1 1 0 1 0 2 0 1 1 0 0 0-2 0zm4 0a1 1 0 1 0 2 0 1 1 0 0 0-2 0z"/></svg></div>AI Asistan</div>
   </div>
   <div class="sb-sec">
     <div class="sb-sec-lbl">Ek Modüller</div>
-    <div class="ni" data-p="sigorta" data-role="yonetici"><div class="nico"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>Sigorta Takibi<span class="nbadge rd" id="bdg-sig" style="display:none">!</span></div>
-    <div class="ni" data-p="toplanti" data-role="yonetici"><div class="nico"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>Toplantı Yönetimi<span class="nbadge am" id="bdg-top" style="display:none">0</span></div>
-    <div class="ni" data-p="fatura" data-role="yonetici"><div class="nico"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>Fatura Yönetimi<span class="nbadge am" id="bdg-fat" style="display:none">0</span></div>
+    <div class="ni" data-p="sigorta" data-role="yonetici" data-tip="Sigorta Takibi"><div class="nico"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>Sigorta Takibi<span class="nbadge rd" id="bdg-sig" style="display:none">!</span></div>
+    <div class="ni" data-p="toplanti" data-role="yonetici" data-tip="Toplantı Yönetimi"><div class="nico"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>Toplantı Yönetimi<span class="nbadge am" id="bdg-top" style="display:none">0</span></div>
+    <div class="ni" data-p="fatura" data-role="yonetici" data-tip="Fatura Yönetimi"><div class="nico"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>Fatura Yönetimi<span class="nbadge am" id="bdg-fat" style="display:none">0</span></div>
   </div>
   <div class="sb-sec">
     <div class="sb-sec-lbl">Araçlar</div>
-    <div class="ni" data-p="superadmin" data-role="superadmin"><div class="nico"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>Site Yönetimi</div>
-    <div class="ni" data-p="ayarlar" data-role="yonetici superadmin"><div class="nico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>Ayarlar</div>
+    <div class="ni" data-p="superadmin" data-role="superadmin" data-tip="Site Yönetimi"><div class="nico"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>Site Yönetimi</div>
+    <div class="ni" data-p="ayarlar" data-role="yonetici superadmin" data-tip="Ayarlar"><div class="nico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>Ayarlar</div>
   </div>
   <div class="sb-foot">
     <div class="sb-user" style="cursor:pointer" onclick="switchRole()" title="Rol değiştir">
@@ -7046,14 +7094,21 @@ const _origCallAI = callAI;
 
 
 
-// ── MOBILE SIDEBAR ──────────────────────────────────────
+// ── SIDEBAR TOGGLE ───────────────────────────────────────
 function toggleSidebar() {
   var sb = document.getElementById('sb');
   var overlay = document.getElementById('sb-overlay');
-  var isOpen = sb.classList.contains('mobile-open');
-  sb.classList.toggle('mobile-open', !isOpen);
-  overlay.classList.toggle('show', !isOpen);
-  document.body.style.overflow = !isOpen ? 'hidden' : '';
+  if (window.innerWidth <= 768) {
+    // Mobil: drawer aç/kapat
+    var isOpen = sb.classList.contains('mobile-open');
+    sb.classList.toggle('mobile-open', !isOpen);
+    overlay.classList.toggle('show', !isOpen);
+    document.body.style.overflow = !isOpen ? 'hidden' : '';
+  } else {
+    // Desktop: daralt/genişlet
+    sb.classList.toggle('collapsed');
+    localStorage.setItem('sb_collapsed', sb.classList.contains('collapsed') ? '1' : '0');
+  }
 }
 function closeSidebarMobile() {
   if (window.innerWidth <= 768) {
@@ -7064,6 +7119,13 @@ function closeSidebarMobile() {
     document.body.style.overflow = '';
   }
 }
+// Sayfa yüklenince kayıtlı durumu uygula
+(function(){
+  if (localStorage.getItem('sb_collapsed') === '1') {
+    var sb = document.getElementById('sb');
+    if (sb) sb.classList.add('collapsed');
+  }
+})();
 // Close on ESC
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
