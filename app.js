@@ -6947,7 +6947,7 @@ function renderDaireDetay(sk, yil) {
       <div style="font-size:12px;color:var(--tx-3)">Aidat takibi, ödeme geçmişi ve borçlandırma kayıtları için Finansal Durum sayfasını kullanın.</div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      ${tumKisiSorted.map(kisi=>`
+      ${aktifKisi.map(kisi=>`
         <button class="btn bp sm" onclick="goSakinCari(${kisi.id},true)">
           <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           ${kisi.ad.split(' ')[0]} Finansal Durum
