@@ -2821,7 +2821,7 @@ function renderSakinler() {
   const s = (document.getElementById('sak-srch')?.value||'').toLowerCase();
   const fTip = document.getElementById('sak-f-tip')?.value||'';
   const fBorc = document.getElementById('sak-f-borc')?.value||'';
-  const gorunum = document.getElementById('sak-f-gorunum')?.value||'kart';
+  const gorunum = document.getElementById('sak-f-gorunum')?.value||'tablo';
 
   // Apt seçiliyse o apt'ın sakinleri, seçili değilse tümü
   let list = aptId ? S.sakinler.filter(x=>x.aptId==aptId) : [...S.sakinler];
@@ -2956,14 +2956,18 @@ function renderTopluDaireler() {
     existing[s.daire][s.tip] = s;
   });
   const tipOpts = ['Standart','Dubleks','Stüdyo','Penthouse','1+1','2+1','3+1','4+1'].map(t=>`<option value="${t}">${t}</option>`).join('');
-  const blokOpts = (apt.bloklar||['A Blok']).map(b=>`<option value="${b}">${b}</option>`).join('');
+  // bloklar dizisi nesne ({ad,asansorSayisi}) veya string olabilir — her ikisini de destekle
+  const blokAdlari = (apt.bloklar||[]).map(b => typeof b === 'object' ? (b.ad||'Blok') : String(b));
+  if (!blokAdlari.length) blokAdlari.push('A Blok');
+  const blokOpts = blokAdlari.map(b=>`<option value="${b}">${b}</option>`).join('');
+  const ilkBlok = blokAdlari[0];
   let rows = '';
   for (let i = 1; i <= count; i++) {
     const dNo = String(i);
     const mal = existing[dNo]?.malik || {};
     const kir = existing[dNo]?.kiralik || {};
     const selTip = v => tipOpts.replace(`value="${v||'Standart'}"`,`value="${v||'Standart'}" selected`);
-    const selBlk = v => blokOpts.replace(`value="${v||apt.bloklar?.[0]||'A Blok'}"`,`value="${v||apt.bloklar?.[0]||'A Blok'}" selected`);
+    const selBlk = v => blokOpts.replace(`value="${v||ilkBlok}"`,`value="${v||ilkBlok}" selected`);
     rows += `<tr style="border-bottom:1px solid var(--border)">
       <td style="padding:7px 10px"><div style="border:1px solid var(--border);border-radius:6px;padding:5px 8px;display:inline-block"><input class="fi" value="${dNo}" data-dno="${i}" style="width:44px;padding:3px 4px;font-size:13px;font-weight:600;text-align:center;border:none;background:transparent"></div></td>
       <td style="padding:7px 8px"><select class="fi" data-blok="${i}" style="width:100%;padding:6px 10px;font-size:12.5px">${selBlk(mal.blok)}</select></td>
