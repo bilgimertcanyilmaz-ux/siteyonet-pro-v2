@@ -1,4 +1,4 @@
-// ═══════════════════════════════════════════
+﻿// ═══════════════════════════════════════════
 // SUPABASE ENTEGRASYONU
 // ═══════════════════════════════════════════
 let _supabase = null;
@@ -765,7 +765,7 @@ function renderDashboard() {
     '<div class="sc" onclick="goPage(\'apartmanlar\')" style="cursor:pointer"><div class="sc-ico ic-pu"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div><div class="sc-lbl">Toplam Daire</div><div class="sc-val v-pu">' + topDaire + '</div><div class="sc-sub">Tüm apartmanlar</div><div class="sc-bar bar-pu"></div></div>' +
     '<div class="sc" onclick="goPage(\'gorevler\')" style="cursor:pointer"><div class="sc-ico ic-am"><svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div><div class="sc-lbl">Açık Görev</div><div class="sc-val v-am">' + acikGov + '</div><div class="sc-sub">' + tamGov + ' tamamlandı</div><div class="sc-bar bar-am"></div></div>' +
     '<div class="sc" onclick="goPage(\'asansor\')" style="cursor:pointer"><div class="sc-ico ' + (dolAsan?'ic-rd':'ic-tl') + '">' + asnIco + '</div><div class="sc-lbl">Asansör Uyarısı</div><div class="sc-val ' + (dolAsan?'v-rd':'v-tl') + '">' + dolAsan + '</div><div class="sc-sub">Süresi dolmuş etiket</div><div class="sc-bar ' + (dolAsan?'bar-rd':'bar-tl') + '"></div></div>' +
-    '<div class="sc" onclick="goPage(\'finans\')" style="cursor:pointer"><div class="sc-ico ic-gr"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg></div><div class="sc-lbl">Toplam Hizmet Bedeli</div><div class="sc-val v-gr" style="font-size:18px">₺' + fmt(topHizmet) + '</div><div class="sc-sub">Aktif apartmanlar</div><div class="sc-bar bar-gr"></div></div>' +
+    '<div class="sc" onclick="goPage(\'finans\')" style="cursor:pointer"><div class="sc-ico ic-gr"><svg viewBox="0 0 24 24"><text x="12" y="17" text-anchor="middle" font-size="16" font-weight="800" fill="currentColor">&#8378;</text></svg></div><div class="sc-lbl">Toplam Hizmet Bedeli</div><div class="sc-val v-gr" style="font-size:18px">₺' + fmt(topHizmet) + '</div><div class="sc-sub">Aktif apartmanlar</div><div class="sc-bar bar-gr"></div></div>' +
     '<div class="sc" onclick="goPage(\'sakinler\')" style="cursor:pointer"><div class="sc-ico ic-bl"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div class="sc-lbl">Toplam Sakin</div><div class="sc-val v-bl">' + topSakin + '</div><div class="sc-sub">' + borcluSakin + ' borçlu</div><div class="sc-bar bar-bl"></div></div>' +
     '<div class="sc" onclick="goPage(\'ariza\')" style="cursor:pointer"><div class="sc-ico ic-rd"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><div class="sc-lbl">Açık Arıza</div><div class="sc-val v-rd">' + acikAriza + '</div><div class="sc-sub">Bekleyen</div><div class="sc-bar bar-rd"></div></div>' +
     '<div class="sc" onclick="goPage(\'personel\')" style="cursor:pointer"><div class="sc-ico ic-am"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="sc-lbl">Aktif Personel</div><div class="sc-val v-am">' + aktifPer + '</div><div class="sc-sub">Toplam ' + S.personel.length + '</div><div class="sc-bar bar-am"></div></div>';
@@ -2727,7 +2727,7 @@ function renderIcraRapor() {
   const el=document.getElementById('icra-rapor-stats'); if(!el) return;
   el.innerHTML=`
     <div class="sc"><div class="sc-ico ic-rd"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="sc-lbl">Aktif Dosya</div><div class="sc-val v-rd">${devam.length}</div><div class="sc-sub">Devam eden takip</div><div class="sc-bar bar-rd"></div></div>
-    <div class="sc"><div class="sc-ico ic-am"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg></div><div class="sc-lbl">Toplam Alacak</div><div class="sc-val v-am" style="font-size:18px">₺${fmt(topTutar)}</div><div class="sc-sub">Tüm dosyalar</div><div class="sc-bar bar-am"></div></div>
+    <div class="sc"><div class="sc-ico ic-am"><svg viewBox="0 0 24 24"><text x="12" y="17" text-anchor="middle" font-size="16" font-weight="800" fill="currentColor">&#8378;</text></svg></div><div class="sc-lbl">Toplam Alacak</div><div class="sc-val v-am" style="font-size:18px">₺${fmt(topTutar)}</div><div class="sc-sub">Tüm dosyalar</div><div class="sc-bar bar-am"></div></div>
     <div class="sc"><div class="sc-ico ic-gr"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><div class="sc-lbl">Tahsil Edilen</div><div class="sc-val v-gr" style="font-size:18px">₺${fmt(tahsilTutar)}</div><div class="sc-sub">${tahsil.length} dosya kapandı</div><div class="sc-bar bar-gr"></div></div>
     <div class="sc"><div class="sc-ico ic-bl"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div class="sc-lbl">Avukat Sayısı</div><div class="sc-val v-bl">${avSet.size}</div><div class="sc-sub">Takip eden avukat</div><div class="sc-bar bar-bl"></div></div>`;
   const byApt={};
@@ -2867,7 +2867,7 @@ function renderSakinler() {
           <td style="font-size:11px;font-family:monospace">${sk.plaka||'—'}</td>
           <td onclick="event.stopPropagation()"><div class="act">
             <button class="btn bg xs" onclick="goDaireDetay(${sk.id})" title="Daire Detay"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
-            <button class="btn xs" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe" onclick="goSakinCari(${sk.id})" title="Cari Hesap"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></button>
+            <button class="btn xs" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe" onclick="goSakinCari(${sk.id})" title="Cari Hesap"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><text x="12" y="17" text-anchor="middle" font-size="16" font-weight="800" fill="currentColor">&#8378;</text></svg></button>
             <button class="btn bg xs" onclick="editSakin(${sk.id})" title="Düzenle"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
             <button class="btn xs" style="background:#f0fdf4;color:#059669;border:1px solid #a7f3d0" onclick="openQrModal(${sk.id})" title="QR Kod"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h7v7M14 14v3M17 21h4"/></svg></button>
             <button class="btn xs" style="background:var(--err-bg);color:var(--err);border:1px solid var(--err)" onclick="sakinCikisYap(${sk.id})" title="${sk.tip==='malik'?'Ev Sahibi Değişimi':'Kiracı Çıkışı'}"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></button>
@@ -2906,7 +2906,7 @@ function renderSakinler() {
         </div>
         <div class="fc g6 mt12" onclick="event.stopPropagation()">
           <button class="btn bg xs" onclick="goDaireDetay(${sk.id})"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Detay</button>
-          <button class="btn xs" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe" onclick="goSakinCari(${sk.id})"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Cari</button>
+          <button class="btn xs" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe" onclick="goSakinCari(${sk.id})"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none"><text x="12" y="17" text-anchor="middle" font-size="16" font-weight="800" fill="currentColor">&#8378;</text></svg> Cari</button>
           <button class="btn bg xs" onclick="editSakin(${sk.id})"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Düzenle</button>
           <button class="btn xs" style="background:#f0fdf4;color:#059669;border:1px solid #a7f3d0" onclick="openQrModal(${sk.id})" title="QR Kod"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h7v7M14 14v3M17 21h4"/></svg> QR</button>
           <button class="btn xs" style="background:var(--err-bg);color:var(--err);border:1px solid var(--err)" onclick="sakinCikisYap(${sk.id})"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg> Çıkart</button>
@@ -3947,7 +3947,7 @@ function renderTahsilat() {
 
   const stats=document.getElementById('tah-stats');
   if(stats) stats.innerHTML=`
-    <div class="sc"><div class="sc-ico ic-rd"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg></div><div class="sc-lbl">Toplam Alacak</div><div class="sc-val v-rd">₺${fmt(topBorc)}</div><div class="sc-sub">${borclu} borçlu sakin</div><div class="sc-bar bar-rd"></div></div>
+    <div class="sc"><div class="sc-ico ic-rd"><svg viewBox="0 0 24 24"><text x="12" y="17" text-anchor="middle" font-size="16" font-weight="800" fill="currentColor">&#8378;</text></svg></div><div class="sc-lbl">Toplam Alacak</div><div class="sc-val v-rd">₺${fmt(topBorc)}</div><div class="sc-sub">${borclu} borçlu sakin</div><div class="sc-bar bar-rd"></div></div>
     <div class="sc"><div class="sc-ico ic-gr"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg></div><div class="sc-lbl">Toplam Tahsilat</div><div class="sc-val v-gr">₺${fmt(tahsilat)}</div><div class="sc-sub">Bu apartman</div><div class="sc-bar bar-gr"></div></div>
     <div class="sc"><div class="sc-ico ic-bl"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div class="sc-lbl">Sakin</div><div class="sc-val v-bl">${list.length}</div><div class="sc-sub">${list.length-borclu} temiz</div><div class="sc-bar bar-bl"></div></div>
     <div class="sc"><div class="sc-ico ic-am"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div class="sc-lbl">Tahsilat Oranı</div><div class="sc-val v-am">${list.length?Math.round(((list.length-borclu)/list.length)*100):100}%</div><div class="sc-sub">Bu dönem</div><div class="sc-bar bar-am"></div></div>`;
@@ -4417,7 +4417,7 @@ function renderRaporlar() {
   if(stats) stats.innerHTML=`
     <div class="sc"><div class="sc-ico ic-gr"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg></div><div class="sc-lbl">Toplam Gelir</div><div class="sc-val v-gr">₺${fmt(gelir)}</div><div class="sc-sub">${apt.ad}</div><div class="sc-bar bar-gr"></div></div>
     <div class="sc"><div class="sc-ico ic-rd"><svg viewBox="0 0 24 24"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg></div><div class="sc-lbl">Toplam Gider</div><div class="sc-val v-rd">₺${fmt(gider)}</div><div class="sc-sub">Tüm kategoriler</div><div class="sc-bar bar-rd"></div></div>
-    <div class="sc"><div class="sc-ico ic-bl"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg></div><div class="sc-lbl">Net Bakiye</div><div class="sc-val v-bl">₺${fmt(gelir-gider)}</div><div class="sc-sub">Gelir - Gider</div><div class="sc-bar bar-bl"></div></div>
+    <div class="sc"><div class="sc-ico ic-bl"><svg viewBox="0 0 24 24"><text x="12" y="17" text-anchor="middle" font-size="16" font-weight="800" fill="currentColor">&#8378;</text></svg></div><div class="sc-lbl">Net Bakiye</div><div class="sc-val v-bl">₺${fmt(gelir-gider)}</div><div class="sc-sub">Gelir - Gider</div><div class="sc-bar bar-bl"></div></div>
     <div class="sc"><div class="sc-ico ic-am"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><div class="sc-lbl">Toplam Tahsilat</div><div class="sc-val v-am">₺${fmt(tahsilat)}</div><div class="sc-sub">${borclu} borçlu sakin</div><div class="sc-bar bar-am"></div></div>`;
 
   renderKPIGrid(aptId,gelir,gider,tahsilat,aptSakin,acikAriza);
@@ -6795,7 +6795,7 @@ function renderDaireDetay(sk, yil) {
       <td>${borcTxt}</td>
       <td style="display:flex;gap:4px">
         <button class="btn bg xs" onclick="goSakinCari(${kisi.id},true)" title="Cari Hesap" style="background:#eff6ff;color:#2563eb;border-color:#bfdbfe">
-          <svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2"><text x="12" y="17" text-anchor="middle" font-size="16" font-weight="800" fill="currentColor">&#8378;</text></svg>
         </button>
         ${!isEski ? `<button class="btn bg xs" onclick="editSakin(${kisi.id});goPage('sakinler');goTab('sak-tekil')" title="Düzenle"><svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>` : ''}
         ${isEski ? `<button class="btn xs" style="background:var(--err-bg);color:var(--err);border:1px solid var(--err)" onclick="delSakin(${kisi.id})" title="Kaydı Sil"><svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>` : ''}
@@ -6959,7 +6959,7 @@ function renderDaireDetay(sk, yil) {
   // ── FİNANSAL DURUM YÖNLENDİRME ──
   `<div class="card" style="padding:18px 20px;display:flex;align-items:center;gap:16px;background:linear-gradient(135deg,var(--brand-10),#f5f3ff);border:1.5px solid var(--brand-20);">
     <div style="width:44px;height:44px;background:var(--brand);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-      <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2"><text x="12" y="17" text-anchor="middle" font-size="16" font-weight="800" fill="currentColor">&#8378;</text></svg>
     </div>
     <div style="flex:1">
       <div style="font-size:13.5px;font-weight:700;color:var(--tx);margin-bottom:3px">Finansal Detaylar</div>
@@ -6968,7 +6968,7 @@ function renderDaireDetay(sk, yil) {
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       ${aktifKisi.map(kisi=>`
         <button class="btn bp sm" onclick="goSakinCari(${kisi.id},true)">
-          <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><text x="12" y="17" text-anchor="middle" font-size="16" font-weight="800" fill="currentColor">&#8378;</text></svg>
           ${kisi.ad.split(' ')[0]} Finansal Durum
         </button>`).join('')}
     </div>
@@ -7423,7 +7423,7 @@ function renderTopluBorcPage() {
         <div class="sc-val v-am">${toplamKayit}</div>
       </div>
       <div class="sc bar-rd" style="cursor:default">
-        <div class="sc-ico ic-rd"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg></div>
+        <div class="sc-ico ic-rd"><svg viewBox="0 0 24 24"><text x="12" y="17" text-anchor="middle" font-size="16" font-weight="800" fill="currentColor">&#8378;</text></svg></div>
         <div class="sc-lbl">Toplam Borçlandırılan</div>
         <div class="sc-val v-rd">₺${fmt(toplamBorc)}</div>
       </div>
