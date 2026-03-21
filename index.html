@@ -346,7 +346,7 @@ img{display:block;max-width:100%;}
 /* ── GLOBAL SEARCH ───────────────────────────── */
 #global-search-bar{position:relative;}
 #global-search-bar input{
-  width:210px;
+  width:260px;
   padding:7px 12px 7px 34px;
   border-radius:var(--r8);
   border:1.5px solid var(--border);
@@ -356,7 +356,7 @@ img{display:block;max-width:100%;}
 }
 #global-search-bar input:focus{
   border-color:var(--brand);background:var(--surface);
-  width:260px;box-shadow:0 0 0 3px var(--brand-20);
+  width:340px;box-shadow:0 0 0 3px var(--brand-20);
 }
 #global-search-bar input::placeholder{color:var(--tx-4);}
 #global-search-bar>svg{
@@ -917,6 +917,43 @@ select.fi,select.fs{
 .borc-hist-row:hover{background:var(--s2);}
 .dd-note-area{width:100%;padding:12px;border:1.5px solid var(--border);border-radius:var(--r6);font-size:13px;font-family:inherit;resize:vertical;min-height:100px;outline:none;transition:border-color .14s;}
 .dd-note-area:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-20);}
+/* ===== BAĞIMSIZ BÖLÜM YENİ TASARIM ===== */
+.bb-header{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:var(--r12);padding:14px 20px;margin-bottom:16px;gap:12px;flex-wrap:wrap;}
+.bb-header-left{display:flex;align-items:center;gap:14px;}
+.bb-daire-kodu{font-size:24px;font-weight:800;color:var(--tx);font-family:'DM Mono',monospace;letter-spacing:1px;}
+.bb-apt-ad{font-size:11.5px;color:var(--tx-3);margin-top:2px;}
+.bb-body{display:grid;grid-template-columns:1fr 290px;gap:16px;margin-bottom:16px;}
+.bb-left{display:flex;flex-direction:column;gap:12px;}
+.bb-borc-banner{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r8);padding:16px 20px;display:flex;align-items:center;gap:14px;}
+.bb-borc-icon{width:42px;height:42px;background:var(--s2);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.bb-borc-lbl{font-size:11px;color:var(--tx-3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;}
+.bb-borc-val{font-size:24px;font-weight:800;font-family:'DM Mono',monospace;}
+.bb-info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;}
+.bb-info-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r8);padding:12px 14px;}
+.bb-info-item .bil{font-size:10px;color:var(--tx-3);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;}
+.bb-info-item .biv{font-size:14px;font-weight:700;color:var(--tx);}
+.bb-right{background:var(--surface);border:1px solid var(--border);border-radius:var(--r12);overflow:hidden;display:flex;flex-direction:column;}
+.bb-right-tabs{display:flex;border-bottom:1px solid var(--border);}
+.bb-right-tab{flex:1;padding:10px 8px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;color:var(--tx-3);display:flex;align-items:center;justify-content:center;gap:5px;transition:all .15s;border-bottom:2px solid transparent;}
+.bb-right-tab.on{color:var(--brand);border-bottom-color:var(--brand);background:var(--brand-10);}
+.bb-right-content{flex:1;padding:14px;overflow-y:auto;min-height:180px;max-height:340px;}
+.bb-not-empty{text-align:center;padding:28px 16px;color:var(--tx-3);}
+.bb-not-empty svg{width:30px;height:30px;stroke:var(--tx-4);fill:none;display:block;margin:0 auto 8px;}
+.bb-not-item{background:var(--s2);border-radius:var(--r6);padding:10px 12px;margin-bottom:8px;border-left:3px solid var(--brand);}
+.bb-not-item .not-tarih{font-size:10.5px;color:var(--tx-3);margin-bottom:3px;}
+.bb-not-item .not-metin{font-size:12.5px;color:var(--tx);}
+.bb-kisi-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--r12);overflow:hidden;margin-bottom:16px;}
+.bb-kisi-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--s2);}
+.bb-kisi-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.bb-kisi-table th{padding:9px 14px;text-align:left;font-size:10.5px;font-weight:700;color:var(--tx-3);text-transform:uppercase;letter-spacing:.4px;background:var(--s2);}
+.bb-kisi-table td{padding:11px 14px;border-top:1px solid var(--border);vertical-align:middle;}
+.bb-kisi-table tr:hover td{background:var(--s2);}
+.bb-kisi-durum{font-size:11.5px;font-weight:600;}
+.bb-kisi-durum.malik{color:#1d4ed8;}
+.bb-kisi-durum.kiralik{color:#d97706;}
+.bb-kisi-durum.eski{color:var(--tx-3);}
+.bb-tabs-section{margin-top:4px;}
+@media(max-width:768px){.bb-body{grid-template-columns:1fr;}.bb-info-grid{grid-template-columns:1fr 1fr;}}
 .borc-ozet-5{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px;}
 .borc-ozet-5 .borc-ozet-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r8);padding:14px;text-align:center;}
 .borc-ozet-5 .bol{font-size:10.5px;color:var(--tx-3);margin-bottom:4px;}
@@ -1376,7 +1413,7 @@ select.fi,select.fs{
     <div id="apt-ctx-topbar"></div>
     <div id="global-search-bar">
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input id="gsearch" placeholder="Sistem geneli ara…" oninput="globalSearch(this.value)" onfocus="showSearchResults()" autocomplete="off">
+      <input id="gsearch" placeholder="Kişi, bağımsız bölüm veya daha fazlasını ara…" oninput="globalSearch(this.value)" onfocus="showSearchResults()" autocomplete="off">
       <div id="search-results"></div>
     </div>
     <button class="btn bg sm notif-btn" onclick="toggleNotifPanel()" title="Bildirimler">
@@ -8042,16 +8079,71 @@ function downloadPDF(tip) {
 function globalSearch(q) {
   const res = document.getElementById('search-results');
   if (!q || q.length < 2) { res.classList.remove('show'); return; }
-  q = q.toLowerCase();
+  const qRaw = q.trim();
+  q = qRaw.toLowerCase();
   let items = [];
+
+  // --- DAİRE ARAMI (en üste çıksın) ---
+  // "A 3", "A3", "B 12", "B12" gibi blok+daire no
+  const blokDaireRgx = /^([a-zA-ZçÇğĞıİöÖşŞüÜ]+)\s*(\d+)$/;
+  const blokDaireM = q.match(blokDaireRgx);
+  // Sadece sayı girilince → daire no araması
+  const sadeceNo = /^\d+$/.test(q);
+  const aptId = selectedAptId;
+  const sakinHavuzu = (S.sakinler||[]).filter(s => !aptId || s.aptId == aptId);
+
+  // Tekrarlamamak için işlenmiş daire kümesi
+  const islenenDaire = new Set();
+  sakinHavuzu.forEach(sk => {
+    const blok = (sk.blok||'').toLowerCase().replace(/\s*blok\s*/i,'').trim();
+    const daireNo = (sk.daire||'').toLowerCase();
+    const ad = (sk.ad||'').toLowerCase();
+    const aptAd2 = (S.apartmanlar.find(a=>a.id==sk.aptId)||{}).ad || '';
+    const key = sk.aptId+'_'+sk.daire;
+    let matched = false;
+
+    if (blokDaireM) {
+      // "A 3" → blok "a", daire "3"
+      const bHarf = blokDaireM[1].toLowerCase();
+      const dNo   = blokDaireM[2];
+      if ((blok === bHarf || blok.startsWith(bHarf)) && daireNo === dNo) matched = true;
+    } else if (sadeceNo) {
+      if (daireNo === q) matched = true;
+    } else {
+      // Ad soyad araması
+      if (ad.includes(q)) matched = true;
+      // "a blok 3" veya "a-3" gibi
+      const noSpace = q.replace(/[\s\-\/]/g,'');
+      if ((blok+daireNo) === noSpace) matched = true;
+    }
+
+    if (matched && !islenenDaire.has(key)) {
+      islenenDaire.add(key);
+      const tipLbl = sk.tip==='malik' ? 'Kat Maliki' : 'Kiracı';
+      const borcDrm = (sk.borc||0)>0 ? `₺${fmt(sk.borc)} borç` : 'Temiz';
+      const blokGoster = sk.blok ? sk.blok+' / ' : '';
+      items.push({
+        tag:'Daire',
+        title:`${blokGoster}Daire ${sk.daire} — ${sk.ad}`,
+        sub:`${aptAd2} · ${tipLbl} · ${borcDrm}`,
+        action:`goDaireDetay(${sk.id});hideSearchResults()`
+      });
+    }
+  });
+
+  // --- DİĞER ARAMALAR ---
   S.apartmanlar.forEach(a => { if ((a.ad+' '+(a.adres||'')).toLowerCase().includes(q)) items.push({tag:'Apartman',title:a.ad,sub:a.adres||'',page:'apartmanlar'}); });
   S.gorevler.forEach(g => { if ((g.baslik+' '+(g.atanan||'')).toLowerCase().includes(q)) items.push({tag:'Görev',title:g.baslik,sub:g.atanan||'',page:'gorevler'}); });
   S.teklifler.forEach(t => { if ((t.konu+' '+(t.firma||'')).toLowerCase().includes(q)) items.push({tag:'Teklif',title:t.konu,sub:(t.firma||'')+' — '+fmtMoney(t.tutar),page:'teklifler'}); });
   S.denetimler.forEach(d => { if ((d.aptAd+' '+(d.denetci||'')).toLowerCase().includes(q)) items.push({tag:'Denetim',title:d.aptAd,sub:d.denetci||'',page:'denetim'}); });
   S.icralar.forEach(i => { if ((i.borclu+' '+(i.dosyaNo||'')).toLowerCase().includes(q)) items.push({tag:'İcra',title:i.borclu,sub:i.dosyaNo||'',page:'icra'}); });
   S.finansIslemler.forEach(f => { if ((f.aciklama+' '+(f.kat||'')).toLowerCase().includes(q)) items.push({tag:'Finans',title:f.aciklama||f.kat,sub:fmtMoney(f.tutar),page:'finans'}); });
+
   if (!items.length) { res.innerHTML='<div class="notif-empty">Sonuç bulunamadı</div>'; res.classList.add('show'); return; }
-  res.innerHTML = items.slice(0,8).map(i=>`<div class="sr-item" onclick="goPage('${i.page}');hideSearchResults()"><span class="sr-tag">${i.tag}</span><div><div class="sr-title">${i.title}</div><div class="sr-sub">${i.sub}</div></div></div>`).join('');
+  res.innerHTML = items.slice(0,10).map(i => {
+    const onclick = i.action ? i.action : `goPage('${i.page}');hideSearchResults()`;
+    return `<div class="sr-item" onclick="${onclick}"><span class="sr-tag">${i.tag}</span><div><div class="sr-title">${i.title}</div><div class="sr-sub">${i.sub}</div></div></div>`;
+  }).join('');
   res.classList.add('show');
 }
 function showSearchResults() { if (document.getElementById('gsearch').value.length >= 2) document.getElementById('search-results').classList.add('show'); }
@@ -9026,204 +9118,320 @@ function renderDaireDetay(sk, yil) {
   if (!yil) yil = new Date().getFullYear();
   const apt = S.apartmanlar.find(a => a.id == sk.aptId);
   const aptAd = apt ? apt.ad : '—';
-  const isMalik = sk.tip === 'malik';
-  const borc = sk.borc || 0;
-  const aidat = sk.aidat || sk.aidatK || (apt ? apt.aidat : 0) || 0;
 
-  // Ödeme geçmişi (sakId veya sakinId ile eşleş)
-  const tumOdemeler = (S.tahsilatlar || []).filter(t => t.sakId == sk.id || t.sakinId == sk.id).sort((a, b) => (b.tarih||'').localeCompare(a.tarih||''));
-  const odemeler = tumOdemeler.filter(o => (o.tarih||'').startsWith(yil+''));
-  const toplamOdeme = tumOdemeler.reduce((s, t) => s + (t.tutar || 0), 0);
-  const toplamOdemeYil = odemeler.reduce((s, t) => s + (t.tutar || 0), 0);
+  // Tüm bu dairedeki kişiler (aynı aptId + daire)
+  const todayStr = new Date().toISOString().slice(0,10);
+  const tumDaireKisi = (S.sakinler||[]).filter(s => s.aptId == sk.aptId && s.daire == sk.daire);
+  const aktifKisi = tumDaireKisi.filter(s => !s.cikis || s.cikis >= todayStr);
+  const eskiKisi  = tumDaireKisi.filter(s => s.cikis && s.cikis < todayStr);
+  const malik  = aktifKisi.find(s => s.tip === 'malik') || tumDaireKisi.find(s => s.tip === 'malik');
+  const kiraci = aktifKisi.find(s => s.tip === 'kiralik');
+  const mainSk = malik || sk;
 
-  // Gecikmiş dönem sayısı
+  // Borç = tüm daire kişilerinin borcu toplamı
+  const topBorc = tumDaireKisi.reduce((sum, s) => sum + (s.borc||0), 0);
+  const aidat = mainSk.aidat || mainSk.aidatK || (apt ? apt.aidat : 0) || 0;
+
+  // Blok / Daire kodu
+  const blokHarf = (mainSk.blok||'').replace(/\s*blok\s*/i,'').trim();
+  const daireKod = blokHarf ? `${blokHarf} / ${mainSk.daire||'?'}` : (mainSk.daire||'?');
+
+  // Kullanım durumu
+  const kullDurum = kiraci ? 'Kiracılı' : (aktifKisi.length > 0 ? 'Dolu' : 'Boş');
+  const kullCls   = kiraci ? 'b-am'     : (aktifKisi.length > 0 ? 'b-gr' : 'b-rd');
+
+  // Ödeme geçmişi (ana sakin üzerinden)
   const now = new Date();
+  const tumOdemeler = (S.tahsilatlar||[]).filter(t => t.sakId==mainSk.id||t.sakinId==mainSk.id).sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||''));
+  const odemeler = tumOdemeler.filter(o=>(o.tarih||'').startsWith(yil+''));
+  const toplamOdeme = tumOdemeler.reduce((s,t)=>s+(t.tutar||0),0);
+  const toplamOdemeYil = odemeler.reduce((s,t)=>s+(t.tutar||0),0);
+
+  // Gecikmiş dönem
   let gecikmis = 0;
-  for (let m = 0; m < 12; m++) {
-    const donemSon = new Date(yil, m + 1, 0);
+  for (let m=0; m<12; m++) {
+    const donemSon = new Date(yil, m+1, 0);
     if (donemSon < now) {
-      const ayStr = String(m + 1).padStart(2, '0');
-      const donemStr = yil + '-' + ayStr;
-      const odendi = tumOdemeler.some(o => (o.donem || o.tarih || '').startsWith(donemStr));
-      if (!odendi) gecikmis++;
+      const ds = yil+'-'+String(m+1).padStart(2,'0');
+      if (!tumOdemeler.some(o=>(o.donem||o.tarih||'').startsWith(ds))) gecikmis++;
     }
   }
 
   // Arızalar
-  const arizalar = (S.arizalar || []).filter(a => a.aptId == sk.aptId && (a.konum || '').includes(sk.daire));
+  const arizalar = (S.arizalar||[]).filter(a=>a.aptId==sk.aptId&&(a.konum||'').includes(sk.daire));
 
-  // Borçlandırma geçmişi bu sakin için
+  // Borçlandırma geçmişi
   const borcGecmisi = [];
-  (S.aidatBorclandir || []).forEach(kayit => {
-    if (kayit.detaylar) {
-      kayit.detaylar.forEach(d => {
-        if (d.sakId == sk.id) borcGecmisi.push({ donem: kayit.donem, tarih: kayit.tarih, tutar: d.tutar });
-      });
-    }
+  (S.aidatBorclandir||[]).forEach(kayit=>{
+    if(kayit.detaylar) kayit.detaylar.forEach(d=>{
+      if(d.sakId==mainSk.id) borcGecmisi.push({donem:kayit.donem,tarih:kayit.tarih,tutar:d.tutar});
+    });
   });
-  borcGecmisi.sort((a, b) => (b.donem || '').localeCompare(a.donem || ''));
+  borcGecmisi.sort((a,b)=>(b.donem||'').localeCompare(a.donem||''));
 
   // 12 aylık aidat tablosu
-  const aylar = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
-  let aidatTablosu = `<div class="aidat-row6 aidat-row6-hdr"><div>Dönem</div><div>Tutar</div><div>Yöntem</div><div>Ödeme Tarihi</div><div>Durum</div><div>İşlem</div></div>`;
-  for (let ay = 0; ay < 12; ay++) {
-    const ayStr = String(ay + 1).padStart(2, '0');
-    const donemStr = yil + '-' + ayStr;
-    const odeme = tumOdemeler.find(o => (o.donem || o.tarih || '').startsWith(donemStr));
-    const odendi = !!odeme;
-    const donemSon = new Date(yil, ay + 1, 0);
-    const gecmis = donemSon < now;
-    const durum = odendi ? 'ok' : (gecmis ? 'err' : 'warn');
-    const durumLbl = odendi ? 'Ödendi' : (gecmis ? 'Gecikmiş' : 'Bekliyor');
-    const durumCls = odendi ? 'b-gr' : (gecmis ? 'b-rd' : 'b-am');
-    const tutar = odeme ? odeme.tutar : aidat;
-    aidatTablosu += `<div class="aidat-row6" style="${!odendi && gecmis ? 'background:#fff8f8' : ''}">
+  const aylar=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  let aidatTablosu=`<div class="aidat-row6 aidat-row6-hdr"><div>Dönem</div><div>Tutar</div><div>Yöntem</div><div>Ödeme Tarihi</div><div>Durum</div><div>İşlem</div></div>`;
+  for(let ay=0;ay<12;ay++){
+    const ayStr=String(ay+1).padStart(2,'0');
+    const donemStr=yil+'-'+ayStr;
+    const odeme=tumOdemeler.find(o=>(o.donem||o.tarih||'').startsWith(donemStr));
+    const odendi=!!odeme;
+    const gecmisAy=new Date(yil,ay+1,0)<now;
+    const durumLbl=odendi?'Ödendi':(gecmisAy?'Gecikmiş':'Bekliyor');
+    const durumCls=odendi?'b-gr':(gecmisAy?'b-rd':'b-am');
+    const tutar=odeme?odeme.tutar:aidat;
+    aidatTablosu+=`<div class="aidat-row6" style="${!odendi&&gecmisAy?'background:#fff8f8':''}">
       <div style="font-weight:600">${aylar[ay]} ${yil}</div>
-      <div style="font-family:'DM Mono',monospace;font-weight:700;color:${odendi ? 'var(--ok)' : 'var(--tx-3)'}">₺${fmt(tutar)}</div>
-      <div style="color:var(--tx-3)">${odeme ? (odeme.yontem || '—') : '—'}</div>
-      <div style="font-size:11.5px;color:var(--tx-3)">${odeme ? odeme.tarih : '—'}</div>
+      <div style="font-family:'DM Mono',monospace;font-weight:700;color:${odendi?'var(--ok)':'var(--tx-3)'}">₺${fmt(tutar)}</div>
+      <div style="color:var(--tx-3)">${odeme?(odeme.yontem||'—'):'—'}</div>
+      <div style="font-size:11.5px;color:var(--tx-3)">${odeme?odeme.tarih:'—'}</div>
       <div><span class="b ${durumCls}">${durumLbl}</span></div>
-      <div>${!odendi ? `<button class="btn bg xs" onclick="openHizliOdeme(${sk.id},'${donemStr}')">Ödeme Al</button>` : `<button class="btn bg xs" onclick="deleteTahsilat('${odeme ? odeme.id : ''}',${sk.id})">İptal</button>`}</div>
+      <div>${!odendi?`<button class="btn bg xs" onclick="openHizliOdeme(${mainSk.id},'${donemStr}')">Ödeme Al</button>`:`<button class="btn bg xs" onclick="deleteTahsilat('${odeme?odeme.id:''}',${mainSk.id})">İptal</button>`}</div>
     </div>`;
   }
+  const thisYear=new Date().getFullYear();
+  const yilOpts=[thisYear+1,thisYear,thisYear-1,thisYear-2,thisYear-3].map(y=>`<option value="${y}" ${y==yil?'selected':''}>${y}</option>`).join('');
 
-  // Yıl seçici seçenekleri
-  const thisYear = new Date().getFullYear();
-  const yilOpts = [thisYear+1, thisYear, thisYear-1, thisYear-2, thisYear-3].map(y =>
-    `<option value="${y}" ${y==yil?'selected':''}>${y}</option>`).join('');
+  // Kişiler tablosu (aktif + eski)
+  const tumKisiSorted = [...aktifKisi, ...eskiKisi];
+  const kisiRows = tumKisiSorted.map(kisi=>{
+    const isEski = kisi.cikis && kisi.cikis < todayStr;
+    const tipLbl = kisi.tip==='malik' ? 'Kat Maliki' : 'Kiracı';
+    const tipCls = isEski ? 'eski' : (kisi.tip==='malik' ? 'malik' : 'kiralik');
+    const borcVal = kisi.borc||0;
+    const borcTxt = borcVal>0 ? `<span style="color:var(--err);font-weight:700">₺${fmt(borcVal)} (B)</span>` : `<span style="color:var(--ok)">₺0</span>`;
+    const cikisCell = isEski
+      ? `<span style="color:var(--tx-3)">${kisi.cikis}</span>`
+      : `<button class="btn brd xs" onclick="daireKisiCikis(${kisi.id},${mainSk.id})">Çıkart</button>`;
+    return `<tr style="${isEski?'opacity:.55':''}">
+      <td><span class="bb-kisi-durum ${tipCls}">${tipLbl}${isEski?' <em style="font-weight:400">(Çıktı)</em>':''}</span></td>
+      <td style="font-weight:600">${kisi.ad}</td>
+      <td style="font-size:12px">${kisi.tel||'—'}</td>
+      <td style="font-size:12px;color:var(--tx-3)">${kisi.giris||'—'}</td>
+      <td>${cikisCell}</td>
+      <td>1/1</td>
+      <td>${borcTxt}</td>
+      <td style="color:var(--tx-3);font-size:11.5px">${borcTxt}</td>
+      <td><button class="btn bg xs" onclick="goDaireDetay(${kisi.id})"><svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></td>
+    </tr>`;
+  }).join('');
 
   const el = document.getElementById('daire-detay-content');
   el.innerHTML =
-    // Hero
-    `<div class="daire-hero">
-      <div class="daire-hero-num">${sk.daire || '?'}</div>
-      <div class="daire-hero-info">
-        <h2>${sk.ad}</h2>
-        <p>${aptAd}${sk.kat ? ' · Kat ' + sk.kat : ''} · ${isMalik ? 'Kat Maliki' : 'Kiracı'}</p>
-        ${sk.tel ? `<p style="margin-top:4px;font-size:12px;opacity:.8">${sk.tel}${sk.email?' · '+sk.email:''}</p>` : ''}
+
+  // ── HEADER ──
+  `<div class="bb-header">
+    <div class="bb-header-left">
+      <div>
+        <div class="bb-daire-kodu">${daireKod}</div>
+        <div class="bb-apt-ad">${aptAd}</div>
       </div>
-      <div style="position:absolute;top:14px;right:14px;display:flex;gap:6px;z-index:2">
-        <div style="background:${borc>0?'rgba(220,38,38,.3)':'rgba(5,150,105,.25)'};padding:5px 13px;border-radius:20px;font-size:11.5px;font-weight:700">${borc > 0 ? '₺'+fmt(borc)+' Borç' : '✓ Temiz'}</div>
+      <span class="b ${kullCls}" style="font-size:12px">${kullDurum}</span>
+    </div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap">
+      <button class="btn bg sm" onclick="editSakin(${mainSk.id});goPage('sakinler');goTab('sak-tekil')">
+        <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Düzenle
+      </button>
+      <button class="btn brd sm" onclick="openAidatBorcDaire(${mainSk.id})">
+        <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg> Borçlandır
+      </button>
+      <button class="btn bp sm" onclick="openHizliOdeme(${mainSk.id},'')">
+        <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> Tahsil Et
+      </button>
+    </div>
+  </div>` +
+
+  // ── ANA BÖLÜM (Sol + Sağ) ──
+  `<div class="bb-body">
+
+    <div class="bb-left">
+
+      <!-- Borç Banner -->
+      <div class="bb-borc-banner">
+        <div class="bb-borc-icon">
+          <svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:${topBorc>0?'var(--err)':'var(--ok)'};fill:none;stroke-width:2">
+            <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+          </svg>
+        </div>
+        <div style="flex:1">
+          <div class="bb-borc-lbl">Toplam Borç</div>
+          <div class="bb-borc-val" style="color:${topBorc>0?'var(--err)':'var(--ok)'}">
+            ${topBorc>0 ? '₺'+fmt(topBorc) : '✓ Temiz'}
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+          <div style="font-size:11px;color:var(--tx-3)">Toplam tahsilat</div>
+          <div style="font-size:16px;font-weight:700;color:var(--ok)">₺${fmt(toplamOdeme)}</div>
+        </div>
       </div>
-    </div>` +
 
-    // Hızlı işlemler
-    `<div class="dd-qa">
-      <button class="btn bp sm" onclick="openHizliOdeme(${sk.id},'')"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Ödeme Kaydet</button>
-      <button class="btn brd sm" onclick="openAidatBorcDaire(${sk.id})"><svg viewBox="0 0 24 24"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg> Aidat Borçlandır</button>
-      <button class="btn bg sm" onclick="editSakin(${sk.id});goPage('sakinler');goTab('sak-tekil')"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Düzenle</button>
-      <button class="btn bg sm" onclick="goPage('sakinler')"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg> Sakinler</button>
-    </div>` +
+      <!-- Bilgi Izgarası -->
+      <div class="bb-info-grid">
+        <div class="bb-info-item">
+          <div class="bil">Kullanım Durumu</div>
+          <div class="biv"><span class="b ${kullCls}">${kullDurum}</span></div>
+        </div>
+        <div class="bb-info-item">
+          <div class="bil">Aidat Tutar</div>
+          <div class="biv">₺${fmt(aidat)}</div>
+        </div>
+        <div class="bb-info-item">
+          <div class="bil">Bulunduğu Kat</div>
+          <div class="biv">${mainSk.kat||'—'}</div>
+        </div>
+        <div class="bb-info-item">
+          <div class="bil">Tipi</div>
+          <div class="biv">${mainSk.dairetipi||mainSk.tur||'—'}</div>
+        </div>
+        <div class="bb-info-item">
+          <div class="bil">Grubu</div>
+          <div class="biv">${mainSk.grup||'—'}</div>
+        </div>
+        <div class="bb-info-item">
+          <div class="bil">Blok</div>
+          <div class="biv">${mainSk.blok||'—'}</div>
+        </div>
+        <div class="bb-info-item">
+          <div class="bil">Brüt m²</div>
+          <div class="biv">${mainSk.brut||'0'}</div>
+        </div>
+        <div class="bb-info-item">
+          <div class="bil">Net m²</div>
+          <div class="biv">${mainSk.net||'0'}</div>
+        </div>
+        <div class="bb-info-item">
+          <div class="bil">Arsa Payı</div>
+          <div class="biv">${mainSk.arsa||'0'}</div>
+        </div>
+      </div>
 
-    // 5 stat card
-    `<div class="borc-ozet-5">
-      <div class="borc-ozet-card"><div class="bol">Aylık Aidat</div><div class="bov" style="color:var(--brand)">₺${fmt(aidat)}</div></div>
-      <div class="borc-ozet-card"><div class="bol">Toplam Borç</div><div class="bov" style="color:${borc>0?'var(--err)':'var(--ok)'}">₺${fmt(borc)}</div></div>
-      <div class="borc-ozet-card"><div class="bol">Tüm Zamanlar Ödeme</div><div class="bov" style="color:var(--ok)">₺${fmt(toplamOdeme)}</div></div>
-      <div class="borc-ozet-card"><div class="bol">Gecikmiş Dönem</div><div class="bov" style="color:${gecikmis>0?'var(--err)':'var(--ok)'}">${gecikmis}</div></div>
-      <div class="borc-ozet-card"><div class="bol">Toplam Tahsilat</div><div class="bov" style="color:var(--brand)">${tumOdemeler.length}</div></div>
-    </div>` +
+    </div><!-- /bb-left -->
 
-    // Tab bar
-    `<div class="dd-tabs-bar">
+    <!-- Notlar / Ekler (Sağ Panel) -->
+    <div class="bb-right">
+      <div class="bb-right-tabs">
+        <div class="bb-right-tab on" onclick="bbTab(this,'bb-np')">
+          <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Notlar
+        </div>
+        <div class="bb-right-tab" onclick="bbTab(this,'bb-ep')">
+          <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+          Ekler
+        </div>
+      </div>
+      <div id="bb-np" class="bb-right-content">
+        ${(mainSk.not||'').trim() ? `<div class="bb-not-item"><div class="not-metin">${mainSk.not}</div></div>` :
+          `<div class="bb-not-empty">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <p style="font-size:12px;margin-top:6px">Gösterilecek not bulunmamaktadır.</p>
+          </div>`}
+        <div style="margin-top:10px">
+          <textarea class="dd-note-area" id="dd-note-input" placeholder="Not ekle…" style="min-height:72px">${mainSk.not||''}</textarea>
+          <button class="btn bp sm mt8" onclick="saveDaireNot(${mainSk.id})" style="width:100%">+ Yeni Not Kaydet</button>
+        </div>
+      </div>
+      <div id="bb-ep" class="bb-right-content" style="display:none">
+        <div class="bb-not-empty">
+          <svg viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+          <p style="font-size:12px;margin-top:6px">Ek bulunmamaktadır.</p>
+        </div>
+      </div>
+    </div><!-- /bb-right -->
+
+  </div>` + /* /bb-body */
+
+  // ── KİŞİLER BÖLÜMÜ ──
+  `<div class="bb-kisi-section">
+    <div class="bb-kisi-header">
+      <div style="font-size:13px;font-weight:700">Kişiler <span style="font-size:12px;color:var(--tx-3);font-weight:400">(${tumKisiSorted.length})</span></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:11.5px;color:var(--tx-3)">Güncel</span>
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--brand);display:inline-block"></span>
+        <span style="font-size:11.5px;color:var(--tx-3)">Hepsi</span>
+        <button class="btn bg xs" onclick="editSakin(${mainSk.id});goPage('sakinler');goTab('sak-tekil')">+ Kişi Ekle</button>
+      </div>
+    </div>
+    <div class="tw">
+      <table class="bb-kisi-table">
+        <thead><tr>
+          <th>Durumu</th><th>Adı Soyadı</th><th>Cep Telefonu</th>
+          <th>Giriş / Satın Alma Tarihi</th><th>Çıkış Tarihi</th>
+          <th>Hisse</th><th>Bakiye</th><th>BB Bakiyesi</th><th>İşlemler</th>
+        </tr></thead>
+        <tbody>${kisiRows||`<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--tx-3)">Kayıtlı kişi bulunmuyor.</td></tr>`}</tbody>
+      </table>
+    </div>
+  </div>` +
+
+  // ── TAKİP TABLARI (alt) ──
+  `<div class="bb-tabs-section">
+    <div class="dd-tabs-bar">
       <div class="dd-tab on" onclick="ddShowTab(this,'dd-aidat')">Aidat Takibi</div>
       <div class="dd-tab" onclick="ddShowTab(this,'dd-odeme')">Ödeme Geçmişi (${tumOdemeler.length})</div>
-      <div class="dd-tab" onclick="ddShowTab(this,'dd-borchist')">Borçlandırma Geçmişi (${borcGecmisi.length})</div>
-      <div class="dd-tab" onclick="ddShowTab(this,'dd-bilgi')">Daire Bilgileri</div>
+      <div class="dd-tab" onclick="ddShowTab(this,'dd-borchist')">Borçlandırma (${borcGecmisi.length})</div>
       <div class="dd-tab" onclick="ddShowTab(this,'dd-ariza')">Arıza/Bakım (${arizalar.length})</div>
-      <div class="dd-tab" onclick="ddShowTab(this,'dd-not')">Notlar</div>
-    </div>` +
+      <div class="dd-tab" onclick="ddShowTab(this,'dd-bilgi')">Daire Bilgileri</div>
+    </div>
 
-    // Pane 1: Aidat Takibi
-    `<div id="dd-aidat" class="dd-pane on">
+    <div id="dd-aidat" class="dd-pane on">
       <div class="dd-year-bar">
         <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--brand);fill:none;stroke-width:2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         <label>Yıl:</label>
-        <select class="dd-year-sel" onchange="renderDaireDetay(S.sakinler.find(s=>s.id==${sk.id}),+this.value)">${yilOpts}</select>
-        <span style="margin-left:auto;font-size:11.5px;color:var(--tx-3)">${yil} yılı toplam tahsilat: <strong style="color:var(--ok)">₺${fmt(toplamOdemeYil)}</strong></span>
+        <select class="dd-year-sel" onchange="renderDaireDetay(S.sakinler.find(s=>s.id==${mainSk.id}),+this.value)">${yilOpts}</select>
+        <span style="margin-left:auto;font-size:11.5px;color:var(--tx-3)">${yil} yılı: <strong style="color:var(--ok)">₺${fmt(toplamOdemeYil)}</strong></span>
       </div>
-      <div class="card" style="padding:0;overflow:hidden">
-        ${aidatTablosu}
-      </div>
-    </div>` +
+      <div class="card" style="padding:0;overflow:hidden">${aidatTablosu}</div>
+    </div>
 
-    // Pane 2: Ödeme Geçmişi
-    `<div id="dd-odeme" class="dd-pane">
-      ${tumOdemeler.length ? `<div class="card" style="padding:0">
-        <div class="tw"><table>
-          <thead><tr><th>Tarih</th><th>Dönem</th><th>Tutar</th><th>Yöntem</th><th>Not</th><th>İşlem</th></tr></thead>
-          <tbody>${tumOdemeler.map(o => `<tr>
-            <td>${o.tarih||'—'}</td>
-            <td>${o.donem||'—'}</td>
-            <td style="font-weight:700;color:var(--ok)">₺${fmt(o.tutar)}</td>
-            <td>${o.yontem||'—'}</td>
-            <td class="t3">${o.not||'—'}</td>
-            <td><button class="btn bg xs" onclick="deleteTahsilat('${o.id}',${sk.id})">Sil</button></td>
-          </tr>`).join('')}</tbody>
-        </table></div>
-      </div>` : `<div class="emp"><span class="emp-i">💳</span><p>Henüz ödeme kaydı bulunmuyor.</p><button class="btn bp sm mt12" onclick="openHizliOdeme(${sk.id},'')">İlk Ödemeyi Kaydet</button></div>`}
-    </div>` +
+    <div id="dd-odeme" class="dd-pane">
+      ${tumOdemeler.length ? `<div class="card" style="padding:0"><div class="tw"><table>
+        <thead><tr><th>Tarih</th><th>Dönem</th><th>Tutar</th><th>Yöntem</th><th>Not</th><th>İşlem</th></tr></thead>
+        <tbody>${tumOdemeler.map(o=>`<tr>
+          <td>${o.tarih||'—'}</td><td>${o.donem||'—'}</td>
+          <td style="font-weight:700;color:var(--ok)">₺${fmt(o.tutar)}</td>
+          <td>${o.yontem||'—'}</td><td class="t3">${o.not||'—'}</td>
+          <td><button class="btn bg xs" onclick="deleteTahsilat('${o.id}',${mainSk.id})">Sil</button></td>
+        </tr>`).join('')}</tbody>
+      </table></div></div>` : `<div class="emp"><span class="emp-i">💳</span><p>Henüz ödeme kaydı yok.</p><button class="btn bp sm mt12" onclick="openHizliOdeme(${mainSk.id},'')">İlk Ödemeyi Kaydet</button></div>`}
+    </div>
 
-    // Pane 3: Borçlandırma Geçmişi
-    `<div id="dd-borchist" class="dd-pane">
+    <div id="dd-borchist" class="dd-pane">
       ${borcGecmisi.length ? `<div class="card" style="padding:0">
-        <div style="padding:12px 16px;background:var(--s3);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--tx-3);border-radius:var(--r12) var(--r12) 0 0">Toplu aidat borçlandırma geçmişi</div>
-        ${borcGecmisi.map(b => `<div class="borc-hist-row">
-          <div>
-            <div style="font-weight:600">${b.donem} dönemi</div>
-            <div style="font-size:11px;color:var(--tx-3)">${b.tarih}</div>
-          </div>
-          <span class="b b-rd">₺${fmt(b.tutar)} Borçlandırıldı</span>
-        </div>`).join('')}
-      </div>` : `<div class="emp"><span class="emp-i">📋</span><p>Bu sakin için borçlandırma geçmişi yok.</p></div>`}
-    </div>` +
+        <div style="padding:10px 16px;background:var(--s3);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--tx-3)">Toplu aidat borçlandırma geçmişi</div>
+        ${borcGecmisi.map(b=>`<div class="borc-hist-row"><div><div style="font-weight:600">${b.donem} dönemi</div><div style="font-size:11px;color:var(--tx-3)">${b.tarih}</div></div><span class="b b-rd">₺${fmt(b.tutar)} Borçlandırıldı</span></div>`).join('')}
+      </div>` : `<div class="emp"><span class="emp-i">📋</span><p>Borçlandırma geçmişi yok.</p></div>`}
+    </div>
 
-    // Pane 4: Daire Bilgileri
-    `<div id="dd-bilgi" class="dd-pane">
-      <div class="daire-info-grid">
-        <div class="daire-info-item"><div class="dii-lbl">Apartman</div><div class="dii-val">${aptAd}</div></div>
-        <div class="daire-info-item"><div class="dii-lbl">Daire No</div><div class="dii-val">${sk.daire||'—'}</div></div>
-        ${sk.kat?`<div class="daire-info-item"><div class="dii-lbl">Kat</div><div class="dii-val">${sk.kat}</div></div>`:''}
-        <div class="daire-info-item"><div class="dii-lbl">Sakin Tipi</div><div class="dii-val">${isMalik?'Kat Maliki':'Kiracı'}</div></div>
-        <div class="daire-info-item"><div class="dii-lbl">Telefon</div><div class="dii-val">${sk.tel||'—'}</div></div>
-        ${sk.tel2?`<div class="daire-info-item"><div class="dii-lbl">Ev Telefonu</div><div class="dii-val">${sk.tel2}</div></div>`:''}
-        <div class="daire-info-item"><div class="dii-lbl">E-posta</div><div class="dii-val" style="font-size:12px">${sk.email||'—'}</div></div>
-        ${sk.tc?`<div class="daire-info-item"><div class="dii-lbl">TC Kimlik</div><div class="dii-val" style="font-family:monospace">${sk.tc}</div></div>`:''}
-        ${sk.giris?`<div class="daire-info-item"><div class="dii-lbl">Giriş Tarihi</div><div class="dii-val">${sk.giris}</div></div>`:''}
-        ${sk.plaka?`<div class="daire-info-item"><div class="dii-lbl">Araç Plaka</div><div class="dii-val" style="font-family:monospace;letter-spacing:1px">${sk.plaka}</div></div>`:''}
-        ${sk.arac?`<div class="daire-info-item"><div class="dii-lbl">Araç</div><div class="dii-val">${sk.arac}</div></div>`:''}
-        ${sk.acil?`<div class="daire-info-item"><div class="dii-lbl">Acil İrtibat</div><div class="dii-val">${sk.acil}</div></div>`:''}
-        ${isMalik&&sk.tapu?`<div class="daire-info-item"><div class="dii-lbl">Tapu No</div><div class="dii-val">${sk.tapu}</div></div>`:''}
-        ${isMalik&&sk.arsa?`<div class="daire-info-item"><div class="dii-lbl">Arsa Payı (m²)</div><div class="dii-val">${sk.arsa}</div></div>`:''}
-        ${!isMalik&&sk.kira?`<div class="daire-info-item"><div class="dii-lbl">Aylık Kira</div><div class="dii-val" style="color:var(--warn)">₺${fmt(sk.kira)}</div></div>`:''}
-        ${!isMalik&&sk.depozito?`<div class="daire-info-item"><div class="dii-lbl">Depozito</div><div class="dii-val">₺${fmt(sk.depozito)}</div></div>`:''}
-        ${!isMalik&&sk.sozlasmeBas?`<div class="daire-info-item"><div class="dii-lbl">Sözleşme Başlangıç</div><div class="dii-val">${sk.sozlasmeBas}</div></div>`:''}
-        ${!isMalik&&sk.sozlasmeBit?`<div class="daire-info-item"><div class="dii-lbl">Sözleşme Bitiş</div><div class="dii-val">${sk.sozlasmeBit}</div></div>`:''}
-        ${sk.adres?`<div class="daire-info-item" style="grid-column:1/-1"><div class="dii-lbl">Adres (Daire Dışı)</div><div class="dii-val" style="font-size:12.5px">${sk.adres}</div></div>`:''}
-      </div>
-    </div>` +
-
-    // Pane 5: Arıza/Bakım
-    `<div id="dd-ariza" class="dd-pane">
+    <div id="dd-ariza" class="dd-pane">
       ${arizalar.length ? `<div class="card" style="padding:0"><div class="tw"><table>
         <thead><tr><th>Tarih</th><th>Açıklama</th><th>Kategori</th><th>Durum</th><th>Maliyet</th></tr></thead>
-        <tbody>${arizalar.map(a => {
-          const dcls = a.durum==='tamam'?'b-gr':a.durum==='devam'?'b-am':'b-rd';
-          return `<tr><td>${a.tarih||'—'}</td><td>${a.baslik||a.aciklama||'—'}</td><td>${a.kategori||'—'}</td><td><span class="b ${dcls}">${a.durum||'—'}</span></td><td>${a.maliyetGercek?'₺'+fmt(a.maliyetGercek):'—'}</td></tr>`;
+        <tbody>${arizalar.map(a=>{const dc=a.durum==='tamam'?'b-gr':a.durum==='devam'?'b-am':'b-rd';
+          return `<tr><td>${a.tarih||'—'}</td><td>${a.baslik||a.aciklama||'—'}</td><td>${a.kategori||'—'}</td><td><span class="b ${dc}">${a.durum||'—'}</span></td><td>${a.maliyetGercek?'₺'+fmt(a.maliyetGercek):'—'}</td></tr>`;
         }).join('')}</tbody>
-      </table></div></div>` : `<div class="emp"><span class="emp-i">🔧</span><p>Bu daire için arıza kaydı bulunmuyor.</p></div>`}
-    </div>` +
+      </table></div></div>` : `<div class="emp"><span class="emp-i">🔧</span><p>Bu daire için arıza kaydı yok.</p></div>`}
+    </div>
 
-    // Pane 6: Notlar
-    `<div id="dd-not" class="dd-pane">
-      <div class="card">
-        <div class="card-t mb12">Daire Notları</div>
-        <textarea class="dd-note-area" id="dd-note-input" placeholder="Bu daire hakkında notlar...">${sk.not||''}</textarea>
-        <div class="fc g8 mt12">
-          <button class="btn bp sm" onclick="saveDaireNot(${sk.id})"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Kaydet</button>
-        </div>
+    <div id="dd-bilgi" class="dd-pane">
+      <div class="daire-info-grid">
+        <div class="daire-info-item"><div class="dii-lbl">Apartman</div><div class="dii-val">${aptAd}</div></div>
+        <div class="daire-info-item"><div class="dii-lbl">Daire No</div><div class="dii-val">${mainSk.daire||'—'}</div></div>
+        ${mainSk.kat?`<div class="daire-info-item"><div class="dii-lbl">Kat</div><div class="dii-val">${mainSk.kat}</div></div>`:''}
+        <div class="daire-info-item"><div class="dii-lbl">Sakin Tipi</div><div class="dii-val">${mainSk.tip==='malik'?'Kat Maliki':'Kiracı'}</div></div>
+        <div class="daire-info-item"><div class="dii-lbl">Telefon</div><div class="dii-val">${mainSk.tel||'—'}</div></div>
+        <div class="daire-info-item"><div class="dii-lbl">E-posta</div><div class="dii-val" style="font-size:12px">${mainSk.email||'—'}</div></div>
+        ${mainSk.tc?`<div class="daire-info-item"><div class="dii-lbl">TC Kimlik</div><div class="dii-val">${mainSk.tc}</div></div>`:''}
+        ${mainSk.giris?`<div class="daire-info-item"><div class="dii-lbl">Giriş Tarihi</div><div class="dii-val">${mainSk.giris}</div></div>`:''}
+        ${mainSk.plaka?`<div class="daire-info-item"><div class="dii-lbl">Araç Plaka</div><div class="dii-val">${mainSk.plaka}</div></div>`:''}
+        ${mainSk.tapu?`<div class="daire-info-item"><div class="dii-lbl">Tapu No</div><div class="dii-val">${mainSk.tapu}</div></div>`:''}
+        ${mainSk.kira?`<div class="daire-info-item"><div class="dii-lbl">Aylık Kira</div><div class="dii-val" style="color:var(--warn)">₺${fmt(mainSk.kira)}</div></div>`:''}
+        ${mainSk.depozito?`<div class="daire-info-item"><div class="dii-lbl">Depozito</div><div class="dii-val">₺${fmt(mainSk.depozito)}</div></div>`:''}
+        ${mainSk.sozlasmeBas?`<div class="daire-info-item"><div class="dii-lbl">Sözleşme Başlangıç</div><div class="dii-val">${mainSk.sozlasmeBas}</div></div>`:''}
+        ${mainSk.sozlasmeBit?`<div class="daire-info-item"><div class="dii-lbl">Sözleşme Bitiş</div><div class="dii-val">${mainSk.sozlasmeBit}</div></div>`:''}
       </div>
-    </div>`;
+    </div>
+
+  </div>`; /* /bb-tabs-section */
 }
 
 function ddShowTab(el, paneId) {
@@ -9233,6 +9441,30 @@ function ddShowTab(el, paneId) {
   document.querySelectorAll('.dd-pane').forEach(p => p.classList.remove('on'));
   const pane = document.getElementById(paneId);
   if (pane) pane.classList.add('on');
+}
+
+// Sağ panel (Notlar/Ekler) sekme değiştirici
+function bbTab(el, paneId) {
+  el.closest('.bb-right-tabs').querySelectorAll('.bb-right-tab').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+  ['bb-np','bb-ep'].forEach(id => {
+    const p = document.getElementById(id);
+    if (p) p.style.display = (id === paneId) ? '' : 'none';
+  });
+}
+
+// Kişi çıkış tarihi kaydet
+function daireKisiCikis(sakId, mainId) {
+  const tarih = prompt('Çıkış tarihi (YYYY-MM-DD):', new Date().toISOString().slice(0,10));
+  if (!tarih) return;
+  const kisi = S.sakinler.find(s => s.id === +sakId);
+  if (!kisi) return;
+  kisi.cikis = tarih;
+  save();
+  const main = S.sakinler.find(s => s.id === +mainId) || kisi;
+  const yr = document.querySelector('.dd-year-sel');
+  renderDaireDetay(main, yr ? +yr.value : new Date().getFullYear());
+  toast('Çıkış tarihi kaydedildi', 'ok');
 }
 
 function goDaireAidatGecmis(sakId, yil) {
