@@ -391,20 +391,10 @@ function updateGlobalSiteBar() {
       </button>
       <div class="gsb-dropdown" id="gsb-dropdown">${items}</div>
     </div>
-    <div class="gsb-divider"></div>
-    <div class="gsb-stats">
-      <div class="gsb-stat">
-        <svg viewBox="0 0 24 24" width="14" height="14" stroke="var(--tx-3)" stroke-width="2" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-        <span><strong>${sakinSayisi}</strong> Sakin</span>
-      </div>
-      ${borcluSayisi > 0 ? `<div class="gsb-stat"><svg viewBox="0 0 24 24" width="14" height="14" stroke="var(--err)" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span style="color:var(--err)"><strong>${borcluSayisi}</strong> Borçlu</span></div>` : ''}
-      ${acikAriza > 0 ? `<div class="gsb-stat"><svg viewBox="0 0 24 24" width="14" height="14" stroke="#f59e0b" stroke-width="2" fill="none"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg><span style="color:#f59e0b"><strong>${acikAriza}</strong> Arıza</span></div>` : ''}
-      <div class="gsb-stat">
-        <svg viewBox="0 0 24 24" width="14" height="14" stroke="var(--tx-3)" stroke-width="2" fill="none"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-        <span><strong>${daireSayisi}</strong> Daire</span>
-      </div>
+    <div class="gsb-stat" style="margin-left:4px">
+      <svg viewBox="0 0 24 24" width="14" height="14" stroke="var(--tx-3)" stroke-width="2" fill="none"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+      <span><strong>${daireSayisi}</strong> Daire</span>
     </div>
-    ${apts.length > 1 ? `<button class="gsb-all-btn" onclick="switchGlobalSite(null)" title="Tüm siteleri göster" id="gsb-all-btn" ${!selectedAptId?'style="background:rgba(255,255,255,.35)"':''}>Tümü</button>` : ''}
   `;
 
   // Dropdown dışına tıklanınca kapat
