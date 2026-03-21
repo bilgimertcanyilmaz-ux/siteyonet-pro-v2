@@ -2724,23 +2724,35 @@ function renderSakinler() {
       <div class="sc bar-am" style="cursor:default"><div class="sc-ico ic-am"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div><div class="sc-lbl">Kiracı</div><div class="sc-val v-am">${kiralikSayisi}</div></div>
       <div class="sc bar-rd" style="cursor:default"><div class="sc-ico ic-rd"><svg viewBox="0 0 24 24"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg></div><div class="sc-lbl">Borçlu Sakin</div><div class="sc-val v-rd">${borcluSayisi}</div><div class="sc-sub">₺${fmt(toplamBorc)} toplam</div></div>`;
   }
-  const bannerId = 'sak-apt-banner';
-  const contentId = 'sak-content';
-  if (!aptCtxCheck('sakinler', bannerId, contentId, 'sakin listesi ve yeni sakin ekleme')) return;
+  // aptCtxCheck overlay kaldırıldı — üst menüden seçilen site yeterli
+  const contentEl = document.getElementById('sak-content');
+  if (contentEl) contentEl.style.display = '';
   const aptId = selectedAptId;
-  const apt = S.apartmanlar.find(a=>a.id==aptId);
-  renderAptBanner(bannerId, apt);
+  const apt = aptId ? S.apartmanlar.find(a=>a.id==aptId) : null;
 
-  // Forma apartmanı gizli input olarak set et
+  // Üst banner: apt seçiliyse göster, seçili değilse gizle
+  const bannerEl = document.getElementById('sak-apt-banner');
+  if (bannerEl) { if (apt) renderAptBanner('sak-apt-banner', apt); else bannerEl.innerHTML = ''; }
+
+  // Forma apartman dropdown'ı
   const sakAptEl = document.getElementById('sak-apt');
-  if(sakAptEl){ sakAptEl.innerHTML=`<option value="${apt.id}">${apt.ad}</option>`; sakAptEl.value=apt.id; }
+  if (sakAptEl) {
+    if (apt) {
+      sakAptEl.innerHTML = `<option value="${apt.id}">${apt.ad}</option>`;
+      sakAptEl.value = apt.id;
+    } else {
+      sakAptEl.innerHTML = '<option value="">— Apartman Seçin —</option>' +
+        S.apartmanlar.filter(a=>a.durum==='aktif').map(a=>`<option value="${a.id}">${a.ad}</option>`).join('');
+    }
+  }
 
   const s = (document.getElementById('sak-srch')?.value||'').toLowerCase();
   const fTip = document.getElementById('sak-f-tip')?.value||'';
   const fBorc = document.getElementById('sak-f-borc')?.value||'';
   const gorunum = document.getElementById('sak-f-gorunum')?.value||'kart';
 
-  let list = S.sakinler.filter(x=>x.aptId==aptId);
+  // Apt seçiliyse o apt'ın sakinleri, seçili değilse tümü
+  let list = aptId ? S.sakinler.filter(x=>x.aptId==aptId) : [...S.sakinler];
   if (fTip) list = list.filter(x=>x.tip===fTip);
   if (fBorc==='borclu') list = list.filter(x=>(x.borc||0)>0);
   if (fBorc==='temiz') list = list.filter(x=>!(x.borc||0));
@@ -2755,17 +2767,18 @@ function renderSakinler() {
   if (!container) return;
 
   if (!list.length) {
-    container.innerHTML=`<div class="card">${emp('👤','Bu apartmanda henüz sakin kaydı bulunmuyor. "Tekil Ekle" veya "Toplu Ekle" ile sakin ekleyin.')}</div>`;
+    container.innerHTML=`<div class="card">${emp('👤', aptId ? 'Bu apartmanda henüz sakin kaydı bulunmuyor. "Tekil Ekle" veya "Toplu Ekle" ile sakin ekleyin.' : 'Sistemde kayıtlı sakin bulunmuyor.')}</div>`;
     return;
   }
 
   if (gorunum === 'tablo') {
     // TABLO GÖRÜNÜM
     container.innerHTML=`<div class="card"><div class="tw"><table>
-      <thead><tr><th>Daire</th><th>Ad Soyad</th><th>Tip</th><th>Telefon</th><th>E-posta</th><th>Aidat</th><th>Borç</th><th>Plaka</th><th>İşlem</th></tr></thead>
+      <thead><tr>${!aptId?'<th>Apartman</th>':''}<th>Daire</th><th>Ad Soyad</th><th>Tip</th><th>Telefon</th><th>E-posta</th><th>Aidat</th><th>Borç</th><th>Plaka</th><th>İşlem</th></tr></thead>
       <tbody>${list.map(sk => {
         const borc=sk.borc||0;
         return `<tr>
+          ${!aptId?`<td style="font-size:11.5px;color:var(--tx-3)">${sk.aptAd||'—'}</td>`:''}
           <td style="font-weight:700;color:var(--brand)">${sk.daire||'—'}</td>
           <td><strong>${sk.ad}</strong>${sk.kat?'<div class="t3" style="font-size:10.5px">Kat: '+sk.kat+'</div>':''}</td>
           <td><span class="b ${sk.tip==='malik'?'b-bl':'b-am'}">${sk.tip==='malik'?'Malik':'Kiracı'}</span></td>
@@ -2799,6 +2812,7 @@ function renderSakinler() {
             <div style="font-size:11.5px;color:var(--tx-3)">
               <span class="b ${isMalik?'b-bl':'b-am'}" style="font-size:10px;padding:2px 6px">${isMalik?'Malik':'Kiracı'}</span>
               &nbsp;Daire: <strong style="color:var(--brand)">${sk.daire||'—'}</strong>${sk.kat?' · Kat '+sk.kat:''}
+              ${!aptId?`<div style="font-size:10.5px;color:var(--tx-4);margin-top:2px">🏢 ${sk.aptAd||'—'}</div>`:''}
             </div>
           </div>
           ${borc>0?`<div style="font-size:11px;font-weight:700;color:var(--err);text-align:right">₺${fmt(borc)}<div style="font-size:10px;font-weight:400;color:var(--tx-3)">borç</div></div>`:'<div style="font-size:10px;color:var(--ok)">✓ Temiz</div>'}
