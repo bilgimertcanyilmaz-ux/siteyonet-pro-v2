@@ -9366,58 +9366,9 @@ function renderDaireDetay(sk, yil) {
   const kullDurum = kiraci ? 'Kiracılı' : (aktifKisi.length > 0 ? 'Dolu' : 'Boş');
   const kullCls   = kiraci ? 'b-am'     : (aktifKisi.length > 0 ? 'b-gr' : 'b-rd');
 
-  // Ödeme geçmişi (ana sakin üzerinden)
-  const now = new Date();
-  const tumOdemeler = (S.tahsilatlar||[]).filter(t => t.sakId==mainSk.id||t.sakinId==mainSk.id).sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||''));
-  const odemeler = tumOdemeler.filter(o=>(o.tarih||'').startsWith(yil+''));
+  // Toplam tahsilat (borç banner için)
+  const tumOdemeler = (S.tahsilatlar||[]).filter(t => t.sakId==mainSk.id||t.sakinId==mainSk.id);
   const toplamOdeme = tumOdemeler.reduce((s,t)=>s+(t.tutar||0),0);
-  const toplamOdemeYil = odemeler.reduce((s,t)=>s+(t.tutar||0),0);
-
-  // Gecikmiş dönem
-  let gecikmis = 0;
-  for (let m=0; m<12; m++) {
-    const donemSon = new Date(yil, m+1, 0);
-    if (donemSon < now) {
-      const ds = yil+'-'+String(m+1).padStart(2,'0');
-      if (!tumOdemeler.some(o=>(o.donem||o.tarih||'').startsWith(ds))) gecikmis++;
-    }
-  }
-
-  // Arızalar
-  const arizalar = (S.arizalar||[]).filter(a=>a.aptId==sk.aptId&&(a.konum||'').includes(sk.daire));
-
-  // Borçlandırma geçmişi
-  const borcGecmisi = [];
-  (S.aidatBorclandir||[]).forEach(kayit=>{
-    if(kayit.detaylar) kayit.detaylar.forEach(d=>{
-      if(d.sakId==mainSk.id) borcGecmisi.push({donem:kayit.donem,tarih:kayit.tarih,tutar:d.tutar});
-    });
-  });
-  borcGecmisi.sort((a,b)=>(b.donem||'').localeCompare(a.donem||''));
-
-  // 12 aylık aidat tablosu
-  const aylar=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
-  let aidatTablosu=`<div class="aidat-row6 aidat-row6-hdr"><div>Dönem</div><div>Tutar</div><div>Yöntem</div><div>Ödeme Tarihi</div><div>Durum</div><div>İşlem</div></div>`;
-  for(let ay=0;ay<12;ay++){
-    const ayStr=String(ay+1).padStart(2,'0');
-    const donemStr=yil+'-'+ayStr;
-    const odeme=tumOdemeler.find(o=>(o.donem||o.tarih||'').startsWith(donemStr));
-    const odendi=!!odeme;
-    const gecmisAy=new Date(yil,ay+1,0)<now;
-    const durumLbl=odendi?'Ödendi':(gecmisAy?'Gecikmiş':'Bekliyor');
-    const durumCls=odendi?'b-gr':(gecmisAy?'b-rd':'b-am');
-    const tutar=odeme?odeme.tutar:aidat;
-    aidatTablosu+=`<div class="aidat-row6" style="${!odendi&&gecmisAy?'background:#fff8f8':''}">
-      <div style="font-weight:600">${aylar[ay]} ${yil}</div>
-      <div style="font-family:'DM Mono',monospace;font-weight:700;color:${odendi?'var(--ok)':'var(--tx-3)'}">₺${fmt(tutar)}</div>
-      <div style="color:var(--tx-3)">${odeme?(odeme.yontem||'—'):'—'}</div>
-      <div style="font-size:11.5px;color:var(--tx-3)">${odeme?odeme.tarih:'—'}</div>
-      <div><span class="b ${durumCls}">${durumLbl}</span></div>
-      <div>${!odendi?`<button class="btn bg xs" onclick="openHizliOdeme(${mainSk.id},'${donemStr}')">Ödeme Al</button>`:`<button class="btn bg xs" onclick="deleteTahsilat('${odeme?odeme.id:''}',${mainSk.id})">İptal</button>`}</div>
-    </div>`;
-  }
-  const thisYear=new Date().getFullYear();
-  const yilOpts=[thisYear+1,thisYear,thisYear-1,thisYear-2,thisYear-3].map(y=>`<option value="${y}" ${y==yil?'selected':''}>${y}</option>`).join('');
 
   // Kişiler tablosu (aktif + eski)
   const tumKisiSorted = [...aktifKisi, ...eskiKisi];
@@ -9597,74 +9548,23 @@ function renderDaireDetay(sk, yil) {
     </div>
   </div>` +
 
-  // ── TAKİP TABLARI (alt) ──
-  `<div class="bb-tabs-section">
-    <div class="dd-tabs-bar">
-      <div class="dd-tab on" onclick="ddShowTab(this,'dd-aidat')">Aidat Takibi</div>
-      <div class="dd-tab" onclick="ddShowTab(this,'dd-odeme')">Ödeme Geçmişi (${tumOdemeler.length})</div>
-      <div class="dd-tab" onclick="ddShowTab(this,'dd-borchist')">Borçlandırma (${borcGecmisi.length})</div>
-      <div class="dd-tab" onclick="ddShowTab(this,'dd-ariza')">Arıza/Bakım (${arizalar.length})</div>
-      <div class="dd-tab" onclick="ddShowTab(this,'dd-bilgi')">Daire Bilgileri</div>
+  // ── FİNANSAL DURUM YÖNLENDİRME ──
+  `<div class="card" style="padding:18px 20px;display:flex;align-items:center;gap:16px;background:linear-gradient(135deg,var(--brand-10),#f5f3ff);border:1.5px solid var(--brand-20);">
+    <div style="width:44px;height:44px;background:var(--brand);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
     </div>
-
-    <div id="dd-aidat" class="dd-pane on">
-      <div class="dd-year-bar">
-        <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--brand);fill:none;stroke-width:2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        <label>Yıl:</label>
-        <select class="dd-year-sel" onchange="renderDaireDetay(S.sakinler.find(s=>s.id==${mainSk.id}),+this.value)">${yilOpts}</select>
-        <span style="margin-left:auto;font-size:11.5px;color:var(--tx-3)">${yil} yılı: <strong style="color:var(--ok)">₺${fmt(toplamOdemeYil)}</strong></span>
-      </div>
-      <div class="card" style="padding:0;overflow:hidden">${aidatTablosu}</div>
+    <div style="flex:1">
+      <div style="font-size:13.5px;font-weight:700;color:var(--tx);margin-bottom:3px">Finansal Detaylar</div>
+      <div style="font-size:12px;color:var(--tx-3)">Aidat takibi, ödeme geçmişi ve borçlandırma kayıtları için Finansal Durum sayfasını kullanın.</div>
     </div>
-
-    <div id="dd-odeme" class="dd-pane">
-      ${tumOdemeler.length ? `<div class="card" style="padding:0"><div class="tw"><table>
-        <thead><tr><th>Tarih</th><th>Dönem</th><th>Tutar</th><th>Yöntem</th><th>Not</th><th>İşlem</th></tr></thead>
-        <tbody>${tumOdemeler.map(o=>`<tr>
-          <td>${o.tarih||'—'}</td><td>${o.donem||'—'}</td>
-          <td style="font-weight:700;color:var(--ok)">₺${fmt(o.tutar)}</td>
-          <td>${o.yontem||'—'}</td><td class="t3">${o.not||'—'}</td>
-          <td><button class="btn bg xs" onclick="deleteTahsilat('${o.id}',${mainSk.id})">Sil</button></td>
-        </tr>`).join('')}</tbody>
-      </table></div></div>` : `<div class="emp"><span class="emp-i">💳</span><p>Henüz ödeme kaydı yok.</p><button class="btn bp sm mt12" onclick="openHizliOdeme(${mainSk.id},'')">İlk Ödemeyi Kaydet</button></div>`}
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${tumKisiSorted.map(kisi=>`
+        <button class="btn bp sm" onclick="goSakinCari(${kisi.id},true)">
+          <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          ${kisi.ad.split(' ')[0]} Finansal Durum
+        </button>`).join('')}
     </div>
-
-    <div id="dd-borchist" class="dd-pane">
-      ${borcGecmisi.length ? `<div class="card" style="padding:0">
-        <div style="padding:10px 16px;background:var(--s3);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--tx-3)">Toplu aidat borçlandırma geçmişi</div>
-        ${borcGecmisi.map(b=>`<div class="borc-hist-row"><div><div style="font-weight:600">${b.donem} dönemi</div><div style="font-size:11px;color:var(--tx-3)">${b.tarih}</div></div><span class="b b-rd">₺${fmt(b.tutar)} Borçlandırıldı</span></div>`).join('')}
-      </div>` : `<div class="emp"><span class="emp-i">📋</span><p>Borçlandırma geçmişi yok.</p></div>`}
-    </div>
-
-    <div id="dd-ariza" class="dd-pane">
-      ${arizalar.length ? `<div class="card" style="padding:0"><div class="tw"><table>
-        <thead><tr><th>Tarih</th><th>Açıklama</th><th>Kategori</th><th>Durum</th><th>Maliyet</th></tr></thead>
-        <tbody>${arizalar.map(a=>{const dc=a.durum==='tamam'?'b-gr':a.durum==='devam'?'b-am':'b-rd';
-          return `<tr><td>${a.tarih||'—'}</td><td>${a.baslik||a.aciklama||'—'}</td><td>${a.kategori||'—'}</td><td><span class="b ${dc}">${a.durum||'—'}</span></td><td>${a.maliyetGercek?'₺'+fmt(a.maliyetGercek):'—'}</td></tr>`;
-        }).join('')}</tbody>
-      </table></div></div>` : `<div class="emp"><span class="emp-i">🔧</span><p>Bu daire için arıza kaydı yok.</p></div>`}
-    </div>
-
-    <div id="dd-bilgi" class="dd-pane">
-      <div class="daire-info-grid">
-        <div class="daire-info-item"><div class="dii-lbl">Apartman</div><div class="dii-val">${aptAd}</div></div>
-        <div class="daire-info-item"><div class="dii-lbl">Daire No</div><div class="dii-val">${mainSk.daire||'—'}</div></div>
-        ${mainSk.kat?`<div class="daire-info-item"><div class="dii-lbl">Kat</div><div class="dii-val">${mainSk.kat}</div></div>`:''}
-        <div class="daire-info-item"><div class="dii-lbl">Sakin Tipi</div><div class="dii-val">${mainSk.tip==='malik'?'Kat Maliki':'Kiracı'}</div></div>
-        <div class="daire-info-item"><div class="dii-lbl">Telefon</div><div class="dii-val">${mainSk.tel||'—'}</div></div>
-        <div class="daire-info-item"><div class="dii-lbl">E-posta</div><div class="dii-val" style="font-size:12px">${mainSk.email||'—'}</div></div>
-        ${mainSk.tc?`<div class="daire-info-item"><div class="dii-lbl">TC Kimlik</div><div class="dii-val">${mainSk.tc}</div></div>`:''}
-        ${mainSk.giris?`<div class="daire-info-item"><div class="dii-lbl">Giriş Tarihi</div><div class="dii-val">${mainSk.giris}</div></div>`:''}
-        ${mainSk.plaka?`<div class="daire-info-item"><div class="dii-lbl">Araç Plaka</div><div class="dii-val">${mainSk.plaka}</div></div>`:''}
-        ${mainSk.tapu?`<div class="daire-info-item"><div class="dii-lbl">Tapu No</div><div class="dii-val">${mainSk.tapu}</div></div>`:''}
-        ${mainSk.kira?`<div class="daire-info-item"><div class="dii-lbl">Aylık Kira</div><div class="dii-val" style="color:var(--warn)">₺${fmt(mainSk.kira)}</div></div>`:''}
-        ${mainSk.depozito?`<div class="daire-info-item"><div class="dii-lbl">Depozito</div><div class="dii-val">₺${fmt(mainSk.depozito)}</div></div>`:''}
-        ${mainSk.sozlasmeBas?`<div class="daire-info-item"><div class="dii-lbl">Sözleşme Başlangıç</div><div class="dii-val">${mainSk.sozlasmeBas}</div></div>`:''}
-        ${mainSk.sozlasmeBit?`<div class="daire-info-item"><div class="dii-lbl">Sözleşme Bitiş</div><div class="dii-val">${mainSk.sozlasmeBit}</div></div>`:''}
-      </div>
-    </div>
-
-  </div>`; /* /bb-tabs-section */
+  </div>`; /* /finansal yönlendirme */
 }
 
 function ddShowTab(el, paneId) {
