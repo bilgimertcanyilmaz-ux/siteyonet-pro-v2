@@ -561,7 +561,7 @@ function toast(msg, type='') {
 // 
 // NAVIGATION
 // 
-const PAGE_TITLES = { dashboard:'Anasayfa', apartmanlar:'Apartmanlar', karar:'Karar Metni Oluşturucu', isletme:'İşletme Projesi', 'isl-detay':'İşletme Projesi Detay', denetim:'Denetim Raporları', 'den-detay':'Denetim Raporu Detay', asansor:'Asansör Etiket Kontrolü', 'asan-detay':'Asansör Detay', teklifler:'Teklifler', gorevler:'Görev Yönetimi', icra:'İcra Listesi', finans:'Gelir / Gider Takibi', ayarlar:'Ayarlar', sakinler:'Sakin Yönetimi', personel:'Personel Yönetimi', duyurular:'Duyuru & İletişim', ariza:'Arıza & Bakım Yönetimi', tahsilat:'Tahsilat & Borç Takibi', raporlar:'Raporlar & Analitik', 'ai-asistan':'AI Yönetim Asistanı', sigorta:'Sigorta Takibi', toplanti:'Toplantı Yönetimi', fatura:'Fatura & Hizmet Yönetimi', superadmin:'Süper Admin Paneli', 'apt-detay':'Apartman Detay', 'daire-detay':'Daire Detay', 'sakin-cari':'Kişilere Göre Finansal Durum', 'tanimlama':'Tanımlama — Gelir & Gider Kategorileri', 'proje':'Proje & Tadilat Takibi', 'iletisim':'İletişim Merkezi' };
+const PAGE_TITLES = { dashboard:'Anasayfa', apartmanlar:'Apartmanlar', karar:'Karar Metni Oluşturucu', isletme:'İşletme Projesi', 'isl-detay':'İşletme Projesi Detay', denetim:'Denetim Raporları', 'den-detay':'Denetim Raporu Detay', asansor:'Asansör Etiket Kontrolü', 'asan-detay':'Asansör Detay', teklifler:'Teklifler', gorevler:'Görev Yönetimi', icra:'İcra Listesi', finans:'Gelir / Gider Takibi', ayarlar:'Ayarlar', sakinler:'Sakin Yönetimi', personel:'Personel Yönetimi', duyurular:'Duyuru & İletişim', ariza:'Arıza & Bakım Yönetimi', tahsilat:'Tahsilat & Borç Takibi', raporlar:'Raporlar & Analitik', 'ai-asistan':'AI Yönetim Asistanı', sigorta:'Sigorta Takibi', toplanti:'Toplantı Yönetimi', fatura:'Fatura & Hizmet Yönetimi', superadmin:'Süper Admin Paneli', 'apt-detay':'Apartman Detay', 'daire-detay':'Daire Detay', 'sakin-cari':'Kişilere Göre Finansal Durum', 'tanimlama':'Tanımlama — Gelir & Gider Kategorileri', 'proje':'Proje & Tadilat Takibi', 'iletisim':'İletişim Merkezi', 'toplu-borc':'Toplu Borçlandırma' };
 
 function goPage(p) {
  document.querySelectorAll('.ni').forEach(n => n.classList.toggle('on', n.dataset.p === p));
@@ -592,6 +592,7 @@ function goPage(p) {
  'isl-detay': '<button class="btn bg" onclick="goPage(\'isletme\');setTimeout(()=>goTab(\'isl-kayitli\'),50)"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none"><polyline points="15 18 9 12 15 6"/></svg> Geri</button>',
  'den-detay': '<button class="btn bg" onclick="goPage(\'denetim\');setTimeout(()=>goTab(\'den-liste\'),50)"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none"><polyline points="15 18 9 12 15 6"/></svg> Geri</button>',
  'asan-detay': '<button class="btn bg" onclick="goPage(\'asansor\')"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none"><polyline points="15 18 9 12 15 6"/></svg> Geri</button>',
+ 'toplu-borc': '',
  };
  if (acts[p]) ta.innerHTML = acts[p];
   // PDF button for all pages except ayarlar + ai-asistan
@@ -614,6 +615,7 @@ function goPage(p) {
   if (p==='finans') { renderFinans(); renderFinansRapor(); }
   if (p==='ayarlar') { loadSettings(); renderSetStats(); }
   if (p==='sakinler') { renderSakinler(); initTopluDaireForm(); }
+  if (p==='toplu-borc') { renderTopluBorcPage(); }
   if (p==='tanimlama') renderTanimlama();
   if (p==='proje') renderProjeler();
   if (p==='iletisim') renderIletisim();
@@ -658,6 +660,7 @@ function initTabs() {
     if (id==='per-liste') { try{renderPersonel();}catch(e){} }
     if (id==='sak-liste') { try{renderSakinler();}catch(e){} }
     if (id==='sak-toplu-borc') { try{renderTopluBorc();}catch(e){} }
+    if (id==='tbp-gecmis') { try{renderTopluBorcGecmis();}catch(e){} }
     if (id==='sig-liste') { try{renderSigorta();}catch(e){} }
     if (id==='top-liste') { try{renderToplanti();}catch(e){} }
     if (id==='top-takvim') { try{renderTopTakvim();}catch(e){} }
@@ -7390,6 +7393,455 @@ function saveHizliOdeme() {
   const yr = document.querySelector('.dd-year-sel');
   const yil = yr ? +yr.value : new Date().getFullYear();
   renderDaireDetay(sk, yil);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// TOPLU BORÇLANDIRMA SAYFASI (Standalone Page)
+// ══════════════════════════════════════════════════════════════════════
+
+function renderTopluBorcPage() {
+  // İstatistik kartları
+  const statsEl = document.getElementById('tbp-page-stats');
+  if (statsEl) {
+    const tumKayitlar = S.aidatBorclandir || [];
+    const buAy = new Date().toISOString().slice(0,7);
+    const buAyKayitlar = tumKayitlar.filter(k => k.donem === buAy);
+    const buAyToplam = buAyKayitlar.reduce((s,k) => s+(k.toplamBorc||0), 0);
+    const toplamKayit = tumKayitlar.length;
+    const toplamBorc = tumKayitlar.reduce((s,k) => s+(k.toplamBorc||0), 0);
+    const aktifAptlar = [...new Set(tumKayitlar.map(k=>k.aptId))].length;
+    statsEl.innerHTML = `
+      <div class="sc bar-bl" style="cursor:default">
+        <div class="sc-ico ic-bl"><svg viewBox="0 0 24 24"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg></div>
+        <div class="sc-lbl">Bu Ay Borçlandırılan</div>
+        <div class="sc-val v-bl">₺${fmt(buAyToplam)}</div>
+        <div class="sc-sub">${buAyKayitlar.length} kayıt</div>
+      </div>
+      <div class="sc bar-am" style="cursor:default">
+        <div class="sc-ico ic-am"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+        <div class="sc-lbl">Toplam Kayıt</div>
+        <div class="sc-val v-am">${toplamKayit}</div>
+      </div>
+      <div class="sc bar-rd" style="cursor:default">
+        <div class="sc-ico ic-rd"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg></div>
+        <div class="sc-lbl">Toplam Borçlandırılan</div>
+        <div class="sc-val v-rd">₺${fmt(toplamBorc)}</div>
+      </div>
+      <div class="sc bar-gr" style="cursor:default">
+        <div class="sc-ico ic-gr"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+        <div class="sc-lbl">İşlem Yapılan Site</div>
+        <div class="sc-val v-gr">${aktifAptlar}</div>
+      </div>`;
+  }
+
+  // Apartman dropdown'ı doldur
+  const aptEl = document.getElementById('tbp-apt');
+  if (aptEl) {
+    const cur = aptEl.value || (selectedAptId ? String(selectedAptId) : '');
+    aptEl.innerHTML = '<option value="">— Seçin —</option>' +
+      S.apartmanlar.filter(a=>a.durum==='aktif')
+        .map(a=>`<option value="${a.id}">${a.ad}</option>`).join('');
+    if (cur) aptEl.value = cur;
+    if (!aptEl.value && selectedAptId) aptEl.value = selectedAptId;
+  }
+
+  // Dönem initialize
+  const donemEl = document.getElementById('tbp-donem');
+  if (donemEl && !donemEl.value) {
+    const now = new Date();
+    donemEl.value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  }
+
+  // Kategori listesi doldur
+  const katEl = document.getElementById('tbp-kategori');
+  if (katEl && !katEl.options.length) {
+    katEl.innerHTML = getGelirTanimlari().map(t=>`<option value="${t.ad}">${t.ikon||''} ${t.ad}</option>`).join('');
+  }
+}
+
+function tbpAptChange() {
+  tbpCheckDuplicatePeriod();
+  tbpClearPreview();
+}
+
+function tbpTutarTurChange() {
+  const tur = document.getElementById('tbp-tutar-tur')?.value;
+  const wrap = document.getElementById('tbp-sabit-wrap');
+  if (wrap) wrap.style.display = tur === 'sabit' ? '' : 'none';
+  tbpClearPreview();
+}
+
+function tbpSabitChange() { tbpClearPreview(); }
+function tbpKimeChange() { tbpClearPreview(); }
+
+function tbpClearPreview() {
+  const pw = document.getElementById('tbp-preview-wrap');
+  if (pw) pw.innerHTML = '';
+  const ab = document.getElementById('tbp-apply-bar');
+  if (ab) ab.style.display = 'none';
+  window._tbpHedefler = null;
+}
+
+function tbpCheckDuplicatePeriod() {
+  const aptId = document.getElementById('tbp-apt')?.value;
+  const donem = document.getElementById('tbp-donem')?.value;
+  const uyariEl = document.getElementById('tbp-donem-uyari');
+  if (!uyariEl) return;
+  if (!aptId || !donem) { uyariEl.style.display='none'; return; }
+  const varMi = (S.aidatBorclandir||[]).find(k => k.aptId==aptId && k.donem===donem);
+  if (varMi) {
+    const apt = S.apartmanlar.find(a=>a.id==aptId);
+    uyariEl.style.display = '';
+    uyariEl.innerHTML = `⚠️ <strong>${apt?.ad||'Bu site'}</strong> için <strong>${donem}</strong> döneminde zaten ${varMi.sakinSayisi} daire\u0435ye ₺${fmt(varMi.toplamBorc)} borçlandırma yapılmış. Tekrar borçlandırmak borçları çifte kaydeder!`;
+  } else {
+    uyariEl.style.display = 'none';
+  }
+}
+
+function renderTopluBorcOnizle() {
+  const aptId = document.getElementById('tbp-apt')?.value;
+  const donem = document.getElementById('tbp-donem')?.value;
+  const tutarTur = document.getElementById('tbp-tutar-tur')?.value || 'aidat';
+  const sabitTutar = parseFloat(document.getElementById('tbp-sabit-tutar')?.value) || 0;
+  const kime = document.getElementById('tbp-kime')?.value || 'malik';
+  const pw = document.getElementById('tbp-preview-wrap');
+  const ab = document.getElementById('tbp-apply-bar');
+
+  if (!aptId) { toast('Önce bir site seçin.','warn'); return; }
+  if (!donem) { toast('Dönem seçin.','warn'); return; }
+  if (tutarTur === 'sabit' && sabitTutar <= 0) { toast('Sabit tutar giriniz.','warn'); return; }
+
+  const apt = S.apartmanlar.find(a=>a.id==aptId);
+  if (!apt) return;
+
+  // Aktif sakinleri daire bazında grupla
+  const aktifSakinler = S.sakinler.filter(s => s.aptId==aptId && isSakinAktif(s));
+  const daireMap = {};
+  aktifSakinler.forEach(s => {
+    const d = s.daire || '?';
+    if (!daireMap[d]) daireMap[d] = {malik:null, kiraci:null};
+    if (s.tip==='malik' && !daireMap[d].malik) daireMap[d].malik = s;
+    else if (s.tip==='kiralik' && !daireMap[d].kiraci) daireMap[d].kiraci = s;
+  });
+
+  const hedefler = [];
+  Object.entries(daireMap).forEach(([daireNo, kisiler]) => {
+    const hedef = kime==='malik' ? kisiler.malik : (kisiler.kiraci||kisiler.malik);
+    if (!hedef) return;
+    const tutar = tutarTur==='sabit' ? sabitTutar : (hedef.aidat||hedef.aidatK||apt.aidat||0);
+    hedefler.push({sk:hedef, daire:daireNo, tutar, hedefTip: kime==='malik'?'malik':(kisiler.kiraci?'kiraci':'malik')});
+  });
+
+  hedefler.sort((a,b) => { const da=parseInt(a.daire)||0, db=parseInt(b.daire)||0; return da-db||a.daire?.localeCompare(b.daire)||0; });
+  window._tbpHedefler = hedefler;
+
+  const toplamTutar = hedefler.reduce((s,h)=>s+(h.tutar||0), 0);
+
+  if (!hedefler.length) {
+    if (pw) pw.innerHTML = `<div class="card" style="text-align:center;padding:32px;color:var(--tx-3)">Bu sitede aktif sakin kaydı bulunamadı.</div>`;
+    if (ab) ab.style.display = 'none';
+    return;
+  }
+
+  const rows = hedefler.map(h => {
+    const tipCls = h.sk.tip==='malik' ? 'b-bl' : 'b-am';
+    const tipLbl = h.sk.tip==='malik' ? 'Ev Sahibi' : 'Kiracı';
+    const mevcutBorc = h.sk.borc||0;
+    return `<tr>
+      <td style="font-weight:700;color:var(--brand);width:60px">${h.daire}</td>
+      <td style="font-weight:600">${h.sk.ad}</td>
+      <td><span class="b ${tipCls}" style="font-size:10px;padding:2px 7px">${tipLbl}</span></td>
+      <td style="font-size:11.5px;color:var(--tx-3)">${h.sk.tel||'—'}</td>
+      <td style="color:${mevcutBorc>0?'var(--err)':'var(--ok)'}">₺${fmt(mevcutBorc)}</td>
+      <td style="width:140px">
+        <input type="number" class="fi tbp-tutar-inp"
+          id="tbp-t-${h.sk.id}" value="${h.tutar}" min="0" step="0.01"
+          style="padding:5px 8px;font-size:13px;font-weight:600;text-align:right"
+          oninput="tbpUpdateToplam()">
+      </td>
+      <td style="color:var(--tx-3);font-size:11.5px">
+        ₺${fmt(mevcutBorc)} → <strong style="color:var(--err)">₺${fmt(mevcutBorc+(h.tutar||0))}</strong>
+      </td>
+    </tr>`;
+  }).join('');
+
+  if (pw) pw.innerHTML = `<div class="card" style="padding:0">
+    <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:14px;font-weight:700">${apt.ad} — ${donem} Dönemi Önizleme</div>
+        <div style="font-size:12px;color:var(--tx-3);margin-top:3px">
+          ${hedefler.length} daire · Toplam:
+          <strong style="color:var(--err);font-size:15px" id="tbp-toplam-lbl">₺${fmt(toplamTutar)}</strong>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--tx-3);text-align:right">
+        Tutarları değiştirebilirsiniz<br>
+        <span style="color:var(--brand)">Son sütun: Borç sonrası durum</span>
+      </div>
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Daire</th><th>Ad Soyad</th><th>Tip</th><th>Telefon</th>
+          <th>Mevcut Borç</th><th style="text-align:right">Borçlandırılacak (₺)</th>
+          <th>Borç Sonrası</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr style="background:var(--s2)">
+          <td colspan="5" style="text-align:right;font-weight:700;font-size:13px;padding:10px 14px">Toplam Borçlandırma:</td>
+          <td style="font-weight:800;font-size:15px;color:var(--err);text-align:right;padding:10px 14px" id="tbp-toplam-lbl2">₺${fmt(toplamTutar)}</td>
+          <td></td>
+        </tr></tfoot>
+      </table>
+    </div>
+  </div>`;
+
+  // Uygula bar'ı güncelle
+  if (ab) {
+    ab.style.display = 'flex';
+    const ozet = document.getElementById('tbp-apply-ozet');
+    if (ozet) ozet.innerHTML = `${apt.ad} · ${donem} dönemi · ${hedefler.length} daire · <strong>₺${fmt(toplamTutar)}</strong>`;
+  }
+}
+
+function tbpUpdateToplam() {
+  let top = 0;
+  (window._tbpHedefler||[]).forEach(h => {
+    top += parseFloat(document.getElementById('tbp-t-'+h.sk.id)?.value)||0;
+  });
+  const l1 = document.getElementById('tbp-toplam-lbl'); if(l1) l1.textContent='₺'+fmt(top);
+  const l2 = document.getElementById('tbp-toplam-lbl2'); if(l2) l2.textContent='₺'+fmt(top);
+  // Güncelle satır "sonrası" kolonlarını
+  (window._tbpHedefler||[]).forEach(h => {
+    const tutar = parseFloat(document.getElementById('tbp-t-'+h.sk.id)?.value)||0;
+    h.tutar = tutar; // önizleme verisini de güncelle
+  });
+  // Apply bar özetini güncelle
+  const ozet = document.getElementById('tbp-apply-ozet');
+  if (ozet) {
+    const aptId = document.getElementById('tbp-apt')?.value;
+    const apt = S.apartmanlar.find(a=>a.id==aptId);
+    const donem = document.getElementById('tbp-donem')?.value||'';
+    const n = (window._tbpHedefler||[]).filter(h=>h.tutar>0).length;
+    ozet.innerHTML = `${apt?.ad||''} · ${donem} · ${n} daire · <strong>₺${fmt(top)}</strong>`;
+  }
+}
+
+function tbpTemizle() {
+  const aptEl = document.getElementById('tbp-apt'); if(aptEl) aptEl.value='';
+  const acEl = document.getElementById('tbp-aciklama'); if(acEl) acEl.value='';
+  tbpClearPreview();
+  const uyari = document.getElementById('tbp-donem-uyari'); if(uyari) uyari.style.display='none';
+}
+
+function saveTopluBorcPage() {
+  const aptId = document.getElementById('tbp-apt')?.value;
+  if (!aptId) { toast('Site seçin.','err'); return; }
+  const donem = document.getElementById('tbp-donem')?.value;
+  if (!donem) { toast('Dönem seçin.','err'); return; }
+  const kategori = document.getElementById('tbp-kategori')?.value || 'Aidat';
+  const aciklama = document.getElementById('tbp-aciklama')?.value?.trim() || '';
+  const hedefler = window._tbpHedefler || [];
+  if (!hedefler.length) { toast('Önce "Önizle" butonuna basın.','warn'); return; }
+
+  let ok=0, toplamBorc=0;
+  const detaylar = [];
+  const apt = S.apartmanlar.find(a=>a.id==aptId);
+
+  hedefler.forEach(h => {
+    const tutar = parseFloat(document.getElementById('tbp-t-'+h.sk.id)?.value)||0;
+    if (tutar<=0) return;
+    // Sakinin borcunu güncelle
+    h.sk.borc = (h.sk.borc||0) + tutar;
+    toplamBorc += tutar; ok++;
+    detaylar.push({
+      sakId: h.sk.id,
+      ad: h.sk.ad,
+      daire: h.sk.daire,
+      tutar,
+      kategori,
+      aptAd: apt?.ad||''
+    });
+  });
+
+  if (!ok) { toast('Geçerli tutar bulunamadı.','err'); return; }
+
+  // Cari kaydı oluştur (renderSakinCari tarafından okunur)
+  if (!S.aidatBorclandir) S.aidatBorclandir = [];
+  const kayitId = Date.now();
+  S.aidatBorclandir.push({
+    id: kayitId,
+    aptId: +aptId,
+    aptAd: apt?.ad||'',
+    donem,
+    tarih: today(),
+    kategori,
+    aciklama,
+    sakinSayisi: ok,
+    toplamBorc,
+    detaylar
+  });
+
+  save();
+
+  // Başarı mesajı
+  toast(`✅ ${ok} daire · ₺${fmt(toplamBorc)} borçlandırıldı. Tüm cariler güncellendi.`, 'ok');
+
+  // Formu temizle ve geçmişe geç
+  window._tbpHedefler = [];
+  tbpClearPreview();
+  document.getElementById('tbp-aciklama').value = '';
+  const uyari = document.getElementById('tbp-donem-uyari'); if(uyari) uyari.style.display='none';
+
+  // İstatistikleri yenile
+  renderTopluBorcPage();
+
+  // Geçmiş sekmesine geç
+  setTimeout(() => { goTab('tbp-gecmis'); }, 300);
+}
+
+function renderTopluBorcGecmis() {
+  const el = document.getElementById('tbp-gecmis-content');
+  if (!el) return;
+
+  const kayitlar = (S.aidatBorclandir||[]).slice().sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||''));
+
+  if (!kayitlar.length) {
+    el.innerHTML = `<div class="card" style="text-align:center;padding:48px;color:var(--tx-3)">
+      <svg viewBox="0 0 24 24" style="width:40px;height:40px;stroke:var(--tx-4);fill:none;stroke-width:1.5;margin-bottom:12px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <div style="font-weight:600;font-size:14px">Henüz borçlandırma kaydı yok</div>
+      <div style="font-size:12px;margin-top:6px">Yeni Borçlandırma sekmesinden işlem başlatın.</div>
+    </div>`;
+    return;
+  }
+
+  // Ay bazında grupla
+  const gruplar = {};
+  kayitlar.forEach(k => {
+    const ay = k.donem || (k.tarih||'').slice(0,7) || '?';
+    if (!gruplar[ay]) gruplar[ay] = [];
+    gruplar[ay].push(k);
+  });
+
+  let html = '';
+  Object.entries(gruplar).sort((a,b)=>b[0].localeCompare(a[0])).forEach(([ay, liste]) => {
+    const ayToplam = liste.reduce((s,k)=>s+(k.toplamBorc||0),0);
+    const rows = liste.map(k => {
+      const aptAd = k.aptAd || S.apartmanlar.find(a=>a.id==k.aptId)?.ad || '—';
+      return `<tr>
+        <td style="font-size:11.5px;color:var(--tx-3)">${k.tarih||'—'}</td>
+        <td style="font-weight:600">${aptAd}</td>
+        <td><span class="b b-bl" style="font-size:10px">${k.kategori||'Aidat'}</span></td>
+        <td>${k.donem||'—'}</td>
+        <td style="font-size:11.5px;color:var(--tx-3)">${k.aciklama||'—'}</td>
+        <td style="text-align:center">${k.sakinSayisi||0} daire</td>
+        <td style="font-weight:700;color:var(--err);text-align:right">₺${fmt(k.toplamBorc||0)}</td>
+        <td onclick="event.stopPropagation()">
+          <div style="display:flex;gap:4px">
+            <button class="btn bg xs" onclick="tbpGecmisDrilldown(${k.id||0},'${ay}')" title="Detay">
+              <svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+            <button class="btn xs" style="background:var(--err-bg);color:var(--err);border:1px solid var(--err)" onclick="tbpDeleteKayit(${k.id||0})" title="İptal Et / Geri Al">
+              <svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+            </button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    html += `<div class="card mb16" style="padding:0">
+      <div style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--s2)">
+        <div style="font-weight:700;font-size:14px">${ay} Dönemi</div>
+        <div style="font-size:13px;color:var(--tx-3)">${liste.length} kayıt · <strong style="color:var(--err)">₺${fmt(ayToplam)}</strong></div>
+      </div>
+      <div class="tw">
+        <table>
+          <thead><tr>
+            <th>Kayıt Tarihi</th><th>Site</th><th>Kategori</th><th>Dönem</th>
+            <th>Açıklama</th><th>Daire Sayısı</th><th style="text-align:right">Toplam</th><th>İşlem</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+  });
+
+  el.innerHTML = html;
+}
+
+function tbpGecmisDrilldown(kayitId, ay) {
+  const kayit = (S.aidatBorclandir||[]).find(k=>k.id==kayitId || (!k.id && k.donem===ay));
+  if (!kayit || !kayit.detaylar) { toast('Detay bulunamadı.','err'); return; }
+
+  const aptAd = kayit.aptAd || S.apartmanlar.find(a=>a.id==kayit.aptId)?.ad||'—';
+  const rows = kayit.detaylar.map(d => {
+    const sk = S.sakinler.find(s=>s.id==d.sakId);
+    const mevcutBorc = sk ? (sk.borc||0) : '?';
+    return `<tr>
+      <td style="font-weight:700;color:var(--brand)">${d.daire||'?'}</td>
+      <td style="font-weight:600;cursor:pointer;color:var(--brand)" onclick="${sk?'goSakinCari('+d.sakId+');closeModal(\'mod-tbp-drill\')':''}">${d.ad||'?'}${sk?'<span style="font-size:10px;margin-left:4px;color:var(--tx-3)">→</span>':''}</td>
+      <td><span class="b b-bl" style="font-size:10px">${d.kategori||'Aidat'}</span></td>
+      <td style="font-weight:700;color:var(--err)">₺${fmt(d.tutar||0)}</td>
+      <td style="color:${typeof mevcutBorc==='number'&&mevcutBorc>0?'var(--err)':'var(--ok)'}">₺${fmt(mevcutBorc||0)}</td>
+    </tr>`;
+  }).join('');
+
+  // Modal yoksa oluştur
+  let modal = document.getElementById('mod-tbp-drill');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.className = 'ov';
+    modal.id = 'mod-tbp-drill';
+    modal.innerHTML = `<div class="modal" style="max-width:600px">
+      <div class="modal-h">
+        <div class="modal-t" id="drill-title">Borçlandırma Detayı</div>
+        <button class="modal-x" onclick="closeModal('mod-tbp-drill')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div id="drill-body"></div>
+      <div class="modal-f"><button class="btn bg" onclick="closeModal('mod-tbp-drill')">Kapat</button></div>
+    </div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if(e.target===modal) modal.classList.remove('open'); });
+  }
+
+  document.getElementById('drill-title').textContent = `${aptAd} — ${kayit.donem||'?'} Detayı`;
+  document.getElementById('drill-body').innerHTML = `
+    <div style="padding:14px 18px;background:var(--s2);border-bottom:1px solid var(--border);font-size:12.5px;color:var(--tx-3)">
+      Kayıt Tarihi: ${kayit.tarih||'—'} · Kategori: ${kayit.kategori||'Aidat'} · ${kayit.aciklama?'Açıklama: '+kayit.aciklama:''}
+    </div>
+    <div class="tw" style="padding:0 0 4px">
+      <table>
+        <thead><tr><th>Daire</th><th>Sakin</th><th>Kategori</th><th>Borçlandırılan</th><th>Güncel Borç</th></tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr style="background:var(--s2)">
+          <td colspan="3" style="text-align:right;font-weight:700;padding:10px 14px">Toplam:</td>
+          <td style="font-weight:800;color:var(--err);padding:10px 14px">₺${fmt(kayit.toplamBorc||0)}</td>
+          <td></td>
+        </tr></tfoot>
+      </table>
+    </div>`;
+
+  modal.classList.add('open');
+}
+
+function tbpDeleteKayit(kayitId) {
+  const kayit = (S.aidatBorclandir||[]).find(k=>k.id==kayitId);
+  if (!kayit) { toast('Kayıt bulunamadı.','err'); return; }
+  const aptAd = kayit.aptAd || S.apartmanlar.find(a=>a.id==kayit.aptId)?.ad||'?';
+  if (!confirm(`${aptAd} — ${kayit.donem} dönemine ait ₺${fmt(kayit.toplamBorc)} tutarlı ${kayit.sakinSayisi} daire borçlandırması GERİ ALINSIN MI?\n\nSakinlerin borçlarından bu tutarlar düşülecek.`)) return;
+
+  // Borçları geri al
+  (kayit.detaylar||[]).forEach(d => {
+    const sk = S.sakinler.find(s=>s.id==d.sakId);
+    if (sk) sk.borc = Math.max(0, (sk.borc||0) - (d.tutar||0));
+  });
+
+  // Kaydı sil
+  S.aidatBorclandir = (S.aidatBorclandir||[]).filter(k=>k.id!=kayitId);
+  save();
+  toast(`Borçlandırma geri alındı. ${kayit.sakinSayisi} dairenin borçları düşüldü.`, 'warn');
+  renderTopluBorcGecmis();
+  renderTopluBorcPage();
 }
 
 // ══════════════════════════════════════════════════════════

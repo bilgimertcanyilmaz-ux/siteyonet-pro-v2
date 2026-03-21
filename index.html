@@ -149,6 +149,7 @@
     <div class="ni" data-p="tahsilat" data-role="yonetici" data-tip="Tahsilat &amp; Borç"><div class="nico"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg></div>Tahsilat & Borç<span class="nbadge rd" id="bdg-borc" style="display:none">0</span></div>
     <div class="ni" data-p="finans" data-role="yonetici sakin" data-tip="Gelir/Gider"><div class="nico"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>Gelir/Gider<span class="nbadge" id="bdg-fin" style="display:none">!</span></div>
     <div class="ni" data-p="raporlar" data-role="yonetici" data-tip="Raporlar &amp; Analiz"><div class="nico"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>Raporlar & Analiz</div>
+    <div class="ni" data-p="toplu-borc" data-role="yonetici" data-tip="Toplu Borçlandırma"><div class="nico"><svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg></div>Toplu Borçlandır</div>
     <div class="ni" data-p="ai-asistan" data-role="yonetici" data-tip="AI Asistan"><div class="nico"><svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 0 2h-1v1a2 2 0 0 1-2 2v1a1 1 0 0 1-2 0v-1H7v1a1 1 0 0 1-2 0v-1a2 2 0 0 1-2-2v-1H2a1 1 0 0 1 0-2h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2zM9 14a1 1 0 1 0 2 0 1 1 0 0 0-2 0zm4 0a1 1 0 1 0 2 0 1 1 0 0 0-2 0z"/></svg></div>AI Asistan</div>
   </div>
   <div class="sb-sec">
@@ -1676,6 +1677,98 @@
 <!-- APARTMAN DETAY -->
 <div id="page-apt-detay" class="pg">
   <div id="apt-detay-content"></div>
+</div>
+
+<!-- TOPLU BORÇLANDIRMA SAYFASI -->
+<div id="page-toplu-borc" class="pg">
+  <!-- İstatistik kartları (JS tarafından doldurulur) -->
+  <div id="tbp-page-stats" class="sg mb16"></div>
+
+  <!-- Sekmeler -->
+  <div class="tabs">
+    <div class="tab on" data-tab="tbp-yeni">
+      <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none;vertical-align:-2px;margin-right:4px"><path d="M12 5v14M5 12h14"/></svg>Yeni Borçlandırma
+    </div>
+    <div class="tab" data-tab="tbp-gecmis">
+      <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none;vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Geçmiş Kayıtlar
+    </div>
+  </div>
+
+  <!-- YENİ BORÇLANDIRMA SEKMESİ -->
+  <div id="tbp-yeni">
+    <div class="card mb16">
+      <div style="font-size:15px;font-weight:700;color:var(--tx);margin-bottom:18px;display:flex;align-items:center;gap:8px">
+        <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:var(--brand);stroke-width:2;fill:none"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Borçlandırma Parametreleri
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px">
+
+        <div><label class="fi-lbl">Apartman / Site <span style="color:var(--err)">*</span></label>
+          <select id="tbp-apt" class="fi" onchange="tbpAptChange()">
+            <option value="">— Seçin —</option>
+          </select></div>
+
+        <div><label class="fi-lbl">Dönem (Ay-Yıl) <span style="color:var(--err)">*</span></label>
+          <input type="month" id="tbp-donem" class="fi" oninput="tbpCheckDuplicatePeriod()"></div>
+
+        <div><label class="fi-lbl">Gelir Türü <span style="color:var(--err)">*</span></label>
+          <select id="tbp-kategori" class="fi"></select></div>
+
+        <div><label class="fi-lbl">Tutar Yöntemi</label>
+          <select id="tbp-tutar-tur" class="fi" onchange="tbpTutarTurChange()">
+            <option value="aidat">Her Dairenin Kendi Aidat Tutarı</option>
+            <option value="sabit">Herkese Aynı Sabit Tutar</option>
+          </select></div>
+
+        <div id="tbp-sabit-wrap" style="display:none">
+          <label class="fi-lbl">Sabit Tutar (₺) <span style="color:var(--err)">*</span></label>
+          <input type="number" id="tbp-sabit-tutar" class="fi" placeholder="0.00" min="0" step="0.01" oninput="tbpSabitChange()"></div>
+
+        <div><label class="fi-lbl">Borçlandırılacak Kişi</label>
+          <select id="tbp-kime" class="fi" onchange="tbpKimeChange()">
+            <option value="malik">Sadece Ev Sahipleri</option>
+            <option value="kiraci-once">Kiracı Varsa Kiracı, Yoksa Ev Sahibi</option>
+          </select></div>
+
+        <div style="grid-column:1/-1"><label class="fi-lbl">Açıklama (İsteğe Bağlı)</label>
+          <input type="text" id="tbp-aciklama" class="fi" placeholder="Örn: Ocak 2026 Aidatı - Genel Giderler"></div>
+      </div>
+
+      <!-- Dönem çakışma uyarısı -->
+      <div id="tbp-donem-uyari" style="display:none;margin-top:12px;padding:10px 14px;border-radius:8px;background:var(--warn-bg);border:1px solid var(--warn-bd);font-size:12.5px;color:var(--warn)"></div>
+
+      <div style="margin-top:18px;display:flex;gap:10px">
+        <button class="btn bp" onclick="renderTopluBorcOnizle()">
+          <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Önizle
+        </button>
+        <button class="btn bg" onclick="tbpTemizle()">Temizle</button>
+      </div>
+    </div>
+
+    <!-- Önizleme tablosu -->
+    <div id="tbp-preview-wrap"></div>
+
+    <!-- Uygula butonu (önizlemeden sonra görünür) -->
+    <div id="tbp-apply-bar" style="display:none;justify-content:space-between;align-items:center;margin-top:16px;background:var(--ok-bg);border:1px solid var(--ok-bd);border-radius:12px;padding:14px 20px">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:var(--ok)">Borçlandırmaya Hazır</div>
+        <div style="font-size:12px;color:var(--tx-3);margin-top:2px">
+          <span id="tbp-apply-ozet"></span>
+        </div>
+      </div>
+      <button class="btn bp" onclick="saveTopluBorcPage()">
+        <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+        Borçlandırmayı Uygula
+      </button>
+    </div>
+  </div>
+
+  <!-- GEÇMİŞ KAYITLAR SEKMESİ -->
+  <div id="tbp-gecmis" style="display:none">
+    <div id="tbp-gecmis-content"></div>
+  </div>
 </div>
 
 <!-- DAİRE DETAY -->
