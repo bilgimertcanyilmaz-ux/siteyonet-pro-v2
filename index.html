@@ -919,7 +919,7 @@ select.fi,select.fs{
 .dd-note-area:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-20);}
 /* ===== KİŞİ CARİ SAYFA ===== */
 .cari-page{max-width:900px;margin:0 auto;padding-bottom:90px;}
-.cari-banner{background:linear-gradient(135deg,#3b4fa8 0%,#5b6dd4 60%,#7b8ddd 100%);border-radius:var(--r12);padding:24px 28px;margin-bottom:18px;color:#fff;display:flex;align-items:center;gap:20px;position:relative;overflow:hidden;}
+.cari-banner{background:linear-gradient(135deg,var(--brand) 0%,#5b6dd4 60%,#7b8ddd 100%);border-radius:var(--r12);padding:24px 28px;margin-bottom:18px;color:#fff;display:flex;align-items:center;gap:20px;position:relative;overflow:hidden;}
 .cari-banner::after{content:'';position:absolute;right:-30px;bottom:-30px;width:180px;height:180px;background:rgba(255,255,255,.07);border-radius:50%;}
 .cari-avatar{width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;flex-shrink:0;border:3px solid rgba(255,255,255,.3);}
 .cari-banner-info{flex:1;}
@@ -964,6 +964,22 @@ select.fi,select.fs{
 .cari-dot.green{background:var(--ok);}
 .cari-bottom-bar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:10px 20px;display:flex;gap:8px;justify-content:center;z-index:100;box-shadow:0 -2px 12px rgba(0,0,0,.08);}
 @media(max-width:600px){.cari-acc-hdr,.cari-daire-row,.cari-kat-hdr,.cari-islem-hdr,.cari-islem-row{grid-template-columns:1fr 90px 90px;}.cari-acc-hdr>*:nth-child(2),.cari-daire-row>*:nth-child(2),.cari-kat-hdr>*:nth-child(2),.cari-islem-hdr>*:nth-child(2),.cari-islem-row>*:nth-child(2){display:none;}.cari-banner-fin{display:none;}}
+/* ===== TANIMLAMA SAYFASI ===== */
+.tanim-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.tanim-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r12);overflow:hidden;}
+.tanim-card-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--s2);}
+.tanim-card-title{font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.tanim-item{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);transition:background .12s;}
+.tanim-item:hover{background:var(--s2);}
+.tanim-item:last-child{border-bottom:none;}
+.tanim-renk{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.tanim-ad{flex:1;font-size:13px;font-weight:600;color:var(--tx);}
+.tanim-ikon{font-size:16px;flex-shrink:0;}
+.tanim-badge{font-size:10px;background:var(--brand-10);color:var(--brand);padding:2px 7px;border-radius:10px;font-weight:600;}
+.tanim-add-form{padding:14px 16px;background:var(--s2);border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;}
+.tanim-add-form input{flex:1;min-width:120px;}
+.tanim-add-form select{width:70px;}
+@media(max-width:768px){.tanim-grid{grid-template-columns:1fr;}}
 /* ===== BAĞIMSIZ BÖLÜM YENİ TASARIM ===== */
 .bb-header{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:var(--r12);padding:14px 20px;margin-bottom:16px;gap:12px;flex-wrap:wrap;}
 .bb-header-left{display:flex;align-items:center;gap:14px;}
@@ -1440,6 +1456,7 @@ select.fi,select.fs{
   </div>
   <div class="sb-sec">
     <div class="sb-sec-lbl">Araçlar</div>
+    <div class="ni" data-p="tanimlama" data-role="yonetici" data-tip="Tanımlama"><div class="nico"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>Tanımlama</div>
     <div class="ni" data-p="superadmin" data-role="superadmin" data-tip="Site Yönetimi"><div class="nico"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>Site Yönetimi</div>
     <div class="ni" data-p="ayarlar" data-role="yonetici superadmin" data-tip="Ayarlar"><div class="nico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>Ayarlar</div>
   </div>
@@ -1636,6 +1653,46 @@ select.fi,select.fs{
   </div>
   <div id="fin-rapor" style="display:none">
     <div id="fin-rapor-content"></div>
+  </div>
+</div>
+
+<!-- TANIMLAMA -->
+<div id="page-tanimlama" class="pg">
+  <div class="tanim-grid">
+    <!-- Gelir Tanımları -->
+    <div class="tanim-card">
+      <div class="tanim-card-hdr">
+        <div class="tanim-card-title">
+          <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:var(--ok);fill:none;stroke-width:2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          Gelir Tanımları
+        </div>
+        <span id="gelir-tanim-count" class="tanim-badge">0 tanım</span>
+      </div>
+      <div id="gelir-tanim-list"></div>
+      <div class="tanim-add-form">
+        <input class="fi" id="yeni-gelir-ad" placeholder="Yeni gelir tanımı..." style="font-size:12.5px;padding:7px 10px">
+        <input class="fi" id="yeni-gelir-ikon" placeholder="İkon" value="💰" style="width:52px;font-size:15px;text-align:center;padding:7px 6px">
+        <input type="color" id="yeni-gelir-renk" value="#4f6ef7" title="Renk" style="width:36px;height:34px;border:1.5px solid var(--border);border-radius:6px;cursor:pointer;padding:2px">
+        <button class="btn bp sm" onclick="addTanim('gelir')">+ Ekle</button>
+      </div>
+    </div>
+    <!-- Gider Tanımları -->
+    <div class="tanim-card">
+      <div class="tanim-card-hdr">
+        <div class="tanim-card-title">
+          <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:var(--err);fill:none;stroke-width:2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+          Gider Tanımları
+        </div>
+        <span id="gider-tanim-count" class="tanim-badge">0 tanım</span>
+      </div>
+      <div id="gider-tanim-list"></div>
+      <div class="tanim-add-form">
+        <input class="fi" id="yeni-gider-ad" placeholder="Yeni gider tanımı..." style="font-size:12.5px;padding:7px 10px">
+        <input class="fi" id="yeni-gider-ikon" placeholder="İkon" value="💸" style="width:52px;font-size:15px;text-align:center;padding:7px 6px">
+        <input type="color" id="yeni-gider-renk" value="#dc2626" title="Renk" style="width:36px;height:34px;border:1.5px solid var(--border);border-radius:6px;cursor:pointer;padding:2px">
+        <button class="btn brd sm" onclick="addTanim('gider')">+ Ekle</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -2838,6 +2895,7 @@ select.fi,select.fs{
         <div class="fgp"><label class="lbl">Dönem *</label><input class="fi" id="abd-donem" placeholder="2026-01"></div>
         <div class="fgp"><label class="lbl">Tutar (₺) *</label><input type="number" class="fi" id="abd-tutar" placeholder="0" min="0"></div>
       </div>
+      <div class="fgp"><label class="lbl">Kategori</label><select class="fs" id="abd-kategori"><option value="Aidat">Aidat</option></select></div>
       <div class="fgp"><label class="lbl">Açıklama</label><input class="fi" id="abd-aciklama" placeholder="Ocak 2026 aidatı..."></div>
     </div>
     <div class="modal-f">
@@ -3072,7 +3130,7 @@ function initApp() {
 // ═══════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════
-const DEF_STATE = { apartmanlar:[], denetimler:[], teklifler:[], gorevler:[], asansorler:[], isletmeProjeler:[], kararlar:[], icralar:[], sakinler:[], personel:[], duyurular:[], arizalar:[], tahsilatlar:[], sigortalar:[], toplantılar:[], faturalar:[], finansIslemler:[], ayarlar:{} };
+const DEF_STATE = { apartmanlar:[], denetimler:[], teklifler:[], gorevler:[], asansorler:[], isletmeProjeler:[], kararlar:[], icralar:[], sakinler:[], personel:[], duyurular:[], arizalar:[], tahsilatlar:[], sigortalar:[], toplantılar:[], faturalar:[], finansIslemler:[], ayarlar:{}, gelirTanimlari:[], giderTanimlari:[] };
 let S = { ...DEF_STATE };
 
 // ══════════════════════════════════════════════════
@@ -3266,6 +3324,7 @@ function loadState() {
   if (!S.finansIslemler) S.finansIslemler = [];
   if (!S.ayarlar) S.ayarlar = {};
   if (!S.sakinler) S.sakinler = [];
+  initTanimlar();
   if (!S.personel) S.personel = [];
   if (!S.duyurular) S.duyurular = [];
   if (!S.arizalar) S.arizalar = [];
@@ -3337,7 +3396,7 @@ function toast(msg, type='') {
 // 
 // NAVIGATION
 // 
-const PAGE_TITLES = { dashboard:'Anasayfa', apartmanlar:'Apartmanlar', karar:'Karar Metni Oluşturucu', isletme:'İşletme Projesi', 'isl-detay':'İşletme Projesi Detay', denetim:'Denetim Raporları', 'den-detay':'Denetim Raporu Detay', asansor:'Asansör Etiket Kontrolü', 'asan-detay':'Asansör Detay', teklifler:'Teklifler', gorevler:'Görev Yönetimi', icra:'İcra Listesi', finans:'Gelir / Gider Takibi', ayarlar:'Ayarlar', sakinler:'Sakin Yönetimi', personel:'Personel Yönetimi', duyurular:'Duyuru & İletişim', ariza:'Arıza & Bakım Yönetimi', tahsilat:'Tahsilat & Borç Takibi', raporlar:'Raporlar & Analitik', 'ai-asistan':'AI Yönetim Asistanı', sigorta:'Sigorta Takibi', toplanti:'Toplantı Yönetimi', fatura:'Fatura & Hizmet Yönetimi', superadmin:'Süper Admin Paneli', 'apt-detay':'Apartman Detay', 'daire-detay':'Daire Detay', 'sakin-cari':'Kişilere Göre Finansal Durum' };
+const PAGE_TITLES = { dashboard:'Anasayfa', apartmanlar:'Apartmanlar', karar:'Karar Metni Oluşturucu', isletme:'İşletme Projesi', 'isl-detay':'İşletme Projesi Detay', denetim:'Denetim Raporları', 'den-detay':'Denetim Raporu Detay', asansor:'Asansör Etiket Kontrolü', 'asan-detay':'Asansör Detay', teklifler:'Teklifler', gorevler:'Görev Yönetimi', icra:'İcra Listesi', finans:'Gelir / Gider Takibi', ayarlar:'Ayarlar', sakinler:'Sakin Yönetimi', personel:'Personel Yönetimi', duyurular:'Duyuru & İletişim', ariza:'Arıza & Bakım Yönetimi', tahsilat:'Tahsilat & Borç Takibi', raporlar:'Raporlar & Analitik', 'ai-asistan':'AI Yönetim Asistanı', sigorta:'Sigorta Takibi', toplanti:'Toplantı Yönetimi', fatura:'Fatura & Hizmet Yönetimi', superadmin:'Süper Admin Paneli', 'apt-detay':'Apartman Detay', 'daire-detay':'Daire Detay', 'sakin-cari':'Kişilere Göre Finansal Durum', 'tanimlama':'Tanımlama — Gelir & Gider Kategorileri' };
 
 function goPage(p) {
  document.querySelectorAll('.ni').forEach(n => n.classList.toggle('on', n.dataset.p === p));
@@ -3388,6 +3447,7 @@ function goPage(p) {
   if (p==='finans') { renderFinans(); renderFinansRapor(); }
   if (p==='ayarlar') { loadSettings(); renderSetStats(); }
   if (p==='sakinler') { renderSakinler(); initTopluDaireForm(); }
+  if (p==='tanimlama') renderTanimlama();
   if (p==='personel') { renderPersonel(); }
   if (p==='duyurular') { renderDuyurular(); }
   if (p==='ariza') { renderAriza(); }
@@ -8128,6 +8188,110 @@ function downloadPDF(tip) {
 }
 
 // ===================================================
+// TANIMLAMA — GELİR & GİDER KATEGORİLERİ
+// ===================================================
+const VARSAYILAN_GELIR = [
+  {id:1,ad:'Aidat',ikon:'🏠',renk:'#4f6ef7',aktif:true,varsayilan:true},
+  {id:2,ad:'Kira Geliri',ikon:'🏡',renk:'#16a34a',aktif:true},
+  {id:3,ad:'Otopark',ikon:'🚗',renk:'#0e7490',aktif:true},
+  {id:4,ad:'Ortak Alan Geliri',ikon:'🏢',renk:'#7c3aed',aktif:true},
+  {id:5,ad:'Bağış',ikon:'🎁',renk:'#db2777',aktif:true},
+  {id:6,ad:'Diğer Gelir',ikon:'📦',renk:'#78716c',aktif:true}
+];
+const VARSAYILAN_GIDER = [
+  {id:1,ad:'Temizlik',ikon:'🧹',renk:'#dc2626',aktif:true},
+  {id:2,ad:'Asansör Bakım',ikon:'🛗',renk:'#d97706',aktif:true},
+  {id:3,ad:'Elektrik',ikon:'⚡',renk:'#ca8a04',aktif:true},
+  {id:4,ad:'Su',ikon:'💧',renk:'#0ea5e9',aktif:true},
+  {id:5,ad:'Doğalgaz',ikon:'🔥',renk:'#f97316',aktif:true},
+  {id:6,ad:'Güvenlik',ikon:'🔒',renk:'#6366f1',aktif:true},
+  {id:7,ad:'Yönetim Ücreti',ikon:'👔',renk:'#8b5cf6',aktif:true},
+  {id:8,ad:'Sigorta',ikon:'🛡️',renk:'#0f766e',aktif:true},
+  {id:9,ad:'Onarım / Tadilat',ikon:'🔨',renk:'#b45309',aktif:true},
+  {id:10,ad:'Bahçe Bakım',ikon:'🌿',renk:'#15803d',aktif:true},
+  {id:11,ad:'Diğer Gider',ikon:'📋',renk:'#78716c',aktif:true}
+];
+
+function initTanimlar() {
+  if (!S.gelirTanimlari || !S.gelirTanimlari.length) { S.gelirTanimlari = JSON.parse(JSON.stringify(VARSAYILAN_GELIR)); }
+  if (!S.giderTanimlari || !S.giderTanimlari.length) { S.giderTanimlari = JSON.parse(JSON.stringify(VARSAYILAN_GIDER)); }
+}
+
+function renderTanimlama() {
+  initTanimlar();
+  renderTanimList('gelir');
+  renderTanimList('gider');
+}
+
+function renderTanimList(tur) {
+  const list = tur === 'gelir' ? S.gelirTanimlari : S.giderTanimlari;
+  const el = document.getElementById(tur+'-tanim-list');
+  const cnt = document.getElementById(tur+'-tanim-count');
+  if (!el) return;
+  if (cnt) cnt.textContent = list.length + ' tanım';
+  if (!list.length) { el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--tx-3);font-size:12.5px">Henüz tanım eklenmemiş.</div>'; return; }
+  el.innerHTML = list.map((t,i) => `
+    <div class="tanim-item">
+      <span class="tanim-ikon">${t.ikon||'📌'}</span>
+      <span class="tanim-renk" style="background:${t.renk||'#ccc'}"></span>
+      <span class="tanim-ad">${t.ad}</span>
+      ${t.varsayilan?'<span class="tanim-badge">Varsayılan</span>':''}
+      <label style="display:flex;align-items:center;gap:4px;font-size:11.5px;cursor:pointer;color:var(--tx-3)">
+        <input type="checkbox" ${t.aktif!==false?'checked':''} onchange="toggleTanim('${tur}',${i},this.checked)" style="cursor:pointer">
+        Aktif
+      </label>
+      <button class="btn bg xs" onclick="editTanim('${tur}',${i})" title="Düzenle">
+        <svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </button>
+      ${!t.varsayilan?`<button class="btn xs" style="background:var(--err-bg);color:var(--err);border:1px solid var(--err)" onclick="delTanim('${tur}',${i})" title="Sil">
+        <svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+      </button>`:''}
+    </div>`).join('');
+  // Finans dropdown'ını güncelle
+  updateFinKategori();
+}
+
+function addTanim(tur) {
+  const adEl   = document.getElementById('yeni-'+tur+'-ad');
+  const ikonEl = document.getElementById('yeni-'+tur+'-ikon');
+  const renkEl = document.getElementById('yeni-'+tur+'-renk');
+  const ad = adEl?.value?.trim();
+  if (!ad) { toast('Tanım adı giriniz','warn'); return; }
+  initTanimlar();
+  const list = tur === 'gelir' ? S.gelirTanimlari : S.giderTanimlari;
+  if (list.find(t=>t.ad.toLowerCase()===ad.toLowerCase())) { toast('Bu tanım zaten mevcut','warn'); return; }
+  const newId = Math.max(0,...list.map(t=>t.id||0))+1;
+  list.push({id:newId, ad, ikon:ikonEl?.value||'📌', renk:renkEl?.value||'#888', aktif:true});
+  save(); renderTanimList(tur);
+  if(adEl) adEl.value='';
+  toast(ad+' tanımı eklendi','ok');
+}
+
+function delTanim(tur, idx) {
+  if (!confirm('Bu tanımı silmek istediğinizden emin misiniz?')) return;
+  if (tur==='gelir') S.gelirTanimlari.splice(idx,1);
+  else S.giderTanimlari.splice(idx,1);
+  save(); renderTanimList(tur);
+  toast('Tanım silindi','ok');
+}
+
+function toggleTanim(tur, idx, val) {
+  const list = tur==='gelir' ? S.gelirTanimlari : S.giderTanimlari;
+  if (list[idx]) { list[idx].aktif = val; save(); updateFinKategori(); }
+}
+
+function editTanim(tur, idx) {
+  const list = tur==='gelir' ? S.gelirTanimlari : S.giderTanimlari;
+  const t = list[idx];
+  if (!t) return;
+  const yeniAd = prompt('Tanım adını düzenle:', t.ad);
+  if (!yeniAd || !yeniAd.trim()) return;
+  t.ad = yeniAd.trim();
+  save(); renderTanimList(tur);
+  toast('Tanım güncellendi','ok');
+}
+
+// ===================================================
 // GLOBAL SEARCH
 // ===================================================
 function globalSearch(q) {
@@ -8250,11 +8414,19 @@ function updateNotifDot() {
 const FIN_KAT_GELIR = ['Aidat','Kira Geliri','Bağış','Faiz Geliri','Diğer Gelir'];
 const FIN_KAT_GIDER = ['Temizlik','Güvenlik','Asansör Bakım','Doğalgaz','Elektrik','Su','Yönetim Ücreti','Sigorta','Vergi / Harç','Onarım / Tadilat','Bahçe Bakım','Diğer Gider'];
 
+function getGelirTanimlari() {
+  if (S.gelirTanimlari && S.gelirTanimlari.length) return S.gelirTanimlari.filter(t=>t.aktif!==false);
+  return FIN_KAT_GELIR.map((ad,i)=>({id:i+1,ad,ikon:'💰',renk:'#4f6ef7',aktif:true}));
+}
+function getGiderTanimlari() {
+  if (S.giderTanimlari && S.giderTanimlari.length) return S.giderTanimlari.filter(t=>t.aktif!==false);
+  return FIN_KAT_GIDER.map((ad,i)=>({id:i+1,ad,ikon:'💸',renk:'#dc2626',aktif:true}));
+}
 function updateFinKategori() {
   const tur = document.getElementById('fin-tur').value;
   const katSel = document.getElementById('fin-kat');
-  const list = tur === 'gelir' ? FIN_KAT_GELIR : FIN_KAT_GIDER;
-  katSel.innerHTML = list.map(k=>`<option value="${k}">${k}</option>`).join('');
+  const list = tur === 'gelir' ? getGelirTanimlari() : getGiderTanimlari();
+  katSel.innerHTML = list.map(t=>`<option value="${t.ad}">${t.ikon||''} ${t.ad}</option>`).join('');
 }
 
 function saveFinans() {
@@ -9574,7 +9746,8 @@ function renderSakinCari(sk, opts) {
           aciklama: `${kayit.donem || ''} Dönemi Aidat Borçlandırması / Borç mak.`,
           borcTutar: d.tutar || 0,
           alacakTutar: 0,
-          tazminat: 0
+          tazminat: 0,
+          kategori: d.kategori || 'Aidat'
         });
       }
     });
@@ -9751,30 +9924,40 @@ function renderSakinCari(sk, opts) {
       <!-- Kategoriler -->
       <div id="daire-${uid}">
         ${kategoriBlok('Genel', genelIslemler, genelBorc, genelAlacak, genelBakiye, uid+'_genel')}
-        ${kategoriBlok('AİDAT', aidatIslemler, aidatBorc, 0, aidatBakiye, uid+'_aidat')}
+        ${getGelirTanimlari().filter(t=>t.aktif!==false).map(gelirTanim => {
+          const katIslemler = aidatIslemler.filter(x => (x.kategori||'Aidat') === gelirTanim.ad);
+          if (!katIslemler.length) return '';
+          const katBorc = katIslemler.reduce((s,x)=>s+x.borcTutar,0);
+          const katBakiye = katBorc;
+          return kategoriBlok(gelirTanim.ad, katIslemler, katBorc, 0, katBakiye, uid+'_kat_'+gelirTanim.id);
+        }).join('')}
+        ${aidatIslemler.filter(x=>!getGelirTanimlari().find(t=>t.ad===(x.kategori||'Aidat'))).length ?
+          kategoriBlok('Diğer Tahakkuk', aidatIslemler.filter(x=>!getGelirTanimlari().find(t=>t.ad===(x.kategori||'Aidat'))),
+            aidatIslemler.filter(x=>!getGelirTanimlari().find(t=>t.ad===(x.kategori||'Aidat'))).reduce((s,x)=>s+x.borcTutar,0), 0,
+            aidatIslemler.filter(x=>!getGelirTanimlari().find(t=>t.ad===(x.kategori||'Aidat'))).reduce((s,x)=>s+x.borcTutar,0), uid+'_diger') : ''}
       </div>
     </div>
 
-    <!-- ALTTA BUTON BAR -->
-    <div class="cari-bottom-bar">
-      <button class="btn bp" onclick="openAidatBorcDaire(${sk.id})">
-        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+    <!-- İŞLEM BUTONLARI (alt) -->
+    <div class="card" style="padding:14px 18px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <span style="font-size:12px;color:var(--tx-3);font-weight:600;margin-right:4px">İşlemler:</span>
+      <button class="btn brd sm" onclick="openAidatBorcDaire(${sk.id})">
+        <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
         Borçlandır
       </button>
-      <button class="btn" style="background:#16a34a;color:#fff" onclick="openHizliOdeme(${sk.id},'')">
-        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      <button class="btn bp sm" onclick="openHizliOdeme(${sk.id},'')">
+        <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
         Tahsil Et
       </button>
-      <button class="btn" style="background:#0e7490;color:#fff" onclick="openHizliOdeme(${sk.id},'')">
-        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <button class="btn bg sm" onclick="openHizliOdeme(${sk.id},'')">
+        <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         Detaylı Tahsil Et
       </button>
-      <button class="btn" style="background:#1d4ed8;color:#fff" onclick="toast('Kart ile tahsilat yakında','info')">
-        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      <button class="btn bg sm" onclick="toast('Kart ile tahsilat yakında','info')">
+        <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
         Kart ile Tahsil Et
       </button>
-      <button class="btn bg" onclick="window._cariFromDaire?goPage('daire-detay'):goPage('sakinler')">
-        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      <button class="btn bg sm" style="margin-left:auto" onclick="window._cariFromDaire?goPage('daire-detay'):goPage('sakinler')">
         Kapat
       </button>
     </div>
@@ -9862,6 +10045,12 @@ function openAidatBorcDaire(sakId) {
   document.getElementById('abd-donem').value = donem;
   document.getElementById('abd-tutar').value = sk.aidat || sk.aidatK || '';
   document.getElementById('abd-aciklama').value = '';
+  // Gelir tanımlarını kategori dropdownına yükle
+  const katEl = document.getElementById('abd-kategori');
+  if (katEl) {
+    const gelirler = getGelirTanimlari();
+    katEl.innerHTML = gelirler.map(t=>`<option value="${t.ad}">${t.ikon||''} ${t.ad}</option>`).join('');
+  }
   openModal('mod-aidat-borc-daire');
 }
 
@@ -9881,10 +10070,10 @@ function saveAidatBorcDaire() {
     if (!kayit.detaylar) kayit.detaylar = [];
     const mevcut = kayit.detaylar.find(d => d.sakId === sakId);
     if (mevcut) mevcut.tutar = (mevcut.tutar || 0) + tutar;
-    else kayit.detaylar.push({ sakId, ad: sk.ad, daire: sk.daire, tutar });
+    else kayit.detaylar.push({ sakId, ad: sk.ad, daire: sk.daire, tutar, kategori: document.getElementById('abd-kategori')?.value || 'Aidat' });
     kayit.toplamBorc = (kayit.toplamBorc || 0) + tutar;
   } else {
-    S.aidatBorclandir.push({ aptId: sk.aptId, donem, tarih: today(), sakinSayisi: 1, toplamBorc: tutar, detaylar: [{ sakId, ad: sk.ad, daire: sk.daire, tutar }] });
+    S.aidatBorclandir.push({ aptId: sk.aptId, donem, tarih: today(), sakinSayisi: 1, toplamBorc: tutar, detaylar: [{ sakId, ad: sk.ad, daire: sk.daire, tutar, kategori: document.getElementById('abd-kategori')?.value || 'Aidat' }] });
   }
   save();
   closeModal('mod-aidat-borc-daire');
