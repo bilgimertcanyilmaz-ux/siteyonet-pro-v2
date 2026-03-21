@@ -203,6 +203,11 @@ async function checkExistingSession() {
 
 // APP INIT
 function initApp() {
+  // Eğer hiç site seçili değilse ilk aktif siteyi seç
+  if (!selectedAptId) {
+    const ilkApt = S.apartmanlar.find(a => a.durum === 'aktif');
+    if (ilkApt) selectedAptId = ilkApt.id;
+  }
   syncDropdowns();
   renderDashboard();
   if (S.ayarlar) {
@@ -217,6 +222,7 @@ function initApp() {
   }
   updateNotifDot();
   checkTekrarlayanIslemler();
+  updateGlobalSiteBar();
   goPage('dashboard');
 }
 
@@ -288,9 +294,7 @@ function renderAptSelector(page, label) {
 function setSelectedApt(aptId, page) {
   if (!aptId) { toast('Lütfen bir apartman seçin.','err'); return; }
   selectedAptId = +aptId;
-  // Seçilen apt'ı topbar'da göster
-  updateAptCtxTopbar();
-  // Sayfayı yenile
+  updateGlobalSiteBar();
   if (page) goPage(page);
 }
 
@@ -337,63 +341,131 @@ function switchApt(aptId, bannerId) {
   const dd = document.getElementById('apt-switcher-'+bannerId);
   if(dd) dd.style.display='none';
   selectedAptId = aptId;
-  updateAptCtxTopbar();
+  updateGlobalSiteBar();
   const curPage = document.querySelector('.ni.on')?.dataset?.p;
   if(curPage) goPage(curPage);
 }
 
 /**
- * Topbar'da seçili apt göster / değiştir butonu
+ * Global Site Bar — tüm sayfalarda üstte görünen büyük site seçici
  */
-function updateAptCtxTopbar() {
-  const ta = document.getElementById('apt-ctx-topbar');
-  if (!ta) return;
-  if (!selectedAptId) { ta.innerHTML=''; return; }
-  const apt = S.apartmanlar.find(a=>a.id==selectedAptId);
-  if (!apt) { ta.innerHTML=''; return; }
-  const aktifApts = S.apartmanlar.filter(a=>a.durum==='aktif');
-  const switchItems = aktifApts.map(a=>`
-    <div class="apt-switch-item ${a.id==selectedAptId?'active':''}" onclick="topbarSwitchApt(${a.id})">
-      <span class="asi-dot" style="background:var(--ok)"></span>
-      <div><div>${a.ad}</div><div class="asi-meta">${S.sakinler.filter(x=>x.aptId==a.id).length} sakin</div></div>
-      ${a.id==selectedAptId?'<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--brand);stroke-width:2.5;fill:none;margin-left:auto"><polyline points="20 6 9 17 4 12"/></svg>':''}
-    </div>`).join('');
-  ta.innerHTML = `<div class="apt-switch-wrap" id="topbar-apt-wrap">
-    <div style="display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:8px;background:var(--brand-10);border:1px solid var(--brand-20);font-size:12px;color:var(--brand);cursor:pointer;max-width:200px;overflow:hidden;white-space:nowrap" onclick="toggleTopbarSwitcher()" title="Apartman değiştir">
-      <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:var(--brand);stroke-width:2;fill:none;flex-shrink:0"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-4h6v4"/></svg>
-      <span style="overflow:hidden;text-overflow:ellipsis;flex:1">${apt.ad}</span>
-      <svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:var(--brand);stroke-width:2;fill:none;flex-shrink:0"><polyline points="6 9 12 15 18 9"/></svg>
+function updateGlobalSiteBar() {
+  const bar = document.getElementById('global-site-bar');
+  if (!bar) return;
+  const apts = S.apartmanlar.filter(a => a.durum === 'aktif');
+  if (!apts.length) { bar.classList.add('gsb-empty'); bar.innerHTML = ''; return; }
+  bar.classList.remove('gsb-empty');
+
+  // Eğer hiç site seçili değilse ilkini seç
+  if (!selectedAptId) {
+    selectedAptId = apts[0].id;
+  }
+  const apt = S.apartmanlar.find(a => a.id == selectedAptId) || apts[0];
+
+  // İstatistikler
+  const sakinSayisi = S.sakinler.filter(x => x.aptId == apt.id).length;
+  const borcluSayisi = S.sakinler.filter(x => x.aptId == apt.id && (x.borc || 0) > 0).length;
+  const acikAriza = S.arizalar.filter(x => x.aptId == apt.id && x.durum === 'acik').length;
+  const daireSayisi = apt.daireSayisi || S.sakinler.filter(x => x.aptId == apt.id).length;
+
+  // Dropdown items
+  const items = apts.map(a => {
+    const sc = S.sakinler.filter(x => x.aptId == a.id).length;
+    return `<div class="gsb-apt-item ${a.id == apt.id ? 'active' : ''}" onclick="switchGlobalSite(${a.id})">
+      <span class="gsb-dot" style="background:var(--ok)"></span>
+      <div style="flex:1;min-width:0">
+        <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.ad}</div>
+        <div class="gsb-apt-meta">${a.adres || a.il || ''}${a.il && a.adres ? ' · ' + a.il : ''} · ${sc} sakin</div>
+      </div>
+      ${a.id == apt.id ? '<svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:var(--brand);stroke-width:2.5;fill:none;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+    </div>`;
+  }).join('');
+
+  bar.innerHTML = `
+    <span class="gsb-label">Aktif Site</span>
+    <div class="gsb-selector" id="gsb-selector">
+      <button class="gsb-btn" onclick="toggleGsbDropdown(event)" id="gsb-btn">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="#fff" stroke-width="2" fill="none"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-4h6v4"/></svg>
+        <span class="gsb-btn-name">${apt.ad}</span>
+        <svg class="gsb-btn-arrow" id="gsb-arrow" viewBox="0 0 24 24" width="14" height="14" stroke="#fff" stroke-width="2.5" fill="none"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="gsb-dropdown" id="gsb-dropdown">${items}</div>
     </div>
-    <div class="apt-switch-dropdown" id="topbar-apt-switcher" style="display:none">${switchItems}</div>
-  </div>`;
-  setTimeout(()=>{ document.addEventListener('click',function closeTopSwitcher(e){
-    const wrap=document.getElementById('topbar-apt-wrap');
-    if(wrap&&!wrap.contains(e.target)){ const dd=document.getElementById('topbar-apt-switcher'); if(dd) dd.style.display='none'; document.removeEventListener('click',closeTopSwitcher); }
-  }); },100);
+    <div class="gsb-divider"></div>
+    <div class="gsb-stats">
+      <div class="gsb-stat">
+        <svg viewBox="0 0 24 24" width="14" height="14" stroke="#fff" stroke-width="2" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        <span><strong>${sakinSayisi}</strong> Sakin</span>
+      </div>
+      ${borcluSayisi > 0 ? `<div class="gsb-stat"><svg viewBox="0 0 24 24" width="14" height="14" stroke="#fca5a5" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span style="color:#fca5a5"><strong>${borcluSayisi}</strong> Borçlu</span></div>` : ''}
+      ${acikAriza > 0 ? `<div class="gsb-stat"><svg viewBox="0 0 24 24" width="14" height="14" stroke="#fcd34d" stroke-width="2" fill="none"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg><span style="color:#fcd34d"><strong>${acikAriza}</strong> Arıza</span></div>` : ''}
+      <div class="gsb-stat">
+        <svg viewBox="0 0 24 24" width="14" height="14" stroke="#fff" stroke-width="2" fill="none"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        <span><strong>${daireSayisi}</strong> Daire</span>
+      </div>
+    </div>
+    ${apts.length > 1 ? `<button class="gsb-all-btn" onclick="switchGlobalSite(null)" title="Tüm siteleri göster" id="gsb-all-btn" ${!selectedAptId?'style="background:rgba(255,255,255,.35)"':''}>Tümü</button>` : ''}
+  `;
+
+  // Dropdown dışına tıklanınca kapat
+  setTimeout(() => {
+    document.addEventListener('click', function gsbClose(e) {
+      const sel = document.getElementById('gsb-selector');
+      if (sel && !sel.contains(e.target)) {
+        const dd = document.getElementById('gsb-dropdown');
+        const arr = document.getElementById('gsb-arrow');
+        if (dd) dd.classList.remove('open');
+        if (arr) arr.classList.remove('open');
+        document.removeEventListener('click', gsbClose);
+      }
+    });
+  }, 100);
 }
 
-function toggleTopbarSwitcher(){
-  const dd=document.getElementById('topbar-apt-switcher');
-  if(dd) dd.style.display=dd.style.display==='none'?'block':'none';
+/** Geriye dönük uyumluluk: eski çağrılar hâlâ çalışsın */
+function updateAptCtxTopbar() { updateGlobalSiteBar(); }
+
+function toggleGsbDropdown(e) {
+  if (e) e.stopPropagation();
+  const dd = document.getElementById('gsb-dropdown');
+  const arr = document.getElementById('gsb-arrow');
+  if (!dd) return;
+  const isOpen = dd.classList.contains('open');
+  dd.classList.toggle('open', !isOpen);
+  if (arr) arr.classList.toggle('open', !isOpen);
 }
 
-function topbarSwitchApt(aptId){
-  const dd=document.getElementById('topbar-apt-switcher');
-  if(dd) dd.style.display='none';
-  selectedAptId=aptId;
-  updateAptCtxTopbar();
-  const curPage=document.querySelector('.ni.on')?.dataset?.p;
-  if(curPage&&APT_SPECIFIC_PAGES.includes(curPage)) goPage(curPage);
+function switchGlobalSite(aptId) {
+  const dd = document.getElementById('gsb-dropdown');
+  const arr = document.getElementById('gsb-arrow');
+  if (dd) dd.classList.remove('open');
+  if (arr) arr.classList.remove('open');
+  selectedAptId = aptId ? +aptId : (S.apartmanlar.filter(a=>a.durum==='aktif')[0]?.id || null);
+  updateGlobalSiteBar();
+  syncAptFilters();
+  const curPage = document.querySelector('.ni.on')?.dataset?.p;
+  if (curPage) goPage(curPage);
 }
+
+function syncAptFilters() {
+  ['fin-f-apt','sig-f-apt','top-f-apt','fat-f-apt','tah-f-apt'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && selectedAptId) el.value = selectedAptId;
+  });
+}
+
+function toggleTopbarSwitcher(){ toggleGsbDropdown(); }
+
+function topbarSwitchApt(aptId){ switchGlobalSite(aptId); }
 
 /**
  * Apartman değiştirme — seçili aptId sıfırla + mevcut sayfayı yenile
  */
 function changeAptContext() {
   selectedAptId = null;
-  updateAptCtxTopbar();
+  updateGlobalSiteBar();
   const curPage = document.querySelector('.ni.on')?.dataset?.p;
-  if (curPage && APT_SPECIFIC_PAGES.includes(curPage)) goPage(curPage);
+  if (curPage) goPage(curPage);
 }
 
 /**
@@ -401,7 +473,7 @@ function changeAptContext() {
  */
 function goAptSpecific(aptId, page) {
   selectedAptId = +aptId;
-  updateAptCtxTopbar();
+  updateGlobalSiteBar();
   goPage(page);
 }
 
@@ -459,7 +531,7 @@ function refreshUI() {
   } catch(e) {}
   try { syncDropdowns(); } catch(e) {}
   // Apt ctx topbar her save'de güncelle
-  try { if(typeof updateAptCtxTopbar==='function') updateAptCtxTopbar(); } catch(e) {}
+  try { if(typeof updateGlobalSiteBar==='function') updateGlobalSiteBar(); } catch(e) {}
   // Sidebar badge güncelle
   try {
     const borclu=S.sakinler.filter(x=>(x.borc||0)>0).length;
@@ -557,8 +629,8 @@ function goPage(p) {
   if (p==='apt-detay') { /* rendered by goAptDetay */ }
   if (p==='daire-detay') { /* rendered by goDaireDetay */ }
   if (p==='superadmin') { renderSuperAdmin(); }
-  // Apt context topbar güncelle
-  if (APT_SPECIFIC_PAGES && APT_SPECIFIC_PAGES.includes(p)) updateAptCtxTopbar();
+  // Global site bar her sayfa geçişinde güncelle
+  updateGlobalSiteBar();
 }
 
 // 
