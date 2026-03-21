@@ -1354,25 +1354,25 @@ select.fi,select.fs{
 }
 
 /* ═══════════════════════════════════════════════════════
-   GLOBAL SITE BAR — Tüm sayfalarda üstte görünen site seçici
+   GLOBAL SITE BAR — Topbar içinde site seçici
    ═══════════════════════════════════════════════════════ */
 #global-site-bar {
-  background: linear-gradient(135deg, var(--brand) 0%, #6366f1 100%);
-  padding: 0 20px;
   display: flex;
   align-items: center;
-  gap: 16px;
-  min-height: 48px;
-  flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0,0,0,.18);
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  padding: 0 8px 0 16px;
+  border-left: 1px solid var(--border);
+  margin-left: 4px;
 }
 #global-site-bar.gsb-empty {
   display: none;
 }
 .gsb-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: rgba(255,255,255,.65);
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--tx-3);
   text-transform: uppercase;
   letter-spacing: .6px;
   white-space: nowrap;
@@ -1385,21 +1385,21 @@ select.fi,select.fs{
 .gsb-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: rgba(255,255,255,.18);
-  border: 1.5px solid rgba(255,255,255,.3);
+  gap: 7px;
+  background: var(--brand-10);
+  border: 1.5px solid var(--brand-20);
   border-radius: 10px;
-  padding: 6px 14px 6px 10px;
+  padding: 6px 12px 6px 10px;
   cursor: pointer;
-  color: #fff;
-  font-size: 14px;
+  color: var(--brand);
+  font-size: 13px;
   font-weight: 600;
   transition: background .15s;
-  min-width: 160px;
-  max-width: 240px;
+  min-width: 150px;
+  max-width: 220px;
 }
 .gsb-btn:hover {
-  background: rgba(255,255,255,.28);
+  background: var(--brand-20);
 }
 .gsb-btn svg {
   flex-shrink: 0;
@@ -1424,7 +1424,7 @@ select.fi,select.fs{
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0,0,0,.22);
+  box-shadow: 0 8px 32px rgba(0,0,0,.16);
   min-width: 240px;
   max-width: 300px;
   max-height: 320px;
@@ -1468,61 +1468,63 @@ select.fi,select.fs{
   margin-top: 1px;
 }
 .gsb-divider {
-  height: 1px;
-  background: rgba(255,255,255,.2);
-  margin: 0 4px;
+  width: 1px;
+  height: 26px;
+  background: var(--border);
+  flex-shrink: 0;
+  margin: 0 2px;
 }
 .gsb-stats {
   display: flex;
   align-items: center;
-  gap: 20px;
-  margin-left: 4px;
+  gap: 14px;
+  margin-left: 2px;
 }
 .gsb-stat {
   display: flex;
   align-items: center;
-  gap: 6px;
-  color: rgba(255,255,255,.9);
+  gap: 5px;
+  color: var(--tx-2);
   font-size: 12.5px;
   font-weight: 500;
   white-space: nowrap;
 }
 .gsb-stat svg {
-  opacity: .75;
+  opacity: 1;
 }
 .gsb-stat strong {
   font-weight: 700;
-  color: #fff;
+  color: var(--tx);
 }
 .gsb-all-btn {
   margin-left: auto;
-  background: rgba(255,255,255,.15);
-  border: 1px solid rgba(255,255,255,.25);
+  background: var(--s2);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 5px 14px;
-  color: rgba(255,255,255,.9);
+  padding: 5px 12px;
+  color: var(--tx-2);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: background .15s;
+  transition: background .15s, color .15s;
   white-space: nowrap;
 }
 .gsb-all-btn:hover {
-  background: rgba(255,255,255,.25);
+  background: var(--s3);
+  color: var(--tx);
 }
 .gsb-all-btn.active {
-  background: rgba(255,255,255,.35);
-  color: #fff;
+  background: var(--brand-10);
+  color: var(--brand);
+  border-color: var(--brand-20);
 }
-@media(max-width:768px){
-  #global-site-bar {
-    padding: 0 12px;
-    gap: 8px;
-    min-height: 44px;
-  }
+@media(max-width:900px){
   .gsb-label { display: none; }
   .gsb-stats { display: none; }
-  .gsb-btn { min-width: 120px; font-size: 13px; padding: 5px 10px 5px 8px; }
+  .gsb-btn { min-width: 120px; font-size: 12.5px; padding: 5px 10px 5px 8px; }
+}
+@media(max-width:600px){
+  #global-site-bar { display: none; }
 }
 
 /* ═══════════════════════════════════════════════════════

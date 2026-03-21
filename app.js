@@ -385,22 +385,22 @@ function updateGlobalSiteBar() {
     <span class="gsb-label">Aktif Site</span>
     <div class="gsb-selector" id="gsb-selector">
       <button class="gsb-btn" onclick="toggleGsbDropdown(event)" id="gsb-btn">
-        <svg viewBox="0 0 24 24" width="16" height="16" stroke="#fff" stroke-width="2" fill="none"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-4h6v4"/></svg>
+        <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-4h6v4"/></svg>
         <span class="gsb-btn-name">${apt.ad}</span>
-        <svg class="gsb-btn-arrow" id="gsb-arrow" viewBox="0 0 24 24" width="14" height="14" stroke="#fff" stroke-width="2.5" fill="none"><polyline points="6 9 12 15 18 9"/></svg>
+        <svg class="gsb-btn-arrow" id="gsb-arrow" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
       <div class="gsb-dropdown" id="gsb-dropdown">${items}</div>
     </div>
     <div class="gsb-divider"></div>
     <div class="gsb-stats">
       <div class="gsb-stat">
-        <svg viewBox="0 0 24 24" width="14" height="14" stroke="#fff" stroke-width="2" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        <svg viewBox="0 0 24 24" width="14" height="14" stroke="var(--tx-3)" stroke-width="2" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
         <span><strong>${sakinSayisi}</strong> Sakin</span>
       </div>
-      ${borcluSayisi > 0 ? `<div class="gsb-stat"><svg viewBox="0 0 24 24" width="14" height="14" stroke="#fca5a5" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span style="color:#fca5a5"><strong>${borcluSayisi}</strong> Borçlu</span></div>` : ''}
-      ${acikAriza > 0 ? `<div class="gsb-stat"><svg viewBox="0 0 24 24" width="14" height="14" stroke="#fcd34d" stroke-width="2" fill="none"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg><span style="color:#fcd34d"><strong>${acikAriza}</strong> Arıza</span></div>` : ''}
+      ${borcluSayisi > 0 ? `<div class="gsb-stat"><svg viewBox="0 0 24 24" width="14" height="14" stroke="var(--err)" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span style="color:var(--err)"><strong>${borcluSayisi}</strong> Borçlu</span></div>` : ''}
+      ${acikAriza > 0 ? `<div class="gsb-stat"><svg viewBox="0 0 24 24" width="14" height="14" stroke="#f59e0b" stroke-width="2" fill="none"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg><span style="color:#f59e0b"><strong>${acikAriza}</strong> Arıza</span></div>` : ''}
       <div class="gsb-stat">
-        <svg viewBox="0 0 24 24" width="14" height="14" stroke="#fff" stroke-width="2" fill="none"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        <svg viewBox="0 0 24 24" width="14" height="14" stroke="var(--tx-3)" stroke-width="2" fill="none"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
         <span><strong>${daireSayisi}</strong> Daire</span>
       </div>
     </div>
