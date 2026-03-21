@@ -2785,7 +2785,7 @@ function renderSakinler() {
   const statEl = document.getElementById('sak-stats-top');
   if (statEl) {
     const aptId = selectedAptId;
-    const liste = (S.sakinler||[]).filter(x=>!aptId||x.aptId==aptId);
+    const liste = (S.sakinler||[]).filter(x=>(!aptId||x.aptId==aptId) && isSakinAktif(x));
     const malikSayisi = liste.filter(x=>x.tip==='malik').length;
     const kiralikSayisi = liste.filter(x=>x.tip==='kiralik').length;
     const borcluSayisi = liste.filter(x=>(x.borc||0)>0).length;
@@ -2823,8 +2823,10 @@ function renderSakinler() {
   const fBorc = document.getElementById('sak-f-borc')?.value||'';
   const gorunum = document.getElementById('sak-f-gorunum')?.value||'tablo';
 
-  // Apt seçiliyse o apt'ın sakinleri, seçili değilse tümü
-  let list = aptId ? S.sakinler.filter(x=>x.aptId==aptId) : [...S.sakinler];
+  // Apt seçiliyse o apt'ın sakinleri, seçili değilse tümü — sadece aktif sakinler
+  let list = aptId
+    ? S.sakinler.filter(x=>x.aptId==aptId && isSakinAktif(x))
+    : S.sakinler.filter(x=>isSakinAktif(x));
   if (fTip) list = list.filter(x=>x.tip===fTip);
   if (fBorc==='borclu') list = list.filter(x=>(x.borc||0)>0);
   if (fBorc==='temiz') list = list.filter(x=>!(x.borc||0));
@@ -2864,7 +2866,7 @@ function renderSakinler() {
             <button class="btn xs" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe" onclick="goSakinCari(${sk.id})" title="Cari Hesap"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></button>
             <button class="btn bg xs" onclick="editSakin(${sk.id})" title="Düzenle"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
             <button class="btn xs" style="background:#f0fdf4;color:#059669;border:1px solid #a7f3d0" onclick="openQrModal(${sk.id})" title="QR Kod"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h7v7M14 14v3M17 21h4"/></svg></button>
-            <button class="btn xs" style="background:var(--err-bg);color:var(--err);border:1px solid var(--err)" onclick="delSakin(${sk.id})" title="Sil"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+            <button class="btn xs" style="background:var(--err-bg);color:var(--err);border:1px solid var(--err)" onclick="sakinCikisYap(${sk.id})" title="${sk.tip==='malik'?'Ev Sahibi Değişimi':'Kiracı Çıkışı'}"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></button>
           </div></td>
         </tr>`;
       }).join('')}</tbody>
@@ -2903,7 +2905,7 @@ function renderSakinler() {
           <button class="btn xs" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe" onclick="goSakinCari(${sk.id})"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Cari</button>
           <button class="btn bg xs" onclick="editSakin(${sk.id})"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Düzenle</button>
           <button class="btn xs" style="background:#f0fdf4;color:#059669;border:1px solid #a7f3d0" onclick="openQrModal(${sk.id})" title="QR Kod"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h7v7M14 14v3M17 21h4"/></svg> QR</button>
-          <button class="btn xs" style="background:var(--err-bg);color:var(--err);border:1px solid var(--err)" onclick="delSakin(${sk.id})"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg> Sil</button>
+          <button class="btn xs" style="background:var(--err-bg);color:var(--err);border:1px solid var(--err)" onclick="sakinCikisYap(${sk.id})"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg> Çıkart</button>
         </div>
       </div>`;
     }).join('')}</div>`;
@@ -3165,12 +3167,12 @@ function saveTopluDaireler() {
     if (malikAd) {
       const ex = S.sakinler.find(s=>String(s.aptId)===String(aptId)&&s.daire===dNo&&s.tip==='malik');
       if (ex) { ex.ad=malikAd; ex.tel=malikTel; ex.dairetipi=tip; ex.blok=blok; guncellendi++; }
-      else { S.sakinler.push({id:Date.now()+i,ad:malikAd,aptId:+aptId,aptAd:apt?.ad||'',tip:'malik',daire:dNo,tel:malikTel,dairetipi:tip,blok:blok,giris:tarih,aidat:0,borc:0,email:'',not:''}); ok++; }
+      else { S.sakinler.push({id:Date.now()+i,ad:malikAd,aptId:+aptId,aptAd:apt?.ad||'',tip:'malik',daire:dNo,tel:malikTel,dairetipi:tip,blok:blok,giris:tarih,aidat:0,borc:0,email:'',not:'',durum:'aktif'}); ok++; }
     }
     if (kiralikAd) {
       const ex = S.sakinler.find(s=>String(s.aptId)===String(aptId)&&s.daire===dNo&&s.tip==='kiralik');
       if (ex) { ex.ad=kiralikAd; ex.tel=kiralikTel; guncellendi++; }
-      else { S.sakinler.push({id:Date.now()+i+5000,ad:kiralikAd,aptId:+aptId,aptAd:apt?.ad||'',tip:'kiralik',daire:dNo,giris:tarih,aidat:0,borc:0,tel:kiralikTel,email:'',not:''}); ok++; }
+      else { S.sakinler.push({id:Date.now()+i+5000,ad:kiralikAd,aptId:+aptId,aptAd:apt?.ad||'',tip:'kiralik',daire:dNo,giris:tarih,aidat:0,borc:0,tel:kiralikTel,email:'',not:'',durum:'aktif'}); ok++; }
     }
   }
   save();
@@ -3189,10 +3191,16 @@ function saveSakin() {
   const daire = document.getElementById('sak-daire')?.value.trim();
   if (!ad||!aptId||!tel||!daire) { toast('Ad, Daire No ve Telefon zorunludur.','err'); return; }
 
-  // Daire no çakışma kontrolü
+  // Yeni sakin ekleniyorsa aynı daire+tipteki aktif sakini otomatik pasife al
   if (!sakEditId) {
-    const mevcut = S.sakinler.find(x=>x.aptId==aptId&&x.daire===daire);
-    if(mevcut){ if(!confirm(`Daire ${daire} zaten ${mevcut.ad} adına kayıtlı. Yine de eklensin mi?`)) return; }
+    const bugun = new Date().toISOString().slice(0,10);
+    if (tip === 'malik') {
+      S.sakinler.filter(x => x.aptId==aptId && x.daire===daire && x.tip==='malik' && isSakinAktif(x))
+        .forEach(x => { x.durum='pasif'; if(!x.cikis) x.cikis=bugun; });
+    } else if (tip === 'kiralik') {
+      S.sakinler.filter(x => x.aptId==aptId && x.daire===daire && x.tip==='kiralik' && isSakinAktif(x))
+        .forEach(x => { x.durum='pasif'; if(!x.cikis) x.cikis=bugun; });
+    }
   }
 
   const apt = S.apartmanlar.find(a=>a.id==aptId);
@@ -3231,9 +3239,14 @@ function saveSakin() {
 
   if (sakEditId) {
     const i = S.sakinler.findIndex(x=>x.id===sakEditId);
-    if(i>=0) S.sakinler[i]=rec;
+    if(i>=0) {
+      // Çıkış tarihi geçmişte → pasif, değilse aktif
+      rec.durum = (rec.cikis && rec.cikis < new Date().toISOString().slice(0,10)) ? 'pasif' : 'aktif';
+      S.sakinler[i]=rec;
+    }
     sakEditId=null;
   } else {
+    rec.durum = 'aktif';
     S.sakinler.push(rec);
   }
 
@@ -3276,8 +3289,30 @@ function editSakin(id) {
   },80);
 }
 
+function isSakinAktif(sk) {
+  return !sk.durum || sk.durum === 'aktif';
+}
+
+function sakinCikisYap(id) {
+  const sk = S.sakinler.find(x=>x.id===id);
+  if (!sk) return;
+  if (sk.tip === 'malik') {
+    const baskaAktifMalik = S.sakinler.find(s => s.id !== id && s.aptId == sk.aptId && s.daire == sk.daire && s.tip === 'malik' && isSakinAktif(s));
+    if (!baskaAktifMalik) {
+      toast('Daire ev sahibisiz kalamaz. Önce "Sakin Ekle" ile yeni ev sahibini girin — eski sahip otomatik pasife alınır.', 'err'); return;
+    }
+  }
+  const tarih = prompt('Çıkış tarihi (YYYY-MM-DD):', new Date().toISOString().slice(0,10));
+  if (!tarih) return;
+  sk.cikis = tarih; sk.durum = 'pasif';
+  save(); renderSakinler(); toast('Sakin çıkışı kaydedildi.', 'ok');
+}
+
 function delSakin(id) {
-  if(!confirm('Bu sakin kaydı silinsin mi?')) return;
+  const sk = S.sakinler.find(x=>x.id===id);
+  if (!sk) return;
+  if (isSakinAktif(sk)) { sakinCikisYap(id); return; }
+  if(!confirm('Bu geçmiş kayıt kalıcı olarak silinsin mi?')) return;
   S.sakinler = S.sakinler.filter(x=>x.id!==id);
   save(); toast('Silindi.','warn');
 }
@@ -6701,8 +6736,8 @@ function renderDaireDetay(sk, yil) {
   // Tüm bu dairedeki kişiler (aynı aptId + daire)
   const todayStr = new Date().toISOString().slice(0,10);
   const tumDaireKisi = (S.sakinler||[]).filter(s => s.aptId == sk.aptId && s.daire == sk.daire);
-  const aktifKisi = tumDaireKisi.filter(s => !s.cikis || s.cikis >= todayStr);
-  const eskiKisi  = tumDaireKisi.filter(s => s.cikis && s.cikis < todayStr);
+  const aktifKisi = tumDaireKisi.filter(s => isSakinAktif(s));
+  const eskiKisi  = tumDaireKisi.filter(s => !isSakinAktif(s));
   const malik  = aktifKisi.find(s => s.tip === 'malik') || tumDaireKisi.find(s => s.tip === 'malik');
   const kiraci = aktifKisi.find(s => s.tip === 'kiralik');
   const mainSk = malik || sk;
@@ -6723,36 +6758,34 @@ function renderDaireDetay(sk, yil) {
   const tumOdemeler = (S.tahsilatlar||[]).filter(t => t.sakId==mainSk.id||t.sakinId==mainSk.id);
   const toplamOdeme = tumOdemeler.reduce((s,t)=>s+(t.tutar||0),0);
 
-  // Kişiler tablosu (aktif + eski)
-  const tumKisiSorted = [...aktifKisi, ...eskiKisi];
-  const kisiRows = tumKisiSorted.map(kisi=>{
-    const isEski = kisi.cikis && kisi.cikis < todayStr;
+  // Kişi satırı oluşturucu (aktif ve eski için ortak)
+  const makeKisiRow = (kisi, isEski) => {
     const tipLbl = kisi.tip==='malik' ? 'Kat Maliki' : 'Kiracı';
     const tipCls = isEski ? 'eski' : (kisi.tip==='malik' ? 'malik' : 'kiralik');
     const borcVal = kisi.borc||0;
     const borcTxt = borcVal>0 ? `<span style="color:var(--err);font-weight:700">₺${fmt(borcVal)} (B)</span>` : `<span style="color:var(--ok)">₺0</span>`;
     const cikisCell = isEski
-      ? `<span style="color:var(--tx-3)">${kisi.cikis}</span>`
-      : `<button class="btn brd xs" onclick="daireKisiCikis(${kisi.id},${mainSk.id})">Çıkart</button>`;
-    return `<tr style="${isEski?'opacity:.55':''}">
-      <td><span class="bb-kisi-durum ${tipCls}">${tipLbl}${isEski?' <em style="font-weight:400">(Çıktı)</em>':''}</span></td>
+      ? `<span style="color:var(--tx-3);font-size:11px">${kisi.cikis||'—'}</span>`
+      : `<button class="btn brd xs" onclick="daireKisiCikis(${kisi.id})">Çıkart</button>`;
+    return `<tr style="${isEski?'opacity:.6':''}">
+      <td><span class="bb-kisi-durum ${tipCls}">${tipLbl}${isEski?' <em style="font-weight:400;font-size:10px">(Eski)</em>':''}</span></td>
       <td style="font-weight:600;cursor:pointer;color:var(--brand)" onclick="goSakinCari(${kisi.id},true)">${kisi.ad} →</td>
       <td style="font-size:12px">${kisi.tel||'—'}</td>
       <td style="font-size:12px;color:var(--tx-3)">${kisi.giris||'—'}</td>
       <td>${cikisCell}</td>
-      <td>1/1</td>
       <td>${borcTxt}</td>
-      <td style="color:var(--tx-3);font-size:11.5px">${borcTxt}</td>
       <td style="display:flex;gap:4px">
         <button class="btn bg xs" onclick="goSakinCari(${kisi.id},true)" title="Cari Hesap" style="background:#eff6ff;color:#2563eb;border-color:#bfdbfe">
           <svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         </button>
-        <button class="btn bg xs" onclick="goDaireDetay(${kisi.id})" title="Daire Detay">
-          <svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-        </button>
+        ${!isEski ? `<button class="btn bg xs" onclick="editSakin(${kisi.id});goPage('sakinler');goTab('sak-tekil')" title="Düzenle"><svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>` : ''}
+        ${isEski ? `<button class="btn xs" style="background:var(--err-bg);color:var(--err);border:1px solid var(--err)" onclick="delSakin(${kisi.id})" title="Kaydı Sil"><svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>` : ''}
       </td>
     </tr>`;
-  }).join('');
+  };
+  const aktifKisiRows = aktifKisi.map(k=>makeKisiRow(k,false)).join('');
+  const tumKisiRows   = [...aktifKisi,...eskiKisi].map(k=>makeKisiRow(k,!isSakinAktif(k))).join('');
+  const THEAD = `<thead><tr><th>Durumu</th><th>Adı Soyadı</th><th>Telefon</th><th>Giriş Tarihi</th><th>Çıkış / İşlem</th><th>Bakiye</th><th>İşlemler</th></tr></thead>`;
 
   const el = document.getElementById('daire-detay-content');
   el.innerHTML =
@@ -6881,23 +6914,26 @@ function renderDaireDetay(sk, yil) {
   // ── KİŞİLER BÖLÜMÜ ──
   `<div class="bb-kisi-section">
     <div class="bb-kisi-header">
-      <div style="font-size:13px;font-weight:700">Kişiler <span style="font-size:12px;color:var(--tx-3);font-weight:400">(${tumKisiSorted.length})</span></div>
+      <div style="font-size:13px;font-weight:700">Kişiler <span style="font-size:12px;color:var(--tx-3);font-weight:400">(${tumDaireKisi.length})</span></div>
       <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:11.5px;color:var(--tx-3)">Güncel</span>
-        <span style="width:8px;height:8px;border-radius:50%;background:var(--brand);display:inline-block"></span>
-        <span style="font-size:11.5px;color:var(--tx-3)">Hepsi</span>
-        <button class="btn bg xs" onclick="editSakin(${mainSk.id});goPage('sakinler');goTab('sak-tekil')">+ Kişi Ekle</button>
+        <div class="dk-tabs">
+          <button class="dk-tab on" id="dkt-guncel" onclick="daireKisiTab('guncel')">Güncel <span class="dk-badge ok">${aktifKisi.length}</span></button>
+          <button class="dk-tab" id="dkt-hepsi" onclick="daireKisiTab('hepsi')">Hepsi <span class="dk-badge all">${tumDaireKisi.length}</span></button>
+        </div>
+        <button class="btn bp xs" onclick="addSakinToDaire('${mainSk.daire}',${mainSk.aptId})">
+          <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Kişi Ekle
+        </button>
       </div>
     </div>
-    <div class="tw">
-      <table class="bb-kisi-table">
-        <thead><tr>
-          <th>Durumu</th><th>Adı Soyadı</th><th>Cep Telefonu</th>
-          <th>Giriş / Satın Alma Tarihi</th><th>Çıkış Tarihi</th>
-          <th>Hisse</th><th>Bakiye</th><th>BB Bakiyesi</th><th>İşlemler</th>
-        </tr></thead>
-        <tbody>${kisiRows||`<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--tx-3)">Kayıtlı kişi bulunmuyor.</td></tr>`}</tbody>
-      </table>
+    <div id="dk-guncel-pane">
+      <div class="tw"><table class="bb-kisi-table">${THEAD}
+        <tbody>${aktifKisiRows||`<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--tx-3)">Bu dairede aktif kayıt bulunmuyor.</td></tr>`}</tbody>
+      </table></div>
+    </div>
+    <div id="dk-hepsi-pane" style="display:none">
+      <div class="tw"><table class="bb-kisi-table">${THEAD}
+        <tbody>${tumKisiRows||`<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--tx-3)">Kayıt bulunmuyor.</td></tr>`}</tbody>
+      </table></div>
     </div>
   </div>` +
 
@@ -6930,6 +6966,27 @@ function ddShowTab(el, paneId) {
 }
 
 // Sağ panel (Notlar/Ekler) sekme değiştirici
+function daireKisiTab(which) {
+  ['guncel','hepsi'].forEach(t => {
+    const btn = document.getElementById('dkt-'+t);
+    const pane = document.getElementById('dk-'+t+'-pane');
+    if (btn) btn.classList.toggle('on', t===which);
+    if (pane) pane.style.display = t===which ? '' : 'none';
+  });
+}
+
+function addSakinToDaire(daireNo, aptId) {
+  sakEditId = null;
+  if (aptId && selectedAptId != aptId) selectedAptId = +aptId;
+  goPage('sakinler');
+  goTab('sak-tekil');
+  setTimeout(() => {
+    const daireEl = document.getElementById('sak-daire');
+    if (daireEl) daireEl.value = daireNo;
+    setSakinTip('malik');
+  }, 250);
+}
+
 function bbTab(el, paneId) {
   el.closest('.bb-right-tabs').querySelectorAll('.bb-right-tab').forEach(t => t.classList.remove('on'));
   el.classList.add('on');
@@ -6940,16 +6997,26 @@ function bbTab(el, paneId) {
 }
 
 // Kişi çıkış tarihi kaydet
-function daireKisiCikis(sakId, mainId) {
-  const tarih = prompt('Çıkış tarihi (YYYY-MM-DD):', new Date().toISOString().slice(0,10));
-  if (!tarih) return;
+function daireKisiCikis(sakId) {
   const kisi = S.sakinler.find(s => s.id === +sakId);
   if (!kisi) return;
-  kisi.cikis = tarih;
+  if (kisi.tip === 'malik') {
+    const baskaAktifMalik = S.sakinler.find(s => s.id !== +sakId && s.aptId==kisi.aptId && s.daire==kisi.daire && s.tip==='malik' && isSakinAktif(s));
+    if (!baskaAktifMalik) {
+      toast('Daire ev sahibisiz kalamaz. "Kişi Ekle" ile yeni ev sahibini ekleyin — eski sahip otomatik pasife alınır.', 'err');
+      return;
+    }
+  }
+  const tarih = prompt('Çıkış tarihi (YYYY-MM-DD):', new Date().toISOString().slice(0,10));
+  if (!tarih) return;
+  kisi.cikis = tarih; kisi.durum = 'pasif';
   save();
-  const main = S.sakinler.find(s => s.id === +mainId) || kisi;
+  // Dairenin yeni aktif malikini bul
+  const yeniMain = S.sakinler.find(s => s.aptId==kisi.aptId && s.daire==kisi.daire && s.tip==='malik' && isSakinAktif(s))
+    || S.sakinler.find(s => s.aptId==kisi.aptId && s.daire==kisi.daire && isSakinAktif(s))
+    || kisi;
   const yr = document.querySelector('.dd-year-sel');
-  renderDaireDetay(main, yr ? +yr.value : new Date().getFullYear());
+  renderDaireDetay(yeniMain, yr ? +yr.value : new Date().getFullYear());
   toast('Çıkış tarihi kaydedildi', 'ok');
 }
 

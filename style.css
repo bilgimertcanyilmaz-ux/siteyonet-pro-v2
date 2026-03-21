@@ -1538,3 +1538,51 @@ select.fi,select.fs{
   .gsb-stats { display: none; }
   .gsb-btn { min-width: 120px; font-size: 13px; padding: 5px 10px 5px 8px; }
 }
+
+/* ═══════════════════════════════════════════════════════
+   DAİRE DETAY — KİŞİLER SEKME (Güncel / Hepsi)
+   ═══════════════════════════════════════════════════════ */
+.dk-tabs {
+  display: flex;
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+.dk-tab {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tx-3);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.dk-tab.on {
+  background: var(--surface);
+  color: var(--tx);
+  box-shadow: 0 1px 3px rgba(0,0,0,.1);
+}
+.dk-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 8px;
+  line-height: 1.4;
+}
+.dk-badge.ok { background: var(--ok); color: #fff; }
+.dk-badge.all { background: var(--tx-3); color: #fff; }
+.bb-kisi-durum.eski {
+  background: var(--s2);
+  color: var(--tx-3);
+  border: 1px solid var(--border);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+}
