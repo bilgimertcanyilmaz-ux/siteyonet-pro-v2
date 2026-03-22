@@ -7168,37 +7168,40 @@ function renderSakinCari(sk, opts) {
   const fazlaOdeme  = topAlacak > topBorc ? topAlacak - topBorc : 0;
 
   // ── İşlem satırı builder ──
+  // Her kayıt tek satır; borç kaydı → Borç sütununda, alacak kaydı → Alacak sütununda görünür.
   function islemSatiri(ix, kategori) {
-    if (!ix.length) return `<div style="padding:14px 48px;font-size:12px;color:var(--tx-3);font-style:italic">Bu kategoride işlem bulunmuyor.</div>`;
+    if (!ix.length) return `<div class="ci-empty">Bu kategoride işlem bulunmuyor.</div>`;
     const nowStr = new Date().toISOString().slice(0,10);
+
+    // Her kayıt için tip belirle (borcTutar > 0 → borç, yoksa alacak)
+    let cum = 0;
+    const rows = ix.map(x => {
+      const tip = x.borcTutar > 0 ? 'borc' : 'alacak';
+      const tutar = tip === 'borc' ? x.borcTutar : x.alacakTutar;
+      cum += tip === 'borc' ? tutar : -tutar;
+      return {...x, _tip: tip, _tutar: tutar, _cum: cum};
+    });
+
     return `<div class="cari-islem-hdr">
-      <div>Evrak T.</div><div>Son Ödeme T.</div><div>Açıklama</div><div></div>
-      <div style="text-align:right">${kategori==='Genel'?'Alacak':'Borç'}</div>
-      <div style="text-align:right">Bakiye</div>
-    </div>` +
-    ix.map((x, i) => {
-      const runBorc   = ix.slice(0,i+1).reduce((s,r)=>s+r.borcTutar,0);
-      const runAlacak = ix.slice(0,i+1).reduce((s,r)=>s+r.alacakTutar,0);
-      const runBak    = runBorc - runAlacak;
-      const hasBorc   = x.borcTutar > 0;
-      const hasAlacak = x.alacakTutar > 0;
-      const isOverdue = x.sonOdeme && x.sonOdeme < nowStr && hasBorc;
-      return `<div class="cari-islem-row${isOverdue?' row-overdue':''}">
-        <div class="ci-tarih">${x.evrakTarih || '—'}</div>
-        <div class="ci-tarih">
-          ${x.sonOdeme ? `<span style="color:${isOverdue?'var(--err)':'var(--tx-2)'}">${x.sonOdeme}</span>${isOverdue?'<span class="ci-overdue-badge">Gecikti</span>':''}` : '<span style="color:var(--tx-3)">—</span>'}
-        </div>
-        <div class="ci-aciklama" title="${x.aciklama}">
-          <span class="cari-dot ${hasBorc?'red':'green'}"></span>${x.aciklama}
-        </div>
-        <div class="ci-icon">
-          <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:var(--tx-3);fill:none;stroke-width:1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        </div>
-        <div class="ci-tutar ${hasAlacak?'alacak':'borc'}" style="text-align:right">
-          ${hasBorc?'₺'+fmt(x.borcTutar):''}${hasAlacak?'₺'+fmt(x.alacakTutar):''}${!hasBorc&&!hasAlacak?'—':''}
-        </div>
-        <div class="ci-tutar ${runBak>0?'borc':'alacak'}" style="text-align:right">
-          ${runBak!==0?'₺'+fmt(Math.abs(runBak)):'₺0'}
+      <div>Tarih</div>
+      <div>Açıklama</div>
+      <div class="ci-hdr-borc">Borç</div>
+      <div class="ci-hdr-alacak">Alacak</div>
+      <div class="ci-hdr-bakiye">Bakiye</div>
+    </div>` + rows.map(r => {
+      const isOverdue = r._tip === 'borc' && r.sonOdeme && r.sonOdeme < nowStr;
+      const bakCls = r._cum > 0.01 ? 'bak-d' : r._cum < -0.01 ? 'bak-a' : 'bak-z';
+      const vadeBadge = r._tip === 'borc' && r.sonOdeme
+        ? `<div class="ci-vade">${isOverdue ? '<span class="ci-overdue-badge">GECİKTİ</span>' : ''}<span class="ci-vade-dt" style="color:${isOverdue ? 'var(--err)' : 'var(--tx-3)'}">${r.sonOdeme}</span></div>`
+        : '';
+      return `<div class="cari-islem-row ci-${r._tip}${isOverdue ? ' row-overdue' : ''}">
+        <div class="ci-tarih">${r.evrakTarih || '—'}${vadeBadge}</div>
+        <div class="ci-aciklama" title="${r.aciklama || ''}">${r.aciklama || '—'}</div>
+        <div class="ci-col-borc">${r._tip === 'borc' ? `<span class="ci-tutar borc">₺${fmt(r._tutar)}</span>` : '<span class="ci-dash">—</span>'}</div>
+        <div class="ci-col-alacak">${r._tip === 'alacak' ? `<span class="ci-tutar alacak">₺${fmt(r._tutar)}</span>` : '<span class="ci-dash">—</span>'}</div>
+        <div class="ci-cumbal ${bakCls}">
+          <span>₺${fmt(Math.abs(r._cum))}</span>
+          <span class="ci-bal-arr">${r._cum > 0.01 ? '▲' : r._cum < -0.01 ? '▼' : '='}</span>
         </div>
       </div>`;
     }).join('');
