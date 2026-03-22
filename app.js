@@ -1,4 +1,4 @@
-﻿// ═══════════════════════════════════════════
+// ═══════════════════════════════════════════
 // SUPABASE ENTEGRASYONU
 // ═══════════════════════════════════════════
 let _supabase = null;
@@ -6822,172 +6822,161 @@ function renderDaireDetay(sk, yil) {
   const THEAD = `<thead><tr><th>Durumu</th><th>Adı Soyadı</th><th>Telefon</th><th>Giriş Tarihi</th><th>Çıkış / İşlem</th><th>Bakiye</th><th>İşlemler</th></tr></thead>`;
 
   const el = document.getElementById('daire-detay-content');
-  el.innerHTML =
+  el.innerHTML = `<div class="dd-page">
 
-  // ── HEADER ──
-  `<div class="bb-header">
-    <div class="bb-header-left">
-      <div>
-        <div class="bb-daire-kodu">${daireKod}</div>
-        <div class="bb-apt-ad">${aptAd}</div>
-      </div>
-      <span class="b ${kullCls}" style="font-size:12px">${kullDurum}</span>
-    </div>
-    <div style="display:flex;gap:7px;flex-wrap:wrap">
-      <button class="btn bg sm" onclick="editSakin(${mainSk.id});goPage('sakinler');goTab('sak-tekil')">
-        <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Düzenle
-      </button>
-      <button class="btn brd sm" onclick="openAidatBorcDaire(${mainSk.id})">
-        <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg> Borçlandır
-      </button>
-      <button class="btn bp sm" onclick="openHizliOdeme(${mainSk.id},'')">
-        <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> Tahsil Et
-      </button>
-    </div>
-  </div>` +
+  <!-- ── SOL PANEL ── -->
+  <div class="dd-side">
 
-  // ── ANA BÖLÜM (Sol + Sağ) ──
-  `<div class="bb-body">
-
-    <div class="bb-left">
-
-      <!-- Borç Banner -->
-      <div class="bb-borc-banner">
-        <div class="bb-borc-icon">
-          <svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:${topBorc>0?'var(--err)':'var(--ok)'};fill:none;stroke-width:2">
-            <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+    <div class="dd-profile-card">
+      <svg class="dpc-bg-svg" viewBox="0 0 220 180" fill="none">
+        <circle cx="185" cy="-15" r="100" fill="rgba(255,255,255,.07)"/>
+        <circle cx="210" cy="155" r="80" fill="rgba(255,255,255,.04)"/>
+      </svg>
+      <div class="dpc-top">
+        <div class="dd-avatar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.95)" stroke-width="1.8" width="26" height="26">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
           </svg>
         </div>
-        <div style="flex:1">
-          <div class="bb-borc-lbl">Toplam Borç</div>
-          <div class="bb-borc-val" style="color:${topBorc>0?'var(--err)':'var(--ok)'}">
-            ${topBorc>0 ? '₺'+fmt(topBorc) : '✓ Temiz'}
+        <div class="dpc-meta">
+          <div class="dpc-no">Daire ${daireKod}</div>
+          <div class="dpc-apt">${aptAd}</div>
+        </div>
+      </div>
+      <div class="dpc-badges">
+        <span class="dpc-badge ${kullCls==='b-rd'?'dpc-bos':kullCls==='b-am'?'dpc-kiraci':'dpc-dolu'}">${kullDurum}</span>
+        ${mainSk.dairetipi||mainSk.tur?`<span class="dpc-badge dpc-tip">${mainSk.dairetipi||mainSk.tur}</span>`:''}
+      </div>
+      <div class="dpc-rows">
+        ${blokStr?`<div class="dpc-row"><span>Blok</span><span>${blokStr}</span></div>`:''}
+        ${mainSk.kat?`<div class="dpc-row"><span>Kat</span><span>${mainSk.kat}</span></div>`:''}
+        <div class="dpc-row"><span>Aidat</span><span class="dpc-row-val">₺${fmt(aidat)}</span></div>
+      </div>
+    </div>
+
+    <div class="dd-fin-card">
+      <div class="dfc-item">
+        <span class="dfc-lbl">Toplam Borç</span>
+        <span class="dfc-val dfc-borc-val">₺${fmt(topBorc)}</span>
+      </div>
+      <div class="dfc-sep"></div>
+      <div class="dfc-item">
+        <span class="dfc-lbl">Toplam Tahsilat</span>
+        <span class="dfc-val dfc-tahsil-val">₺${fmt(toplamOdeme)}</span>
+      </div>
+      <div class="dfc-sep"></div>
+      <div class="dfc-item">
+        <span class="dfc-lbl">Net Bakiye</span>
+        <span class="dfc-val ${(topBorc-toplamOdeme)>0.01?'dfc-borclu':'dfc-alacakli'}">₺${fmt(Math.abs(topBorc-toplamOdeme))}</span>
+      </div>
+    </div>
+
+    <div class="dd-side-btns">
+      <button class="dsb-btn dsb-borc" onclick="openAidatBorcDaire(${mainSk.id})">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Borçlandır
+      </button>
+      <button class="dsb-btn dsb-tahsil" onclick="openHizliOdeme(${mainSk.id},'')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M2 11h20"/><circle cx="6" cy="16" r="1.5"/></svg>
+        Tahsil Et
+      </button>
+      <button class="dsb-btn dsb-edit" onclick="editSakin(${mainSk.id});goPage('sakinler');goTab('sak-tekil')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Düzenle
+      </button>
+      ${aktifKisi.map(kisi=>`
+      <button class="dsb-btn dsb-cari" onclick="goSakinCari(${kisi.id},true)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        ${kisi.ad.split(' ')[0]} Finansal Durum
+      </button>`).join('')}
+    </div>
+
+  </div>
+
+  <!-- ── SAĞ ANA PANEL ── -->
+  <div class="dd-main">
+
+    <div class="dd-section">
+      <div class="dds-head">
+        <div class="dds-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Kişiler
+          <span class="dds-count">${tumDaireKisi.length}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="dk-tabs">
+            <button class="dk-tab on" id="dkt-guncel" onclick="daireKisiTab('guncel')">Güncel <span class="dk-badge ok">${aktifKisi.length}</span></button>
+            <button class="dk-tab" id="dkt-hepsi" onclick="daireKisiTab('hepsi')">Hepsi <span class="dk-badge all">${tumDaireKisi.length}</span></button>
+          </div>
+          <button class="btn bp xs" onclick="addSakinToDaire('${mainSk.daire}',${mainSk.aptId})">
+            <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Kişi Ekle
+          </button>
+        </div>
+      </div>
+      <div id="dk-guncel-pane">
+        <div class="tw"><table class="bb-kisi-table">${THEAD}<tbody>${aktifKisiRows||`<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--tx-3)">Bu dairede aktif kayıt bulunmuyor.</td></tr>`}</tbody></table></div>
+      </div>
+      <div id="dk-hepsi-pane" style="display:none">
+        <div class="tw"><table class="bb-kisi-table">${THEAD}<tbody>${tumKisiRows||`<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--tx-3)">Kayıt bulunmuyor.</td></tr>`}</tbody></table></div>
+      </div>
+    </div>
+
+    <div class="dd-section">
+      <div class="dds-head">
+        <div class="dds-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          Daire Bilgileri
+        </div>
+      </div>
+      <div class="dd-info-grid">
+        <div class="ddi-item"><div class="ddi-lbl">Kullanım Durumu</div><div class="ddi-val"><span class="b ${kullCls}">${kullDurum}</span></div></div>
+        <div class="ddi-item"><div class="ddi-lbl">Daire Tipi</div><div class="ddi-val">${mainSk.dairetipi||mainSk.tur||'—'}</div></div>
+        <div class="ddi-item"><div class="ddi-lbl">Bulunduğu Kat</div><div class="ddi-val">${mainSk.kat||'—'}</div></div>
+        <div class="ddi-item"><div class="ddi-lbl">Blok</div><div class="ddi-val">${blokStr||'—'}</div></div>
+        <div class="ddi-item"><div class="ddi-lbl">Grubu</div><div class="ddi-val">${mainSk.grup||'—'}</div></div>
+        <div class="ddi-item"><div class="ddi-lbl">Aidat Tutarı</div><div class="ddi-val" style="color:var(--brand);font-weight:800">₺${fmt(aidat)}</div></div>
+        <div class="ddi-item"><div class="ddi-lbl">Brüt m²</div><div class="ddi-val">${mainSk.brut||'—'}</div></div>
+        <div class="ddi-item"><div class="ddi-lbl">Net m²</div><div class="ddi-val">${mainSk.net||'—'}</div></div>
+        <div class="ddi-item"><div class="ddi-lbl">Arsa Payı</div><div class="ddi-val">${mainSk.arsa||'—'}</div></div>
+      </div>
+    </div>
+
+    <div class="dd-section">
+      <div class="dds-head">
+        <div class="dds-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Notlar & Ekler
+        </div>
+        <div class="bb-right-tabs" style="border-bottom:none">
+          <div class="bb-right-tab on" onclick="bbTab(this,'bb-np')">
+            <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Notlar
+          </div>
+          <div class="bb-right-tab" onclick="bbTab(this,'bb-ep')">
+            <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+            Ekler
           </div>
         </div>
-        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
-          <div style="font-size:11px;color:var(--tx-3)">Toplam tahsilat</div>
-          <div style="font-size:16px;font-weight:700;color:var(--ok)">₺${fmt(toplamOdeme)}</div>
-        </div>
       </div>
-
-      <!-- Bilgi Izgarası -->
-      <div class="bb-info-grid">
-        <div class="bb-info-item">
-          <div class="bil">Kullanım Durumu</div>
-          <div class="biv"><span class="b ${kullCls}">${kullDurum}</span></div>
-        </div>
-        <div class="bb-info-item">
-          <div class="bil">Aidat Tutar</div>
-          <div class="biv">₺${fmt(aidat)}</div>
-        </div>
-        <div class="bb-info-item">
-          <div class="bil">Bulunduğu Kat</div>
-          <div class="biv">${mainSk.kat||'—'}</div>
-        </div>
-        <div class="bb-info-item">
-          <div class="bil">Tipi</div>
-          <div class="biv">${mainSk.dairetipi||mainSk.tur||'—'}</div>
-        </div>
-        <div class="bb-info-item">
-          <div class="bil">Grubu</div>
-          <div class="biv">${mainSk.grup||'—'}</div>
-        </div>
-        <div class="bb-info-item">
-          <div class="bil">Blok</div>
-          <div class="biv">${blokStr||'—'}</div>
-        </div>
-        <div class="bb-info-item">
-          <div class="bil">Brüt m²</div>
-          <div class="biv">${mainSk.brut||'0'}</div>
-        </div>
-        <div class="bb-info-item">
-          <div class="bil">Net m²</div>
-          <div class="biv">${mainSk.net||'0'}</div>
-        </div>
-        <div class="bb-info-item">
-          <div class="bil">Arsa Payı</div>
-          <div class="biv">${mainSk.arsa||'0'}</div>
-        </div>
-      </div>
-
-    </div><!-- /bb-left -->
-
-    <!-- Notlar / Ekler (Sağ Panel) -->
-    <div class="bb-right">
-      <div class="bb-right-tabs">
-        <div class="bb-right-tab on" onclick="bbTab(this,'bb-np')">
-          <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          Notlar
-        </div>
-        <div class="bb-right-tab" onclick="bbTab(this,'bb-ep')">
-          <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-          Ekler
-        </div>
-      </div>
-      <div id="bb-np" class="bb-right-content">
-        ${(mainSk.not||'').trim() ? `<div class="bb-not-item"><div class="not-metin">${mainSk.not}</div></div>` :
-          `<div class="bb-not-empty">
-            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            <p style="font-size:12px;margin-top:6px">Gösterilecek not bulunmamaktadır.</p>
-          </div>`}
-        <div style="margin-top:10px">
-          <textarea class="dd-note-area" id="dd-note-input" placeholder="Not ekle…" style="min-height:72px">${mainSk.not||''}</textarea>
+      <div id="bb-np" style="padding:14px 16px">
+        ${(mainSk.not||'').trim()?`<div class="bb-not-item"><div class="not-metin">${mainSk.not}</div></div>`:`<div class="bb-not-empty"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><p style="font-size:12px;margin-top:6px">Gösterilecek not bulunmamaktadır.</p></div>`}
+        <div style="margin-top:12px">
+          <textarea class="dd-note-area" id="dd-note-input" placeholder="Not ekle…">${mainSk.not||''}</textarea>
           <button class="btn bp sm mt8" onclick="saveDaireNot(${mainSk.id})" style="width:100%">+ Yeni Not Kaydet</button>
         </div>
       </div>
-      <div id="bb-ep" class="bb-right-content" style="display:none">
+      <div id="bb-ep" style="display:none;padding:14px 16px">
         <div class="bb-not-empty">
           <svg viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
           <p style="font-size:12px;margin-top:6px">Ek bulunmamaktadır.</p>
         </div>
       </div>
-    </div><!-- /bb-right -->
+    </div>
 
-  </div>` + /* /bb-body */
+  </div>
+</div>`;
 
-  // ── KİŞİLER BÖLÜMÜ ──
-  `<div class="bb-kisi-section">
-    <div class="bb-kisi-header">
-      <div style="font-size:13px;font-weight:700">Kişiler <span style="font-size:12px;color:var(--tx-3);font-weight:400">(${tumDaireKisi.length})</span></div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <div class="dk-tabs">
-          <button class="dk-tab on" id="dkt-guncel" onclick="daireKisiTab('guncel')">Güncel <span class="dk-badge ok">${aktifKisi.length}</span></button>
-          <button class="dk-tab" id="dkt-hepsi" onclick="daireKisiTab('hepsi')">Hepsi <span class="dk-badge all">${tumDaireKisi.length}</span></button>
-        </div>
-        <button class="btn bp xs" onclick="addSakinToDaire('${mainSk.daire}',${mainSk.aptId})">
-          <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Kişi Ekle
-        </button>
-      </div>
-    </div>
-    <div id="dk-guncel-pane">
-      <div class="tw"><table class="bb-kisi-table">${THEAD}
-        <tbody>${aktifKisiRows||`<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--tx-3)">Bu dairede aktif kayıt bulunmuyor.</td></tr>`}</tbody>
-      </table></div>
-    </div>
-    <div id="dk-hepsi-pane" style="display:none">
-      <div class="tw"><table class="bb-kisi-table">${THEAD}
-        <tbody>${tumKisiRows||`<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--tx-3)">Kayıt bulunmuyor.</td></tr>`}</tbody>
-      </table></div>
-    </div>
-  </div>` +
-
-  // ── FİNANSAL DURUM YÖNLENDİRME ──
-  `<div class="card" style="padding:18px 20px;display:flex;align-items:center;gap:16px;background:linear-gradient(135deg,var(--brand-10),#f5f3ff);border:1.5px solid var(--brand-20);">
-    <div style="width:44px;height:44px;background:var(--brand);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-      <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2"><text x="12" y="17" text-anchor="middle" font-size="16" font-weight="800" fill="currentColor">&#8378;</text></svg>
-    </div>
-    <div style="flex:1">
-      <div style="font-size:13.5px;font-weight:700;color:var(--tx);margin-bottom:3px">Finansal Detaylar</div>
-      <div style="font-size:12px;color:var(--tx-3)">Aidat takibi, ödeme geçmişi ve borçlandırma kayıtları için Finansal Durum sayfasını kullanın.</div>
-    </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      ${aktifKisi.map(kisi=>`
-        <button class="btn bp sm" onclick="goSakinCari(${kisi.id},true)">
-          <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><text x="12" y="17" text-anchor="middle" font-size="16" font-weight="800" fill="currentColor">&#8378;</text></svg>
-          ${kisi.ad.split(' ')[0]} Finansal Durum
-        </button>`).join('')}
-    </div>
-  </div>`; /* /finansal yönlendirme */
 }
 
 function ddShowTab(el, paneId) {
