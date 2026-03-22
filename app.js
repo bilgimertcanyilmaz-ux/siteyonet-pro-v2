@@ -2554,7 +2554,71 @@ function renderGov() {
  const dLbl={bekliyor:'Bekliyor',devam:'Devam',tamamlandi:'Tamamlandı'};
  const kIco={bakim:'',temizlik:'',guvenlik:'',idari:'',mali:'',diger:''};
  if(!list.length){tb.innerHTML=`<tr><td colspan="8">${emp('','Görev yok')}</td></tr>`;return;}
- tb.innerHTML=list.slice().reverse().map(g=>`<tr> <td><div class="fc g8"><span>${kIco[g.kat]||''}</span><div><div style="font-weight:700;font-size:12.5px">${g.baslik}</div>${g.aciklama?`<div class="t3" style="font-size:10.5px">${g.aciklama.slice(0,50)}${g.aciklama.length>50?'…':''}</div>`:''}</div></div></td> <td>${g.aptAd||'—'}</td> <td>${g.atanan||'—'}</td> <td><span class="b ${onBadge(g.oncelik)}">${g.oncelik}</span></td> <td>${g.son?`<span style="color:${dayDiff(g.son)<0?'var(--err)':dayDiff(g.son)<3?'var(--warn)':'var(--tx-2)'}">${g.son}</span>`:'—'}</td> <td><span class="b ${dCls[g.durum]||'b-gy'}">${dLbl[g.durum]||g.durum}</span></td> <td> <div class="prog" style="min-width:55px"><div class="prog-fill" style="width:${g.ilerleme||0}%;background:${g.durum==='tamamlandi'?'var(--ok)':'var(--brand)'}"></div></div> <div class="t3" style="font-size:9.5px;margin-top:2px">${g.ilerleme||0}%</div> </td> <td><div class="act"><button class="btn bg xs" onclick="openGovModal(${g.id})" title="Düzenle">✏️ Düzenle</button><button class="btn bg xs" onclick="openIlerleme(${g.id})" title="İlerleme Güncelle">📊 İlerleme</button><button class="act-btn rd" onclick="delGov(${g.id})" title="Sil"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div></td> </tr>`).join('');
+ tb.innerHTML=list.slice().reverse().map(g=>`<tr> <td><div class="fc g8"><span>${kIco[g.kat]||''}</span><div><div style="font-weight:700;font-size:12.5px">${g.baslik}</div>${g.aciklama?`<div class="t3" style="font-size:10.5px">${g.aciklama.slice(0,50)}${g.aciklama.length>50?'…':''}</div>`:''}</div></div></td> <td>${g.aptAd||'—'}</td> <td>${g.atanan||'—'}</td> <td><span class="b ${onBadge(g.oncelik)}">${g.oncelik}</span></td> <td>${g.son?`<span style="color:${dayDiff(g.son)<0?'var(--err)':dayDiff(g.son)<3?'var(--warn)':'var(--tx-2)'}">${g.son}</span>`:'—'}</td> <td><span class="b ${dCls[g.durum]||'b-gy'}">${dLbl[g.durum]||g.durum}</span></td> <td> <div class="prog" style="min-width:55px"><div class="prog-fill" style="width:${g.ilerleme||0}%;background:${g.durum==='tamamlandi'?'var(--ok)':'var(--brand)'}"></div></div> <div class="t3" style="font-size:9.5px;margin-top:2px">${g.ilerleme||0}%</div> </td> <td><div class="act"><button class="act-btn" onclick="openGovDetay(${g.id})" title="Görüntüle"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button><button class="btn bg xs" onclick="openGovModal(${g.id})" title="Düzenle">✏️ Düzenle</button><button class="btn bg xs" onclick="openIlerleme(${g.id})" title="İlerleme Güncelle">📊 İlerleme</button><button class="act-btn rd" onclick="delGov(${g.id})" title="Sil"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div></td> </tr>`).join('');
+}
+
+let govDetayId = null;
+function openGovDetay(id) {
+  govDetayId = id;
+  const g = S.gorevler.find(x=>x.id===id);
+  if (!g) return;
+  const dCls = {bekliyor:'b-am', devam:'b-bl', tamamlandi:'b-gr'};
+  const dLbl = {bekliyor:'Bekliyor', devam:'Devam Ediyor', tamamlandi:'Tamamlandı'};
+  const kLbl = {bakim:'Bakım / Onarım', temizlik:'Temizlik', guvenlik:'Güvenlik', idari:'İdari', mali:'Mali', diger:'Diğer'};
+  const per = (S.personel||[]).find(p=>p.id==g.atananId);
+  const kalanGun = g.son ? dayDiff(g.son) : null;
+  const tarihRenk = kalanGun===null ? 'var(--tx-2)' : kalanGun<0 ? 'var(--err)' : kalanGun<3 ? 'var(--warn)' : 'var(--ok)';
+  const tarihMsj = kalanGun===null ? '' : kalanGun<0 ? `${Math.abs(kalanGun)} gün gecikmiş` : kalanGun===0 ? 'Bugün bitiyor' : `${kalanGun} gün kaldı`;
+  const pct = g.ilerleme||0;
+  const pctColor = g.durum==='tamamlandi' ? 'var(--ok)' : pct>60 ? 'var(--brand)' : pct>30 ? 'var(--warn)' : 'var(--err)';
+  document.getElementById('mod-gov-detay-body').innerHTML = `
+    <div style="padding:0 0 4px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:17px;font-weight:700;color:var(--tx);line-height:1.35;margin-bottom:10px">${g.baslik}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <span class="b ${dCls[g.durum]||'b-gy'}">${dLbl[g.durum]||g.durum}</span>
+            <span class="b ${onBadge(g.oncelik)}">${g.oncelik}</span>
+            <span class="b b-gy">${kLbl[g.kat]||g.kat||'—'}</span>
+            ${g.aptAd&&g.aptAd!=='—'?`<span class="b b-gy">${g.aptAd}</span>`:''}
+          </div>
+        </div>
+        <div style="text-align:center;flex-shrink:0;background:var(--s2);border-radius:12px;padding:12px 18px">
+          <div style="font-size:26px;font-weight:800;color:${pctColor};line-height:1">${pct}%</div>
+          <div style="font-size:10px;color:var(--tx-3);margin-top:2px">Tamamlanma</div>
+        </div>
+      </div>
+      <div style="background:var(--s2);border-radius:8px;height:7px;margin-bottom:20px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${pctColor};border-radius:8px;transition:width .4s"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
+        <div style="background:var(--s2);border-radius:10px;padding:13px 15px">
+          <div style="font-size:10px;font-weight:600;color:var(--tx-3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px">Atanan Personel</div>
+          <div style="font-size:13.5px;font-weight:600;color:var(--tx)">${per ? per.ad : (g.atanan||'—')}</div>
+          ${per&&per.gorev?`<div style="font-size:11.5px;color:var(--tx-3);margin-top:1px">${perGorevLbl[per.gorev]||per.gorev}</div>`:''}
+          ${per&&per.tel?`<div style="font-size:11.5px;color:var(--brand);margin-top:3px">${per.tel}</div>`:''}
+        </div>
+        <div style="background:var(--s2);border-radius:10px;padding:13px 15px">
+          <div style="font-size:10px;font-weight:600;color:var(--tx-3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px">Apartman</div>
+          <div style="font-size:13.5px;font-weight:600;color:var(--tx)">${g.aptAd&&g.aptAd!=='—'?g.aptAd:'—'}</div>
+        </div>
+        <div style="background:var(--s2);border-radius:10px;padding:13px 15px">
+          <div style="font-size:10px;font-weight:600;color:var(--tx-3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px">Başlangıç</div>
+          <div style="font-size:13.5px;font-weight:600;color:var(--tx)">${g.bas||'—'}</div>
+        </div>
+        <div style="background:var(--s2);border-radius:10px;padding:13px 15px">
+          <div style="font-size:10px;font-weight:600;color:var(--tx-3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px">Son Tarih</div>
+          <div style="font-size:13.5px;font-weight:600;color:var(--tx)">${g.son||'—'}</div>
+          ${tarihMsj?`<div style="font-size:11.5px;font-weight:500;color:${tarihRenk};margin-top:2px">${tarihMsj}</div>`:''}
+        </div>
+      </div>
+      ${g.aciklama?`
+      <div style="background:var(--s2);border-radius:10px;padding:14px 16px">
+        <div style="font-size:10px;font-weight:600;color:var(--tx-3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px">Açıklama</div>
+        <div style="font-size:13px;color:var(--tx-2);line-height:1.65;white-space:pre-wrap">${g.aciklama}</div>
+      </div>`:''}
+    </div>`;
+  openModal('mod-gov-detay');
 }
 
 function openIlerleme(id) {
