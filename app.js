@@ -5519,7 +5519,6 @@ function renderTanimList(tur) {
   if (!list.length) { el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--tx-3);font-size:12.5px">Henüz tanım eklenmemiş.</div>'; return; }
   el.innerHTML = list.map((t,i) => `
     <div class="tanim-item">
-      <span class="tanim-ikon">${t.ikon||'📌'}</span>
       <span class="tanim-renk" style="background:${t.renk||'#ccc'}"></span>
       <span class="tanim-ad">${t.ad}</span>
       ${t.varsayilan?'<span class="tanim-badge">Varsayılan</span>':''}
