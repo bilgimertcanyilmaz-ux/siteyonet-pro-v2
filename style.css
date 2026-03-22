@@ -977,23 +977,38 @@ select.fi,select.fs{
 .cari-kat-hdr{display:grid;grid-template-columns:1fr 120px 100px 120px 120px;padding:10px 20px 10px 40px;cursor:pointer;border-bottom:1px solid var(--border);background:var(--surface);transition:background .12s;align-items:center;}
 .cari-kat-hdr:hover{background:var(--s2);}
 
-/* Transaction rows */
-.cari-islem-hdr{display:grid;grid-template-columns:105px 118px 1fr 24px 118px 118px;padding:7px 20px 7px 54px;background:var(--s2);border-bottom:1px solid var(--border);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tx-3);}
-.cari-islem-row{display:grid;grid-template-columns:105px 118px 1fr 24px 118px 118px;padding:9px 20px 9px 54px;border-bottom:1px solid var(--border);align-items:center;transition:background .1s;font-size:12px;}
+/* Transaction rows — 5-col: Tür | Tarih | Açıklama | Tutar | Kümülatif */
+.cari-islem-hdr{display:grid;grid-template-columns:120px 90px 1fr 110px 120px;padding:7px 20px 7px 16px;background:var(--s2);border-bottom:1px solid var(--border);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tx-3);}
+.cari-islem-row{display:grid;grid-template-columns:120px 90px 1fr 110px 120px;padding:0 20px 0 0;border-bottom:1px solid var(--border);align-items:stretch;transition:background .1s;font-size:12px;min-height:44px;}
 .cari-islem-row:last-child{border-bottom:none;}
 .cari-islem-row:hover{background:var(--s2);}
-.cari-islem-row.row-overdue{background:rgba(239,68,68,.035);}
-.cari-islem-row.row-overdue:hover{background:rgba(239,68,68,.07);}
-.ci-tarih{font-size:11.5px;color:var(--tx-2);font-variant-numeric:tabular-nums;}
-.ci-aciklama{font-size:12px;color:var(--tx-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:6px;}
-.ci-icon{display:flex;align-items:center;color:var(--tx-3);}
-.ci-tutar{font-size:12.5px;font-weight:700;text-align:right;font-family:'DM Mono',monospace;}
+.cari-islem-row.row-overdue{background:rgba(239,68,68,.03);}
+.cari-islem-row.row-overdue:hover{background:rgba(239,68,68,.065);}
+/* Left accent stripe by type */
+.cari-islem-row.ci-borc{border-left:3px solid rgba(239,68,68,.45);}
+.cari-islem-row.ci-alacak{border-left:3px solid rgba(16,185,129,.45);}
+/* Type+vade cell */
+.ci-tip-cell{display:flex;flex-direction:column;justify-content:center;gap:3px;padding:8px 8px 8px 13px;}
+.ci-badge{display:inline-flex;align-items:center;justify-content:center;padding:2px 8px;border-radius:5px;font-size:10px;font-weight:700;letter-spacing:.3px;width:fit-content;}
+.ci-badge-borc{background:rgba(239,68,68,.1);color:var(--err);}
+.ci-badge-alacak{background:rgba(16,185,129,.1);color:var(--ok);}
+.ci-vade{display:flex;align-items:center;gap:4px;flex-wrap:wrap;}
+.ci-vade-dt{font-size:10px;font-variant-numeric:tabular-nums;}
+.ci-overdue-badge{display:inline-block;padding:1px 5px;border-radius:4px;font-size:9px;font-weight:700;background:rgba(239,68,68,.12);color:var(--err);text-transform:uppercase;letter-spacing:.3px;}
+/* Other cells */
+.ci-tarih{display:flex;align-items:center;font-size:11.5px;color:var(--tx-2);font-variant-numeric:tabular-nums;}
+.ci-aciklama{display:flex;align-items:center;font-size:12px;color:var(--tx-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px;}
+.ci-tutar{display:flex;align-items:center;justify-content:flex-end;font-size:12.5px;font-weight:700;font-family:'DM Mono',monospace;text-align:right;}
 .ci-tutar.borc{color:var(--err);}
 .ci-tutar.alacak{color:var(--ok);}
-.cari-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
-.cari-dot.red{background:var(--err);}
-.cari-dot.green{background:var(--ok);}
-.ci-overdue-badge{display:inline-block;padding:1px 5px;border-radius:4px;font-size:9px;font-weight:700;background:rgba(239,68,68,.12);color:var(--err);text-transform:uppercase;letter-spacing:.3px;}
+/* Cumulative balance cell */
+.ci-cumbal{display:flex;align-items:center;justify-content:flex-end;gap:4px;font-size:12px;font-weight:700;font-family:'DM Mono',monospace;padding-right:2px;}
+.bak-d{color:var(--err);}
+.bak-a{color:var(--ok);}
+.bak-z{color:var(--tx-3);}
+.ci-bal-arr{font-size:13px;line-height:1;}
+/* Empty state */
+.ci-empty{padding:18px 20px;font-size:12.5px;color:var(--tx-3);text-align:center;font-style:italic;}
 
 /* Bottom bar — hidden on desktop, shown on mobile as fallback */
 .cari-bottom-bar{display:none;}
@@ -1009,8 +1024,11 @@ select.fi,select.fs{
 @media(max-width:700px){
   .cari-acc-hdr,.cari-daire-row,.cari-kat-hdr{grid-template-columns:1fr 95px 95px;}
   .cari-acc-hdr>:nth-child(3),.cari-daire-row>:nth-child(3),.cari-kat-hdr>:nth-child(3){display:none;}
-  .cari-islem-hdr,.cari-islem-row{grid-template-columns:95px 1fr 95px;padding-left:44px;}
-  .cari-islem-hdr>:nth-child(2),.cari-islem-hdr>:nth-child(4),.cari-islem-hdr>:nth-child(5),.cari-islem-row>:nth-child(2),.cari-islem-row>:nth-child(4),.cari-islem-row>:nth-child(5){display:none;}
+  /* 3-col mobile: Tür | Açıklama | Tutar — hide Tarih(2nd) & Kümülatif(5th) */
+  .cari-islem-hdr,.cari-islem-row{grid-template-columns:100px 1fr 90px;padding-right:12px;}
+  .cari-islem-hdr>:nth-child(2),.cari-islem-row .ci-tarih{display:none;}
+  .cari-islem-hdr>:nth-child(5),.cari-islem-row .ci-cumbal{display:none;}
+  .ci-tip-cell{padding-left:10px;}
 }
 @media(max-width:480px){
   .cari-side-btns{gap:6px;}
