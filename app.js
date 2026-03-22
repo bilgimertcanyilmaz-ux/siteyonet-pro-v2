@@ -229,7 +229,7 @@ function initApp() {
 // ═══════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════
-const DEF_STATE = { apartmanlar:[], denetimler:[], teklifler:[], gorevler:[], asansorler:[], isletmeProjeler:[], kararlar:[], icralar:[], sakinler:[], personel:[], duyurular:[], arizalar:[], tahsilatlar:[], sigortalar:[], toplantılar:[], faturalar:[], finansIslemler:[], ayarlar:{}, gelirTanimlari:[], giderTanimlari:[], projeler:[], iletisimLoglari:[], duyuruOkundu:{}, otomasyonKurallari:[] };
+const DEF_STATE = { apartmanlar:[], denetimler:[], teklifler:[], gorevler:[], asansorler:[], isletmeProjeler:[], kararlar:[], icralar:[], sakinler:[], personel:[], duyurular:[], arizalar:[], tahsilatlar:[], sigortalar:[], toplantılar:[], faturalar:[], finansIslemler:[], ayarlar:{}, gelirTanimlari:[], giderTanimlari:[], projeler:[], iletisimLoglari:[], duyuruOkundu:{}, otomasyonKurallari:[], gorevBildirimleri:[] };
 let S = { ...DEF_STATE };
 
 // ══════════════════════════════════════════════════
@@ -2472,18 +2472,24 @@ function renderKarsil() {
 function openGovModal(id=null) {
  editId=id;
  document.getElementById('mod-gov-title').textContent = id?'️ Görev Düzenle':' Yeni Görev';
+ // Personel select'i doldur
+ const perSel = document.getElementById('gov-atanan');
+ const aktifPer = (S.personel||[]).filter(p=>p.durum!=='pasif');
+ perSel.innerHTML = '<option value="">— Personel Seçin —</option>' +
+   aktifPer.map(p=>`<option value="${p.id}">${p.ad}${p.gorev?' — '+(perGorevLbl[p.gorev]||p.gorev):''}</option>`).join('');
  if (id) {
  const g=S.gorevler.find(x=>x.id===id);
  document.getElementById('gov-baslik').value=g.baslik;
  document.getElementById('gov-apt').value=g.aptId||'';
  document.getElementById('gov-kat').value=g.kat||'bakim';
- document.getElementById('gov-atanan').value=g.atanan||'';
+ perSel.value=g.atananId||'';
  document.getElementById('gov-oncelik').value=g.oncelik;
  document.getElementById('gov-bas').value=g.bas||'';
  document.getElementById('gov-son').value=g.son||'';
  document.getElementById('gov-aciklama').value=g.aciklama||'';
  } else {
- ['gov-baslik','gov-atanan','gov-aciklama','gov-bas','gov-son'].forEach(id=>document.getElementById(id).value='');
+ perSel.value='';
+ ['gov-baslik','gov-aciklama','gov-bas','gov-son'].forEach(fid=>document.getElementById(fid).value='');
  document.getElementById('gov-oncelik').value='normal';
  document.getElementById('gov-kat').value='bakim';
  document.getElementById('gov-apt').value='';
@@ -2494,11 +2500,16 @@ function openGovModal(id=null) {
 function saveGov() {
  const b=document.getElementById('gov-baslik').value.trim();
  if (!b){toast('Başlık zorunlu!','err');return;}
+ const perSel=document.getElementById('gov-atanan');
+ const atananId=perSel.value;
+ if (!atananId){toast('Lütfen atanacak personeli seçin.','err');return;}
+ const per=(S.personel||[]).find(p=>p.id==atananId)||{};
  const apt=aptById(document.getElementById('gov-apt').value);
+ const eskiAtananId=editId?S.gorevler.find(x=>x.id===editId)?.atananId:null;
  const gov={
  id:editId||Date.now(), baslik:b, aptId:apt?.id||null, aptAd:apt?.ad||'—',
  kat:document.getElementById('gov-kat').value,
- atanan:document.getElementById('gov-atanan').value,
+ atanan:per.ad||'', atananId:per.id||null,
  oncelik:document.getElementById('gov-oncelik').value,
  bas:document.getElementById('gov-bas').value,
  son:document.getElementById('gov-son').value,
@@ -2508,8 +2519,20 @@ function saveGov() {
  };
  if (editId){const i=S.gorevler.findIndex(x=>x.id===editId);if(i>=0)S.gorevler[i]=gov;}
  else S.gorevler.push(gov);
+ // Bildirim: yeni görev veya atanan değiştiyse
+ if (!S.gorevBildirimleri) S.gorevBildirimleri=[];
+ if (!editId || (editId && eskiAtananId!=per.id)) {
+   S.gorevBildirimleri.push({
+     id:Date.now(), govId:gov.id, baslik:b,
+     atananId:per.id, atananAd:per.ad||'',
+     aptAd:apt?.ad||'', oncelik:gov.oncelik,
+     tarih:new Date().toISOString().slice(0,10),
+     okundu:false
+   });
+ }
  save();closeModal('mod-gov');
- toast(editId?'Görev güncellendi.':'Görev eklendi.','ok');
+ toast((editId?'Görev güncellendi':'Görev eklendi')+' — '+per.ad+' bildirim aldı.','ok');
+ updateNotifDot();
 }
 
 function renderGov() {
@@ -5666,6 +5689,15 @@ function buildNotifs() {
     if (d < 0) items.push({type:'danger', icon:'<svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 10l3-3 3 3M9 14l3 3 3-3"/></svg>', title:`${a.aptAd} — ${a.bolum||'Asansör'}`, sub:`Muayene ${Math.abs(d)} gün önce doldu!`, page:'asansor'});
     else if (d <= 30) items.push({type:'warn', icon:'<svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 10l3-3 3 3M9 14l3 3 3-3"/></svg>', title:`${a.aptAd} — ${a.bolum||'Asansör'}`, sub:`Muayene ${d} gün içinde`, page:'asansor'});
   });
+  // Personele atanan görev bildirimleri (okunmamış)
+  (S.gorevBildirimleri||[]).filter(b=>!b.okundu).forEach(b=>{
+    const onBadgeTxt = b.oncelik==='acil'?'⚡ Acil':b.oncelik==='yuksek'?'↑ Yüksek':'';
+    items.push({type: b.oncelik==='acil'?'danger':'info',
+      icon:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 9l2 2 4-4"/><line x1="16" y1="10" x2="19" y2="10"/><path d="M8 15l2 2 4-4"/><line x1="16" y1="16" x2="19" y2="16"/></svg>',
+      title:`${b.atananAd} — ${b.baslik}`,
+      sub:`Görev atandı${b.aptAd?' — '+b.aptAd:''}${onBadgeTxt?' ('+onBadgeTxt+')':''}`,
+      page:'gorevler', bildirimId:b.id});
+  });
   // Acil görevler
   S.gorevler.filter(g=>g.durum!=='tamamlandi'&&g.oncelik==='acil').forEach(g=>{
     items.push({type:'danger', icon:'<svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>', title:g.baslik, sub:`Acil görev — ${g.aptAd||''}`, page:'gorevler'});
@@ -5701,8 +5733,13 @@ function toggleNotifPanel() {
     if (!items.length) { list.innerHTML = '<div class="notif-empty">🎉 Bildirim yok</div>'; return; }
     const colors = {danger:'var(--err-bg)', warn:'rgba(255,171,0,.1)', info:'rgba(79,110,247,.08)'};
     const txtColors = {danger:'var(--err)', warn:'var(--warn)', info:'var(--brand)'};
-    list.innerHTML = items.map(i=>`<div class="notif-item" onclick="goPage('${i.page}');toggleNotifPanel()" style="cursor:pointer"><div class="notif-ico" style="background:${colors[i.type]};color:${txtColors[i.type]};font-size:${i.icon.startsWith('<')?'':'16px'}">${i.icon}</div><div class="notif-txt"><strong>${i.title}</strong><span>${i.sub}</span></div></div>`).join('');
+    list.innerHTML = items.map(i=>`<div class="notif-item" onclick="${i.bildirimId?'markGorevBildirimOkundu('+i.bildirimId+');':''}goPage('${i.page}');toggleNotifPanel()" style="cursor:pointer"><div class="notif-ico" style="background:${colors[i.type]};color:${txtColors[i.type]};font-size:${i.icon.startsWith('<')?'':'16px'}">${i.icon}</div><div class="notif-txt"><strong>${i.title}</strong><span>${i.sub}</span></div></div>`).join('');
   }
+}
+function markGorevBildirimOkundu(id) {
+  if (!S.gorevBildirimleri) return;
+  const b = S.gorevBildirimleri.find(x=>x.id===id);
+  if (b) { b.okundu=true; save(); updateNotifDot(); }
 }
 function updateNotifDot() {
   const n = buildNotifs().filter(i=>i.type==='danger').length;
