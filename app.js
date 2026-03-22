@@ -7183,21 +7183,26 @@ function renderSakinCari(sk, opts) {
     });
 
     return `<div class="cari-islem-hdr">
-      <div>Tarih</div>
-      <div>Açıklama</div>
+      <div>Tarih / Açıklama</div>
       <div class="ci-hdr-borc">Borç</div>
+      <div class="ci-hdr-tazminat">Tazminat</div>
       <div class="ci-hdr-alacak">Alacak</div>
       <div class="ci-hdr-bakiye">Bakiye</div>
     </div>` + rows.map(r => {
       const isOverdue = r._tip === 'borc' && r.sonOdeme && r.sonOdeme < nowStr;
       const bakCls = r._cum > 0.01 ? 'bak-d' : r._cum < -0.01 ? 'bak-a' : 'bak-z';
+      const tazVal = r.tazminat > 0 ? `<span class="ci-tutar tazminat">₺${fmt(r.tazminat)}</span>` : '<span class="ci-dash">—</span>';
       const vadeBadge = r._tip === 'borc' && r.sonOdeme
         ? `<div class="ci-vade">${isOverdue ? '<span class="ci-overdue-badge">GECİKTİ</span>' : ''}<span class="ci-vade-dt" style="color:${isOverdue ? 'var(--err)' : 'var(--tx-3)'}">${r.sonOdeme}</span></div>`
         : '';
       return `<div class="cari-islem-row ci-${r._tip}${isOverdue ? ' row-overdue' : ''}">
-        <div class="ci-tarih">${r.evrakTarih || '—'}${vadeBadge}</div>
-        <div class="ci-aciklama" title="${r.aciklama || ''}">${r.aciklama || '—'}</div>
+        <div class="ci-label-cell">
+          <span class="ci-tarih">${r.evrakTarih || '—'}</span>
+          <span class="ci-aciklama" title="${r.aciklama || ''}">${r.aciklama || '—'}</span>
+          ${vadeBadge}
+        </div>
         <div class="ci-col-borc">${r._tip === 'borc' ? `<span class="ci-tutar borc">₺${fmt(r._tutar)}</span>` : '<span class="ci-dash">—</span>'}</div>
+        <div class="ci-col-tazminat">${tazVal}</div>
         <div class="ci-col-alacak">${r._tip === 'alacak' ? `<span class="ci-tutar alacak">₺${fmt(r._tutar)}</span>` : '<span class="ci-dash">—</span>'}</div>
         <div class="ci-cumbal ${bakCls}">
           <span>₺${fmt(Math.abs(r._cum))}</span>
