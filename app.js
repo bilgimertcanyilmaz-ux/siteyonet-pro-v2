@@ -7231,56 +7231,104 @@ function renderSakinCari(sk, opts) {
   const uid = sk.id + '_' + Date.now();
 
   const el = document.getElementById('sakin-cari-content');
+  const netCls = topBakiye>0.01?'err':fazlaOdeme>0?'ok':'neu';
+  const netLbl = topBakiye>0.01?'BORÇLU':fazlaOdeme>0?'ALACAKLI':'KAPALI';
+  const ico = (p) => `<svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0">${p}</svg>`;
+
   el.innerHTML = `<div class="cari-page">
 
-    <!-- ══ HERO BANNER ══ -->
-    <div class="cari-banner">
-      <svg class="cari-banner-bg" viewBox="0 0 400 160" preserveAspectRatio="xMaxYMax meet" fill="white">
-        <rect x="0" y="72" width="48" height="88"/><rect x="6" y="56" width="8" height="16"/>
-        <rect x="53" y="48" width="52" height="112"/><rect x="58" y="32" width="9" height="16"/><rect x="72" y="38" width="9" height="10"/>
-        <rect x="112" y="38" width="46" height="122"/><rect x="117" y="20" width="9" height="18"/><rect x="131" y="26" width="9" height="12"/>
-        <rect x="164" y="62" width="36" height="98"/>
-        <rect x="206" y="22" width="58" height="138"/><rect x="213" y="6" width="10" height="16"/><rect x="229" y="12" width="10" height="10"/>
-        <rect x="270" y="50" width="42" height="110"/>
-        <rect x="318" y="8" width="50" height="152"/><rect x="326" y="0" width="9" height="8"/><rect x="341" y="4" width="9" height="4"/>
-        <rect x="374" y="42" width="38" height="118"/>
-      </svg>
+  <!-- ══ SOL PANEL ══ -->
+  <div class="cari-side">
 
-      <div class="cari-banner-profile">
+    <!-- Profil kartı -->
+    <div class="cari-profile-card">
+      <svg class="cpc-bg" viewBox="0 0 220 180" fill="white">
+        <rect x="0" y="60" width="32" height="120"/><rect x="4" y="46" width="6" height="14"/>
+        <rect x="36" y="34" width="38" height="146"/><rect x="40" y="20" width="7" height="14"/><rect x="51" y="26" width="7" height="8"/>
+        <rect x="80" y="22" width="34" height="158"/><rect x="84" y="8" width="7" height="14"/><rect x="95" y="14" width="7" height="8"/>
+        <rect x="120" y="44" width="28" height="136"/>
+        <rect x="154" y="10" width="44" height="170"/><rect x="159" y="0" width="8" height="10"/><rect x="172" y="4" width="8" height="6"/>
+        <rect x="202" y="30" width="30" height="150"/>
+      </svg>
+      <div class="cpc-head">
         <div class="cari-avatar">${initials}</div>
-        <div class="cari-banner-meta">
-          <div class="cari-banner-apt-lbl">${aptAd} · ${daireLabel}</div>
-          <div class="cari-banner-name" onclick="goDaireDetay(${sk.id});window._cariFromDaire=false">
+        <div class="cpc-meta">
+          <div class="cpc-name" onclick="goDaireDetay(${sk.id});window._cariFromDaire=false">
             ${sk.ad.toUpperCase()}
-            <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:rgba(255,255,255,.7);fill:none;stroke-width:2.5;flex-shrink:0"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:rgba(255,255,255,.7);fill:none;stroke-width:2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
           </div>
-          <div class="cari-banner-contact">
-            ${sk.email ? `<span><svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:rgba(255,255,255,.75);fill:none;stroke-width:2;flex-shrink:0"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>${sk.email}</span>` : ''}
-            ${sk.tel   ? `<span><svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:rgba(255,255,255,.75);fill:none;stroke-width:2;flex-shrink:0"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.35 2 2 0 0 1 3.6 1.15h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6 6l.92-1.87a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.54 16z"/></svg>${sk.tel}</span>` : ''}
-          </div>
+          <div class="cpc-unit">${aptAd}</div>
+          <div class="cpc-type">${sk.tip==='kiralik'?'Kiracı':'Malik'} · ${(sk.blok?(sk.blok.replace(/\s*blok\s*/i,'').trim()+' – '):'') + (sk.daire||'?')}</div>
         </div>
       </div>
+      ${(sk.email||sk.tel)?`<div class="cpc-contact">
+        ${sk.email?`<span><svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:rgba(255,255,255,.75);fill:none;stroke-width:2"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>${sk.email}</span>`:''}
+        ${sk.tel?`<span><svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:rgba(255,255,255,.75);fill:none;stroke-width:2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.35 2 2 0 0 1 3.6 1.15h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6 6l.92-1.87a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.54 16z"/></svg>${sk.tel}</span>`:''}
+      </div>`:''}
+    </div>
 
-      <div class="cari-banner-divider"></div>
+    <!-- Net bakiye hero -->
+    <div class="cari-net-card">
+      <div class="cari-net-lbl">Net Bakiye</div>
+      <div class="cari-net-val ${netCls}">₺${fmt(Math.abs(topBakiye))}</div>
+      <div><span class="cari-net-badge ${netCls}">${netLbl}</span></div>
+    </div>
 
-      <div class="cari-banner-stats">
-        <div class="cbs-item">
-          <div class="cbs-lbl">Toplam Borç</div>
-          <div class="cbs-val">₺${fmt(topBorc)}</div>
+    <!-- Finansal özet -->
+    <div class="cari-fin-cards">
+      <div class="cari-fin-card">
+        <div class="cfc-lbl">
+          <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:var(--err);fill:none;stroke-width:2"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+          Toplam Borç
         </div>
-        <div class="cbs-item">
-          <div class="cbs-lbl">Fazla Ödeme</div>
-          <div class="cbs-val">₺${fmt(fazlaOdeme)}</div>
+        <div class="cfc-val ${topBorc>0?'err':'muted'}">₺${fmt(topBorc)}</div>
+      </div>
+      <div class="cari-fin-card">
+        <div class="cfc-lbl">
+          <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:var(--ok);fill:none;stroke-width:2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M2 11h20"/><circle cx="6" cy="16" r="1.5" fill="var(--ok)" stroke="none"/></svg>
+          Toplam Ödeme
         </div>
-        <div class="cbs-item cbs-main-item">
-          <div class="cbs-lbl">Net Bakiye</div>
-          <div class="cbs-val large">₺${fmt(Math.abs(topBakiye))}</div>
-          <div class="cbs-badge ${topBakiye>0.01?'err':fazlaOdeme>0?'ok':'neu'}">${topBakiye>0.01?'BORÇLU':fazlaOdeme>0?'ALACAKLI':'KAPALI'}</div>
+        <div class="cfc-val ${topAlacak>0?'ok':'muted'}">₺${fmt(topAlacak)}</div>
+      </div>
+      <div class="cari-fin-card">
+        <div class="cfc-lbl">
+          <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:var(--brand);fill:none;stroke-width:2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          Fazla Ödeme
         </div>
+        <div class="cfc-val ${fazlaOdeme>0?'ok':'muted'}">₺${fmt(fazlaOdeme)}</div>
       </div>
     </div>
 
-    <!-- ══ FİLTRE BAR ══ -->
+    <!-- Aksiyon butonları -->
+    <div class="cari-side-btns">
+      <button class="csb-btn cp" onclick="openAidatBorcDaire(${sk.id})">
+        ${ico('<path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>')}
+        Borçlandır
+      </button>
+      <button class="csb-btn cs" onclick="openHizliOdeme(${sk.id},'')">
+        ${ico('<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M2 11h20"/>')}
+        Tahsil Et
+      </button>
+      <button class="csb-btn cs" onclick="openHizliOdeme(${sk.id},'')">
+        ${ico('<path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/>')}
+        Detaylı Tahsil
+      </button>
+      <button class="csb-btn cs" onclick="toast('Kart ile tahsilat yakında aktif olacak.','info')">
+        ${ico('<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M2 11h20"/><circle cx="6" cy="16" r="1.5"/>')}
+        Kart ile Tahsil
+      </button>
+      <button class="csb-btn cg" onclick="window._cariFromDaire?goPage('daire-detay'):goPage('sakinler')">
+        ${ico('<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>')}
+        Kapat
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ══ SAĞ ANA İÇERİK ══ -->
+  <div class="cari-main">
+
+    <!-- Filtre bar -->
     <div class="cari-filter-bar">
       <div class="cari-filter-left">
         <div class="cari-toggle" onclick="cariToggleOpt('tumKirilim',${sk.id})">
@@ -7296,12 +7344,12 @@ function renderSakinCari(sk, opts) {
       <div class="cari-date-range">
         <label>Dönem</label>
         <input type="date" id="cari-dt-bas" value="${startDate}" onchange="cariDateChange(${sk.id})">
-        <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:var(--tx-3);fill:none;stroke-width:2;flex-shrink:0"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        <svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:var(--tx-3);fill:none;stroke-width:2;flex-shrink:0"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         <input type="date" id="cari-dt-bit" value="${endDate}" onchange="cariDateChange(${sk.id})">
       </div>
     </div>
 
-    <!-- ══ AKORDİYON TABLO ══ -->
+    <!-- Akordiyön tablo -->
     <div class="cari-accordion">
       <div class="cari-acc-hdr">
         <div>Kalem / Daire</div>
@@ -7315,7 +7363,7 @@ function renderSakinCari(sk, opts) {
         <div class="cd-label">
           <span id="daire-chev-${uid}" style="transition:transform .2s;font-size:10px;color:var(--tx-3)">▼</span>
           <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--brand);fill:none;stroke-width:2;flex-shrink:0"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          <span>${(sk.blok?(sk.blok.replace(/\s*blok\s*/i,'').trim()+' - '):'')+(sk.daire||'?')}</span>
+          <span>${(sk.blok?(sk.blok.replace(/\s*blok\s*/i,'').trim()+' – '):'')+(sk.daire||'?')}</span>
           <span class="cd-type-badge">${sk.tip==='kiralik'?'Kiracı':'Malik'}</span>
         </div>
         <div class="cd-num red" style="text-align:right">${topBorc>0?'₺'+fmt(topBorc):'—'}</div>
@@ -7341,30 +7389,6 @@ function renderSakinCari(sk, opts) {
     </div>
 
   </div>
-
-  <!-- ══ SABİT AKSİYON BARI ══ -->
-  <div class="cari-bottom-bar">
-    <span class="cb-label">İşlemler</span>
-    <button class="btn brd sm" onclick="openAidatBorcDaire(${sk.id})">
-      <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
-      Borçlandır
-    </button>
-    <button class="btn bp sm" onclick="openHizliOdeme(${sk.id},'')">
-      <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-      Tahsil Et
-    </button>
-    <button class="btn bg sm" onclick="openHizliOdeme(${sk.id},'')">
-      <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-      Detaylı Tahsil Et
-    </button>
-    <button class="btn bg sm" onclick="toast('Kart ile tahsilat yakında aktif olacak.','info')">
-      <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-      Kart ile Tahsil Et
-    </button>
-    <button class="btn bg sm cb-close" onclick="window._cariFromDaire?goPage('daire-detay'):goPage('sakinler')">
-      <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      Kapat
-    </button>
   </div>`;
 
   // Store opts for toggles
