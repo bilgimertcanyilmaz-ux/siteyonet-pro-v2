@@ -7748,16 +7748,20 @@ function openCariKayitEdit(srcType, srcId, sakId) {
   document.getElementById('cke-tutar').value = tutar;
   document.getElementById('cke-aciklama').value = aciklama;
 
-  // Kategori (sadece borç için)
+  // Kategori — her iki kayıt tipinde de göster
   const katWrap = document.getElementById('cke-kat-wrap');
   const katEl = document.getElementById('cke-kategori');
+  katWrap.style.display = '';
   if (srcType === 'borclandir') {
-    katWrap.style.display = '';
     const gelirler = getGelirTanimlari();
     katEl.innerHTML = gelirler.map(t => `<option value="${t.ad}">${t.ikon || ''} ${t.ad}</option>`).join('');
-    katEl.value = rec.detay.kategori || 'Aidat';
+    katEl.value = rec.detay.kategori || (gelirler[0]?.ad || '');
   } else {
-    katWrap.style.display = 'none';
+    // Tahsilat: gelir + gider tanımları optgroup olarak
+    const gelirOpts = getGelirTanimlari().map(t => `<option value="${t.ad}">${t.ikon || ''} ${t.ad}</option>`).join('');
+    const giderOpts = getGiderTanimlari().map(t => `<option value="${t.ad}">${t.ikon || ''} ${t.ad}</option>`).join('');
+    katEl.innerHTML = `<option value="">— Kategori seçin —</option><optgroup label="💰 Gelir Kategorileri">${gelirOpts}</optgroup><optgroup label="💸 Gider Kategorileri">${giderOpts}</optgroup>`;
+    katEl.value = rec.tahsilat.kategori || '';
   }
 
   openModal('mod-cari-kayit-edit');
@@ -7790,6 +7794,7 @@ function saveCariKayitEdit() {
     rec.tahsilat.tutar = tutar;
     rec.tahsilat.not = aciklama;
     rec.tahsilat.aciklama = aciklama;
+    if (kategori) rec.tahsilat.kategori = kategori;
   }
 
   save();
@@ -7895,10 +7900,12 @@ function renderTopluBorcPage() {
     donemEl.value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
   }
 
-  // Kategori listesi doldur
+  // Kategori listesi — her açılışta gelir tanımlarından tazele
   const katEl = document.getElementById('tbp-kategori');
-  if (katEl && !katEl.options.length) {
-    katEl.innerHTML = getGelirTanimlari().map(t=>`<option value="${t.ad}">${t.ikon||''} ${t.ad}</option>`).join('');
+  if (katEl) {
+    const curKat = katEl.value;
+    katEl.innerHTML = getGelirTanimlari().map(t => `<option value="${t.ad}">${t.ikon || ''} ${t.ad}</option>`).join('');
+    if (curKat) katEl.value = curKat; // seçili değeri koru
   }
 }
 
