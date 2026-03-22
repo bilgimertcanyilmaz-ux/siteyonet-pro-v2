@@ -1058,11 +1058,54 @@ select.fi,select.fs{
 
   #main{width:100%;min-width:0;}
 
-  #topbar{padding:0 14px;gap:10px;}
-  #page-title{font-size:16px;font-weight:800;}
+  /* ── Topbar 2-row on mobile ── */
+  #topbar{
+    height:auto;
+    min-height:var(--tb-h);
+    flex-wrap:wrap;
+    padding:0 14px;
+    gap:0;
+    align-items:stretch;
+  }
+  #hamburger{height:var(--tb-h);display:flex;align-items:center;}
+  #global-site-bar{height:var(--tb-h);display:flex;align-items:center;}
+  #topbar-right{height:var(--tb-h);display:flex;align-items:center;margin-left:auto;}
+  #page-title{
+    order:10;
+    flex:0 0 100%;
+    font-size:13.5px;font-weight:800;
+    padding:8px 0 10px;
+    border-top:1px solid var(--border);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    line-height:1.2;color:var(--tx);
+  }
 
-  #global-search-bar input{width:140px;}
-  #global-search-bar input:focus{width:170px;}
+  #global-search-bar input{width:130px;}
+  #global-search-bar input:focus{width:155px;}
+
+  /* ── Cari page mobile ── */
+  .cari-banner{
+    flex-direction:column;align-items:flex-start;
+    gap:16px;padding:20px 20px 22px;min-height:unset;
+  }
+  .cari-banner-divider{display:none;}
+  .cari-banner-stats{
+    width:100%;overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    padding-bottom:2px;
+    flex-wrap:nowrap;
+  }
+  .cbs-item{min-width:108px;flex-shrink:0;padding:12px 14px;}
+  .cari-filter-bar{flex-wrap:wrap;}
+  .cari-filter-left{flex-wrap:wrap;}
+  .cari-filter-sep{display:none;}
+  .cari-date-range{
+    border-left:none;border-top:1px solid var(--border);
+    width:100%;flex-wrap:wrap;
+  }
+  .cari-bottom-bar{left:0;padding:10px 14px;flex-wrap:wrap;gap:6px;}
+  .cari-bottom-bar .cb-label{display:none;}
+  .cari-bottom-bar .cb-close{margin-left:0;}
 
   #content{padding:14px 14px;}
 
@@ -1107,7 +1150,7 @@ select.fi,select.fs{
 }
 
 @media(max-width:480px){
-  :root{--tb-h:52px;}
+  :root{--tb-h:50px;}
   .sg{grid-template-columns:1fr 1fr;gap:8px;}
   .sc-val{font-size:20px;}
   .f3{grid-template-columns:1fr;}
@@ -1118,6 +1161,16 @@ select.fi,select.fs{
   #content{padding:12px 10px;}
   /* Smaller topbar actions */
   #topbar-acts .btn span{display:none;}
+  /* Tighter page title on tiny screens */
+  #page-title{font-size:12.5px;padding:6px 0 8px;}
+  /* Cari banner compact */
+  .cari-avatar{width:58px;height:58px;font-size:20px;}
+  .cari-banner-name{font-size:15px;}
+  .cbs-item{min-width:95px;padding:10px 12px;}
+  .cbs-val.large{font-size:18px;}
+  /* Bottom bar: scroll horizontally on tiny */
+  .cari-bottom-bar{overflow-x:auto;flex-wrap:nowrap;padding:8px 10px;}
+  .cari-bottom-bar .btn{flex-shrink:0;font-size:11.5px;padding:6px 10px;}
 }
 
 /* ── MOBILE UX IMPROVEMENTS ─────────────────── */
