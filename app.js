@@ -542,7 +542,7 @@ function toast(msg, type='') {
 // 
 // NAVIGATION
 // 
-const PAGE_TITLES = { dashboard:'Anasayfa', apartmanlar:'Apartmanlar', karar:'Karar Metni Oluşturucu', isletme:'İşletme Projesi', 'isl-detay':'İşletme Projesi Detay', denetim:'Denetim Raporları', 'den-detay':'Denetim Raporu Detay', asansor:'Asansör Etiket Kontrolü', 'asan-detay':'Asansör Detay', teklifler:'Teklifler', gorevler:'Görev Yönetimi', icra:'İcra Listesi', finans:'Gelir / Gider Takibi', ayarlar:'Ayarlar', sakinler:'Sakin Yönetimi', personel:'Personel Yönetimi', duyurular:'Duyuru & İletişim', ariza:'Arıza & Bakım Yönetimi', tahsilat:'Tahsilat & Borç Takibi', raporlar:'Raporlar & Analitik', 'ai-asistan':'AI Yönetim Asistanı', sigorta:'Sigorta Takibi', toplanti:'Toplantı Yönetimi', fatura:'Fatura & Hizmet Yönetimi', superadmin:'Süper Admin Paneli', 'apt-detay':'Apartman Detay', 'daire-detay':'Daire Detay', 'sakin-cari':'Kişilere Göre Finansal Durum', 'tanimlama':'Tanımlama — Gelir & Gider Kategorileri', 'proje':'Proje & Tadilat Takibi', 'iletisim':'İletişim Merkezi', 'toplu-borc':'Toplu Borçlandırma' };
+const PAGE_TITLES = { dashboard:'Anasayfa', apartmanlar:'Apartmanlar', karar:'Karar Metni Oluşturucu', isletme:'İşletme Projesi', 'isl-detay':'İşletme Projesi Detay', denetim:'Denetim Raporları', 'den-detay':'Denetim Raporu Detay', asansor:'Asansör Etiket Kontrolü', 'asan-detay':'Asansör Detay', teklifler:'Teklifler', gorevler:'Görev Yönetimi', icra:'İcra Listesi', finans:'Gelir / Gider Takibi', ayarlar:'Ayarlar', sakinler:'Sakin Yönetimi', personel:'Personel Yönetimi', duyurular:'Duyuru & İletişim', ariza:'Arıza & Bakım Yönetimi', tahsilat:'Tahsilat & Borç Takibi', raporlar:'Raporlar & Analitik', 'ai-asistan':'AI Yönetim Asistanı', sigorta:'Sigorta Takibi', toplanti:'Toplantı Yönetimi', fatura:'Fatura & Hizmet Yönetimi', superadmin:'Süper Admin Paneli', 'apt-detay':'Apartman Detay', 'daire-detay':'Daire Detay', 'sakin-cari':'Kişilere Göre Finansal Durum', 'tanimlama':'Evrak Kategorisi', 'proje':'Proje & Tadilat Takibi', 'iletisim':'İletişim Merkezi', 'toplu-borc':'Toplu Borçlandırma' };
 
 function goPage(p) {
  document.querySelectorAll('.ni').forEach(n => n.classList.toggle('on', n.dataset.p === p));
@@ -7373,11 +7373,14 @@ function renderSakinCari(sk, opts) {
         aidatIslemler.push({
           evrakTarih: kayit.tarih || '',
           sonOdeme: kayit.sonOdeme || kayit.tarih || '',
-          aciklama: `${kayit.donem || ''} Dönemi Aidat Borçlandırması / Borç mak.`,
+          aciklama: kayit.aciklama || `${kayit.donem || ''} Dönemi Aidat Borçlandırması / Borç mak.`,
           borcTutar: d.tutar || 0,
           alacakTutar: 0,
           tazminat: 0,
-          kategori: d.kategori || 'Aidat'
+          kategori: d.kategori || 'Aidat',
+          _srcType: 'borclandir',
+          _srcId: kayit.id,
+          _sakId: sk.id
         });
       }
     });
@@ -7391,7 +7394,10 @@ function renderSakinCari(sk, opts) {
     aciklama: o.not || o.aciklama || `(BE) Gönderen: ${sk.ad} Sorgu...`,
     borcTutar: 0,
     alacakTutar: o.tutar || 0,
-    tazminat: 0
+    tazminat: 0,
+    _srcType: 'tahsilat',
+    _srcId: o.id,
+    _sakId: sk.id
   }));
 
   // ── Doğrudan borç kaydı (devir) ──
@@ -7450,7 +7456,9 @@ function renderSakinCari(sk, opts) {
       const vadeBadge = r._tip === 'borc' && r.sonOdeme
         ? `<div class="ci-vade">${isOverdue ? '<span class="ci-overdue-badge">GECİKTİ</span>' : ''}<span class="ci-vade-dt" style="color:${isOverdue ? 'var(--err)' : 'var(--tx-3)'}">${r.sonOdeme}</span></div>`
         : '';
-      return `<div class="cari-islem-row ci-${r._tip}${isOverdue ? ' row-overdue' : ''}">
+      const editClick = r._srcType ? `onclick="openCariKayitEdit('${r._srcType}','${r._srcId}','${r._sakId}')" title="Kaydı düzenle"` : '';
+      const editCls = r._srcType ? ' ci-editable' : '';
+      return `<div class="cari-islem-row ci-${r._tip}${isOverdue ? ' row-overdue' : ''}${editCls}" ${editClick}>
         <div class="ci-label-cell">
           <span class="ci-tarih">${r.evrakTarih || '—'}</span>
           <span class="ci-aciklama" title="${r.aciklama || ''}">${r.aciklama || '—'}</span>
@@ -7656,6 +7664,21 @@ function renderSakinCari(sk, opts) {
 
   // Store opts for toggles
   window._cariOpts = { startDate, endDate, sadecGeciken, tumKirilim };
+
+  // Borçlandırma sonrası otomatik kategori vurgusu
+  if (window._cariAutoOpenKat) {
+    const hedefKat = window._cariAutoOpenKat;
+    setTimeout(() => {
+      document.querySelectorAll('.cari-kat-hdr').forEach(hdr => {
+        const lbl = hdr.querySelector('strong');
+        if (lbl && lbl.textContent.trim() === hedefKat) {
+          hdr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          hdr.classList.add('kat-flash');
+          setTimeout(() => hdr.classList.remove('kat-flash'), 2200);
+        }
+      });
+    }, 120);
+  }
 }
 
 function cariToggle(id) {
@@ -7687,6 +7710,95 @@ function cariDateChange(sakId) {
   window._cariOpts = opts;
   const sk = S.sakinler.find(s => s.id === +sakId);
   if (sk) renderSakinCari(sk, opts);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// CARİ KAYIT DÜZENLEME
+// ══════════════════════════════════════════════════════════════════════
+
+function openCariKayitEdit(srcType, srcId, sakId) {
+  srcId = +srcId; sakId = +sakId;
+  let rec = null;
+
+  if (srcType === 'borclandir') {
+    const kayit = (S.aidatBorclandir || []).find(k => k.id == srcId);
+    if (!kayit) { toast('Kayıt bulunamadı.', 'err'); return; }
+    const detay = (kayit.detaylar || []).find(d => d.sakId == sakId);
+    if (!detay) { toast('Detay bulunamadı.', 'err'); return; }
+    rec = { srcType, kayit, detay, sakId };
+  } else if (srcType === 'tahsilat') {
+    const t = (S.tahsilatlar || []).find(x => x.id == srcId);
+    if (!t) { toast('Kayıt bulunamadı.', 'err'); return; }
+    rec = { srcType, tahsilat: t, sakId };
+  }
+  if (!rec) return;
+  window._editingCariRec = rec;
+
+  // Başlık
+  document.getElementById('cke-tip').textContent = srcType === 'borclandir' ? '✏️ Borç Kaydı Düzenle' : '✏️ Tahsilat Kaydı Düzenle';
+
+  // Alanları doldur
+  const tarih = srcType === 'borclandir' ? (rec.kayit.tarih || '') : (rec.tahsilat.tarih || '');
+  const tutar = srcType === 'borclandir' ? (rec.detay.tutar || 0) : (rec.tahsilat.tutar || 0);
+  const aciklama = srcType === 'borclandir'
+    ? (rec.kayit.aciklama || '')
+    : (rec.tahsilat.not || rec.tahsilat.aciklama || '');
+
+  document.getElementById('cke-tarih').value = tarih;
+  document.getElementById('cke-tutar').value = tutar;
+  document.getElementById('cke-aciklama').value = aciklama;
+
+  // Kategori (sadece borç için)
+  const katWrap = document.getElementById('cke-kat-wrap');
+  const katEl = document.getElementById('cke-kategori');
+  if (srcType === 'borclandir') {
+    katWrap.style.display = '';
+    const gelirler = getGelirTanimlari();
+    katEl.innerHTML = gelirler.map(t => `<option value="${t.ad}">${t.ikon || ''} ${t.ad}</option>`).join('');
+    katEl.value = rec.detay.kategori || 'Aidat';
+  } else {
+    katWrap.style.display = 'none';
+  }
+
+  openModal('mod-cari-kayit-edit');
+}
+
+function saveCariKayitEdit() {
+  const rec = window._editingCariRec;
+  if (!rec) return;
+
+  const tarih = document.getElementById('cke-tarih').value;
+  const tutar = parseFloat(document.getElementById('cke-tutar').value) || 0;
+  const aciklama = document.getElementById('cke-aciklama').value.trim();
+  const kategori = document.getElementById('cke-kategori')?.value;
+
+  if (tutar <= 0) { toast('Tutar sıfırdan büyük olmalı!', 'err'); return; }
+
+  if (rec.srcType === 'borclandir') {
+    const eskiTutar = rec.detay.tutar || 0;
+    rec.kayit.tarih = tarih;
+    rec.kayit.aciklama = aciklama;
+    rec.detay.tutar = tutar;
+    if (kategori) rec.detay.kategori = kategori;
+    // Sakin borç farkını güncelle
+    const sk = S.sakinler.find(s => s.id === rec.sakId);
+    if (sk) sk.borc = Math.max(0, (sk.borc || 0) - eskiTutar + tutar);
+    // Toplam borcu yeniden hesapla
+    rec.kayit.toplamBorc = (rec.kayit.detaylar || []).reduce((s, d) => s + (d.tutar || 0), 0);
+  } else if (rec.srcType === 'tahsilat') {
+    rec.tahsilat.tarih = tarih;
+    rec.tahsilat.tutar = tutar;
+    rec.tahsilat.not = aciklama;
+    rec.tahsilat.aciklama = aciklama;
+  }
+
+  save();
+  closeModal('mod-cari-kayit-edit');
+  toast('Kayıt güncellendi!', 'ok');
+
+  // Cari sayfayı yeniden çiz
+  const sk = S.sakinler.find(s => s.id === rec.sakId);
+  if (sk) renderSakinCari(sk, window._cariOpts || {});
 }
 
 function openHizliOdeme(sakId, donem) {
@@ -8014,6 +8126,7 @@ function saveTopluBorcPage() {
   });
 
   save();
+  window._cariAutoOpenKat = kategori;
 
   // Başarı mesajı
   toast(`✅ ${ok} daire · ₺${fmt(toplamBorc)} borçlandırıldı. Tüm cariler güncellendi.`, 'ok');
@@ -8217,7 +8330,9 @@ function saveAidatBorcDaire() {
   } else {
     S.aidatBorclandir.push({ aptId: sk.aptId, donem, tarih: today(), sakinSayisi: 1, toplamBorc: tutar, detaylar: [{ sakId, ad: sk.ad, daire: sk.daire, tutar, kategori: document.getElementById('abd-kategori')?.value || 'Aidat' }] });
   }
+  const abdKat = document.getElementById('abd-kategori')?.value || 'Aidat';
   save();
+  window._cariAutoOpenKat = abdKat;
   closeModal('mod-aidat-borc-daire');
   toast(`${sk.ad} için ${donem} dönemi ₺${fmt(tutar)} borçlandırıldı.`, 'ok');
   const yr = document.querySelector('.dd-year-sel');

@@ -160,7 +160,7 @@
   </div>
   <div class="sb-sec">
     <div class="sb-sec-lbl">Araçlar</div>
-    <div class="ni" data-p="tanimlama" data-role="yonetici" data-tip="Tanımlama"><div class="nico"><svg viewBox="0 0 24 24"><line x1="3" y1="7" x2="21" y2="7"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="17" x2="21" y2="17"/><circle cx="8" cy="7" r="2.5"/><circle cx="16" cy="12" r="2.5"/><circle cx="10" cy="17" r="2.5"/></svg></div>Tanımlama</div>
+    <div class="ni" data-p="tanimlama" data-role="yonetici" data-tip="Evrak Kategorisi"><div class="nico"><svg viewBox="0 0 24 24"><line x1="3" y1="7" x2="21" y2="7"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="17" x2="21" y2="17"/><circle cx="8" cy="7" r="2.5"/><circle cx="16" cy="12" r="2.5"/><circle cx="10" cy="17" r="2.5"/></svg></div>Evrak Kategorisi</div>
     <div class="ni" data-p="proje" data-role="yonetici" data-tip="Proje Takibi"><div class="nico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18"/><rect x="6" y="5.5" width="6" height="2" rx="1"/><rect x="9" y="11.5" width="9" height="2" rx="1"/><rect x="6" y="17.5" width="5" height="2" rx="1"/></svg></div>Proje Takibi</div>
     <div class="ni" data-p="iletisim" data-role="yonetici" data-tip="İletişim"><div class="nico"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V9a2 2 0 0 1 2-2h1"/><path d="M5 4h13a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H9"/></svg></div>İletişim</div>
     <div class="ni" data-p="superadmin" data-role="superadmin" data-tip="Site Yönetimi"><div class="nico"><svg viewBox="0 0 24 24"><path d="M12 2L3 6v5c0 5.5 3.5 10.7 9 12 5.5-1.3 9-6.5 9-12V6L12 2z"/><rect x="8.5" y="9" width="2.5" height="2.5" rx=".5"/><rect x="13" y="9" width="2.5" height="2.5" rx=".5"/><rect x="8.5" y="13" width="2.5" height="2.5" rx=".5"/><rect x="13" y="13" width="2.5" height="2.5" rx=".5"/></svg></div>Site Yönetimi</div>
@@ -1846,6 +1846,43 @@
     <div class="modal-f">
       <button class="btn bg" onclick="closeModal('mod-aidat-borc-daire')">İptal</button>
       <button class="btn brd" onclick="saveAidatBorcDaire()"><svg viewBox="0 0 24 24"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg> Borçlandır</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Cari Kayıt Düzenle -->
+<div class="ov" id="mod-cari-kayit-edit">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-h">
+      <div class="modal-t" id="cke-tip">Kayıt Düzenle</div>
+      <button class="modal-x" onclick="closeModal('mod-cari-kayit-edit')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="fg">
+      <div class="f2 fg">
+        <div class="fgp">
+          <label class="lbl">Tarih</label>
+          <input type="date" class="fi" id="cke-tarih">
+        </div>
+        <div class="fgp">
+          <label class="lbl">Tutar (₺) *</label>
+          <input type="number" class="fi" id="cke-tutar" placeholder="0" min="0" step="0.01">
+        </div>
+      </div>
+      <div class="fgp" id="cke-kat-wrap">
+        <label class="lbl">Kategori</label>
+        <select class="fs" id="cke-kategori"></select>
+      </div>
+      <div class="fgp">
+        <label class="lbl">Açıklama</label>
+        <input class="fi" id="cke-aciklama" placeholder="Açıklama...">
+      </div>
+    </div>
+    <div class="modal-f">
+      <button class="btn bg" onclick="closeModal('mod-cari-kayit-edit')">İptal</button>
+      <button class="btn bp" onclick="saveCariKayitEdit()">
+        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Kaydet
+      </button>
     </div>
   </div>
 </div>
