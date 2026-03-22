@@ -6505,6 +6505,272 @@ function loadDemoData() {
   if (!confirm('Mevcut tüm veriler silinecek ve demo veriler yüklenecek. Devam etmek istiyor musunuz?')) return;
 
   const t = Date.now();
+  const AID = 1500; // aylık aidat
+
+  // ── APARTMAN ──────────────────────────────
+  const apt = {
+    id:t+1, ad:'Göksu Sitesi', adres:'Yeşiltepe Mah. Gül Sok. No:5',
+    mahalle:'Yeşiltepe', ilce:'Üsküdar', il:'İstanbul',
+    daireSayisi:24, katSayisi:6, yon:'Kerem Aslan', yonTel:'0532 400 50 60',
+    iban:'TR34 0001 0002 0003 0004 0005 06', insaatYili:'2008',
+    aidat:AID, hizmetBedeli:4500, asansor:'var', durum:'aktif', bloklar:[], daireler:[]
+  };
+
+  // ── 24 SAKİN (4 daire/kat × 6 kat) ───────
+  // [daire, kat, ad, tip, tel, giris, borc, ek_alanlar]
+  const _sd = [
+    ['1','1','Ahmet Yılmaz','malik','0532 101 11 11','2012-04-15',0,{tc:'11111111111',dogum:'1968-03-20',email:'ahmet.yilmaz@email.com',aidat:AID,arsa:112,tapu:'TK-0001',grup:'A'}],
+    ['2','1','Fatma Kaya','malik','0533 102 22 22','2015-08-10',0,{tc:'22222222222',dogum:'1975-07-14',email:'fatma.kaya@email.com',aidat:AID,arsa:118,tapu:'TK-0002',grup:'A'}],
+    ['3','1','Mehmet Çelik','malik','0544 103 33 33','2010-11-20',3000,{tc:'33333333333',dogum:'1962-12-05',aidat:AID,arsa:115,tapu:'TK-0003',grup:'A',not:'2 aylık aidat borcu mevcut'}],
+    ['4','1','Emine Doğan','kiralik','0505 104 44 44','2024-02-01',0,{tc:'44444444444',dogum:'1991-05-18',aidat:AID,kira:9500,depozito:19000,sozlasmeBas:'2024-02-01',sozlasmeBit:'2026-02-01',evSahibi:'Ali Koç',evSahibiTel:'0532 200 10 11',grup:'A'}],
+    ['5','2','Hasan Arslan','malik','0532 105 55 55','2011-06-30',0,{tc:'55555555555',dogum:'1970-09-22',aidat:AID,arsa:122,tapu:'TK-0005',grup:'B'}],
+    ['6','2','Ayşe Şahin','malik','0533 106 66 66','2018-03-15',0,{tc:'66666666666',dogum:'1985-01-30',email:'ayse.sahin@email.com',aidat:AID,arsa:108,tapu:'TK-0006',grup:'B'}],
+    ['7','2','Mustafa Öztürk','kiralik','0544 107 77 77','2025-04-01',1500,{tc:'77777777777',dogum:'1988-11-03',aidat:AID,kira:9000,depozito:18000,sozlasmeBas:'2025-04-01',sozlasmeBit:'2027-04-01',evSahibi:'Sema Şen',evSahibiTel:'0533 300 20 22',grup:'B',not:'Mart aidatı ödenmedi'}],
+    ['8','2','Zeynep Yıldız','malik','0505 108 88 88','2009-12-01',0,{tc:'88888888888',dogum:'1960-04-08',aidat:AID,arsa:125,tapu:'TK-0008',grup:'B'}],
+    ['9','3','İbrahim Güneş','malik','0532 109 99 99','2013-09-05',0,{tc:'99999999990',dogum:'1972-06-15',email:'ibrahim.gunes@email.com',aidat:AID,arsa:119,tapu:'TK-0009',grup:'C'}],
+    ['10','3','Hatice Aydın','malik','0533 110 10 10','2016-05-20',6000,{tc:'10101010101',dogum:'1958-02-28',aidat:AID,arsa:116,tapu:'TK-0010',grup:'C',not:'4 aylık aidat borcu — icra sürecinde'}],
+    ['11','3','Recep Aktaş','malik','0544 111 11 12','2014-07-10',0,{tc:'11011011011',dogum:'1966-10-18',aidat:AID,arsa:121,tapu:'TK-0011',grup:'C'}],
+    ['12','3','Meryem Coşkun','kiralik','0505 112 12 13','2023-09-01',0,{tc:'12012012012',dogum:'1995-03-25',email:'meryem.coskun@email.com',aidat:AID,kira:8800,depozito:17600,sozlasmeBas:'2023-09-01',sozlasmeBit:'2025-09-01',evSahibi:'Bülent Ateş',evSahibiTel:'0544 400 30 33',grup:'C'}],
+    ['13','4','Yusuf Kılıç','malik','0532 113 13 14','2017-02-28',0,{tc:'13013013013',dogum:'1979-08-07',email:'yusuf.kilic@email.com',aidat:AID,arsa:113,tapu:'TK-0013',grup:'D'}],
+    ['14','4','Habibe Erdoğan','malik','0533 114 14 15','2020-10-15',0,{tc:'14014014014',dogum:'1983-12-20',aidat:AID,arsa:117,tapu:'TK-0014',grup:'D'}],
+    ['15','4','Aliye Kaplan','malik','0544 115 15 16','2011-04-05',3000,{tc:'15015015015',dogum:'1965-07-11',aidat:AID,arsa:120,tapu:'TK-0015',grup:'D',not:'2 aylık aidat borcu'}],
+    ['16','4','Kemal Özdemir','kiralik','0505 116 16 17','2024-06-01',0,{tc:'16016016016',dogum:'1990-09-30',email:'kemal.ozdemir@email.com',aidat:AID,kira:9200,depozito:18400,sozlasmeBas:'2024-06-01',sozlasmeBit:'2026-06-01',evSahibi:'Tuğba Yıldız',evSahibiTel:'0505 500 40 44',grup:'D'}],
+    ['17','5','Sevgi Demirci','malik','0532 117 17 18','2019-01-20',0,{tc:'17017017017',dogum:'1977-04-14',aidat:AID,arsa:114,tapu:'TK-0017',grup:'E'}],
+    ['18','5','Hüseyin Taş','malik','0533 118 18 19','2015-11-10',0,{tc:'18018018018',dogum:'1969-11-22',email:'huseyin.tas@email.com',aidat:AID,arsa:123,tapu:'TK-0018',grup:'E'}],
+    ['19','5','Leyla Şimşek','malik','0544 119 19 20','2022-07-01',0,{tc:'19019019019',dogum:'1992-01-08',email:'leyla.simsek@email.com',aidat:AID,arsa:110,tapu:'TK-0019',grup:'E'}],
+    ['20','5','Cemil Yıldırım','kiralik','0505 120 20 21','2025-01-15',1500,{tc:'20020020020',dogum:'1986-05-17',aidat:AID,kira:9300,depozito:18600,sozlasmeBas:'2025-01-15',sozlasmeBit:'2027-01-15',evSahibi:'Recep Tan',evSahibiTel:'0532 600 50 55',grup:'E',not:'Mart aidatı ödenmedi'}],
+    ['21','6','Nermin Bulut','malik','0532 121 21 22','2013-03-08',0,{tc:'21021021021',dogum:'1974-08-19',aidat:AID,arsa:116,tapu:'TK-0021',grup:'F'}],
+    ['22','6','Tekin Özcan','malik','0533 122 22 23','2016-09-12',0,{tc:'22022022022',dogum:'1980-02-25',email:'tekin.ozcan@email.com',aidat:AID,arsa:119,tapu:'TK-0022',grup:'F'}],
+    ['23','6','Filiz Güler','malik','0544 123 23 24','2010-08-20',0,{tc:'23023023023',dogum:'1967-06-03',email:'filiz.guler@email.com',aidat:AID,arsa:124,tapu:'TK-0023',grup:'F'}],
+    ['24','6','Ramazan Avcı','kiralik','0505 124 24 25','2024-10-01',0,{tc:'24024024024',dogum:'1993-10-15',aidat:AID,kira:9100,depozito:18200,sozlasmeBas:'2024-10-01',sozlasmeBit:'2026-10-01',evSahibi:'Dilek Yılmaz',evSahibiTel:'0533 700 60 66',grup:'F'}],
+  ];
+  const sakinler = _sd.map((d,i) => ({
+    id:t+100+i+1, aptId:apt.id, aptAd:apt.ad,
+    daire:d[0], kat:d[1], ad:d[2], tip:d[3], tel:d[4], giris:d[5], borc:d[6],
+    durum:'aktif', ...d[7]
+  }));
+
+  // ── 6 AY AİDAT BORÇLANDIRMA ───────────────
+  // Ekim 2025 → Mart 2026
+  const _months = [
+    {donem:'2025-10',label:'Ekim 2025',   tarih:'2025-10-01',sonOdeme:'2025-10-10'},
+    {donem:'2025-11',label:'Kasım 2025',  tarih:'2025-11-01',sonOdeme:'2025-11-10'},
+    {donem:'2025-12',label:'Aralık 2025', tarih:'2025-12-01',sonOdeme:'2025-12-10'},
+    {donem:'2026-01',label:'Ocak 2026',   tarih:'2026-01-01',sonOdeme:'2026-01-10'},
+    {donem:'2026-02',label:'Şubat 2026',  tarih:'2026-02-01',sonOdeme:'2026-02-10'},
+    {donem:'2026-03',label:'Mart 2026',   tarih:'2026-03-01',sonOdeme:'2026-03-10'},
+  ];
+  const aidatBorclandir = _months.map(m => ({
+    aptId:apt.id, aptAd:apt.ad, donem:m.donem, tarih:m.tarih,
+    sonOdeme:m.sonOdeme, sakinSayisi:24, toplamBorc:24*AID,
+    detaylar: sakinler.map(s => ({sakId:s.id,ad:s.ad,daire:s.daire,tutar:AID,kategori:'Aidat'}))
+  }));
+
+  // ── TAHSİLATLAR ──────────────────────────
+  // Her daire için ödenen ay indisleri (0=Ekim..5=Mart)
+  // D3→[0,1,2,3]  D7→[0,1,2,3,4]  D10→[0,1]  D15→[0,1,2,3]  D20→[0,1,2,3,4]
+  const _paid = {'3':[0,1,2,3],'7':[0,1,2,3,4],'10':[0,1],'15':[0,1,2,3],'20':[0,1,2,3,4]};
+  const _payDay = {'1':5,'2':3,'3':7,'4':8,'5':4,'6':6,'7':2,'8':9,'9':5,'10':8,
+                   '11':3,'12':7,'13':4,'14':6,'15':9,'16':5,'17':3,'18':7,'19':8,
+                   '20':4,'21':6,'22':2,'23':9,'24':5};
+  const _yontem = ['havale','nakit','eft','havale','havale','eft','nakit','havale'];
+  const tahsilatlar = [];
+  let _tid = t+600;
+  sakinler.forEach(s => {
+    const paidIdx = _paid[s.daire] || [0,1,2,3,4,5];
+    paidIdx.forEach((mi,pi) => {
+      const m = _months[mi];
+      const day = String(_payDay[s.daire]||5).padStart(2,'0');
+      _tid++;
+      tahsilatlar.push({
+        id:_tid, aptId:apt.id, aptAd:apt.ad,
+        sakId:s.id, sakinId:s.id, sakinAd:s.ad, daire:s.daire,
+        tutar:AID, tarih:`${m.donem}-${day}`,
+        tip:'aidat', donem:m.label,
+        yontem:_yontem[(+s.daire+mi)%_yontem.length],
+        not:`${m.label} Aidat Ödemesi`
+      });
+    });
+  });
+
+  // ── PERSONEL ─────────────────────────────
+  const personel = [
+    {id:t+201,ad:'Faruk Demir',tc:'31111111111',gorev:'kapici',tel:'0532 201 01 02',email:'faruk.demir@email.com',aptId:apt.id,aptAd:apt.ad,maas:13500,bas:'2015-03-15',iban:'TR11 0001 0002 0003 0100 0000 01',durum:'aktif',not:'7/24 görev, bina yönetiminden sorumlu'},
+    {id:t+202,ad:'Gülşen Yılmaz',tc:'32222222222',gorev:'temizlik',tel:'0533 202 02 03',aptId:apt.id,aptAd:apt.ad,maas:10500,bas:'2019-06-01',durum:'aktif',not:'Hafta içi 08:00-17:00'},
+    {id:t+203,ad:'Selim Aksoy',tc:'33333333330',gorev:'teknisyen',tel:'0544 203 03 04',email:'selim.aksoy@email.com',aptId:apt.id,aptAd:apt.ad,maas:15000,bas:'2021-09-10',iban:'TR22 0001 0002 0003 0200 0000 02',durum:'aktif',not:'Elektrik ve sıhhi tesisat uzmanı'},
+    {id:t+204,ad:'Dilek Çelik',tc:'34444444440',gorev:'muhasebe',tel:'0505 204 04 05',email:'dilek.celik@email.com',aptId:apt.id,aptAd:apt.ad,maas:18000,bas:'2022-01-03',durum:'aktif',not:'Haftalık aidat takibi ve raporlama'},
+    {id:t+205,ad:'Hakan Kara',tc:'35555555550',gorev:'bahce',tel:'0532 205 05 06',aptId:apt.id,aptAd:apt.ad,maas:9500,bas:'2023-04-01',durum:'aktif',not:'Haftada 3 gün çalışır'},
+  ];
+
+  // ── GÖREVLER ─────────────────────────────
+  const gorevler = [
+    {id:t+301,baslik:'Çatı Akıntısı Onarımı',aptId:apt.id,aptAd:apt.ad,kat:'Çatı',atanan:'Selim Aksoy',atananId:t+203,oncelik:'acil',bas:'2026-03-05',son:'2026-03-20',aciklama:'6. kat koridorunda tavan akıntısı. Çatı izolasyonu hasarlı.',durum:'devam',ilerleme:35},
+    {id:t+302,baslik:'Asansör Periyodik Bakım',aptId:apt.id,aptAd:apt.ad,kat:'Tüm Katlar',atanan:'Lift Teknik A.Ş.',oncelik:'yuksek',bas:'2026-03-15',son:'2026-03-16',aciklama:'Yıllık periyodik bakım ve TSE muayenesi.',durum:'bekliyor',ilerleme:0},
+    {id:t+303,baslik:'Giriş Holü Boya Badana',aptId:apt.id,aptAd:apt.ad,kat:'Giriş',atanan:'Faruk Demir',atananId:t+201,oncelik:'normal',bas:'2026-04-01',son:'2026-04-07',aciklama:'Giriş holü ve 1. kat merdiven duvarları.',durum:'bekliyor',ilerleme:0},
+    {id:t+304,baslik:'Kalorifer Sistemi Bakımı',aptId:apt.id,aptAd:apt.ad,kat:'Bodrum',atanan:'Selim Aksoy',atananId:t+203,oncelik:'yuksek',bas:'2026-03-10',son:'2026-03-14',aciklama:'Mevsim sonu kalorifer sistemi boşaltma ve bakımı.',durum:'tamamlandi',ilerleme:100},
+    {id:t+305,baslik:'Otopark Şerit Boyama',aptId:apt.id,aptAd:apt.ad,kat:'-1',atanan:'Faruk Demir',atananId:t+201,oncelik:'normal',bas:'2026-04-10',son:'2026-04-12',aciklama:'Park yeri şerit boyaları yenileme.',durum:'bekliyor',ilerleme:0},
+    {id:t+306,baslik:'Güvenlik Kamerası Güncellemesi',aptId:apt.id,aptAd:apt.ad,kat:'2. ve 4. Kat',atanan:'Güvenlik Pro A.Ş.',oncelik:'yuksek',bas:'2026-03-20',son:'2026-03-22',aciklama:'2. ve 4. kat kameralar görüntü vermiyor.',durum:'bekliyor',ilerleme:0},
+    {id:t+307,baslik:'Bahçe İlkbahar Düzenlemesi',aptId:apt.id,aptAd:apt.ad,kat:'Zemin',atanan:'Hakan Kara',atananId:t+205,oncelik:'normal',bas:'2026-04-15',son:'2026-05-01',aciklama:'Çim ekimi, fidan dikimi ve sulama sistemi kontrolü.',durum:'bekliyor',ilerleme:0},
+    {id:t+308,baslik:'Su Deposu Yıllık Temizliği',aptId:apt.id,aptAd:apt.ad,kat:'Çatı',atanan:'Selim Aksoy',atananId:t+203,oncelik:'normal',bas:'2026-03-25',son:'2026-03-26',aciklama:'Yıllık su deposu temizlik ve dezenfeksiyonu.',durum:'devam',ilerleme:50},
+    {id:t+309,baslik:'Merdiven LED Dönüşümü',aptId:apt.id,aptAd:apt.ad,kat:'Tüm Katlar',atanan:'Selim Aksoy',atananId:t+203,oncelik:'normal',bas:'2025-12-10',son:'2025-12-15',aciklama:'Tüm merdiven ampulleri LED\'e dönüştürüldü. %40 enerji tasarrufu.',durum:'tamamlandi',ilerleme:100},
+    {id:t+310,baslik:'Koridor Halı Yenileme',aptId:apt.id,aptAd:apt.ad,kat:'1-3. Katlar',atanan:'Faruk Demir',atananId:t+201,oncelik:'normal',bas:'2026-02-20',son:'2026-02-25',aciklama:'1-3. kat koridor halıları yıpranmış, değiştirildi.',durum:'tamamlandi',ilerleme:100},
+  ];
+
+  // ── DUYURULAR ────────────────────────────
+  const duyurular = [
+    {id:t+401,aptId:apt.id,aptAd:apt.ad,baslik:'Mart 2026 Aidat Bildirimi',icerik:'Değerli sakinlerimiz,\n\nMart 2026 dönemi aidat ödemesinin ₺1.500 olduğunu hatırlatırız.\nSon ödeme tarihi: 10 Mart 2026\n\nIBAN: TR34 0001 0002 0003 0004 0005 06\n\nYönetim Kurulu',tip:'aidat',tarih:'2026-03-01',bitis:'2026-03-31'},
+    {id:t+402,aptId:apt.id,aptAd:apt.ad,baslik:'Çatı Onarım Çalışması (5-20 Mart)',icerik:'5-20 Mart 2026 tarihleri arasında çatı izolasyon onarımı yapılacaktır.\nÇalışma saatleri: 08:30-17:00\nGürültüden kaynaklanan rahatsızlık için özür dileriz.',tip:'bakim',tarih:'2026-03-03',bitis:'2026-03-20'},
+    {id:t+403,aptId:apt.id,aptAd:apt.ad,baslik:'Su Deposu Temizliği (25-26 Mart)',icerik:'25-26 Mart 2026 tarihlerinde su deposu periyodik temizliği yapılacaktır. Bu süreçte su kesintisi yaşanmayacaktır.',tip:'duyuru',tarih:'2026-03-22',bitis:'2026-03-27'},
+    {id:t+404,aptId:apt.id,aptAd:apt.ad,baslik:'Şubat 2026 Aidat Hatırlatması',icerik:'Şubat 2026 aidatını henüz ödemeyen sakinlerimizin ivedi ödeme yapması gerekmektedir. Son ödeme tarihi 10 Şubat 2026 geçmiştir.',tip:'aidat',tarih:'2026-02-12',bitis:'2026-02-28'},
+    {id:t+405,aptId:apt.id,aptAd:apt.ad,baslik:'LED Dönüşümü Tamamlandı',icerik:'Tüm merdiven ve ortak alan aydınlatmaları LED sisteme dönüştürülmüştür. Aylık elektrik faturasında yaklaşık %40 tasarruf beklenmektedir.',tip:'duyuru',tarih:'2025-12-18',bitis:'2026-01-18'},
+    {id:t+406,aptId:apt.id,aptAd:apt.ad,baslik:'Yeni Yıl 2026 Tebriği',icerik:'Göksu Sitesi Yönetim Kurulu olarak tüm sakinlerimizin yeni yılını kutlar, sağlık ve mutluluk dileriz.\n\nYönetim Kurulu',tip:'duyuru',tarih:'2025-12-31',bitis:'2026-01-07'},
+    {id:t+407,aptId:apt.id,aptAd:apt.ad,baslik:'Otopark Kullanım Kuralları',icerik:'Otopark içinde tekrarlayan park ihlalleri tespit edilmektedir. Lütfen yalnızca kendi tahsis alanınıza park ediniz. İhlal durumunda araç çektirilecektir.',tip:'duyuru',tarih:'2026-01-15',bitis:'2026-02-15'},
+    {id:t+408,aptId:apt.id,aptAd:apt.ad,baslik:'ACİL: Bodrum Kat Su Baskını',icerik:'18 Kasım 2025 gecesi yaşanan yoğun yağış nedeniyle bodrum katta su birikintisi oluşmuştur. Ekiplerimiz müdahale etmektedir. Bodrum kata inilmeyiniz.',tip:'acil',tarih:'2025-11-18',bitis:'2025-11-20'},
+  ];
+
+  // ── ARIZALAR ─────────────────────────────
+  const arizalar = [
+    {id:t+501,aptId:apt.id,aptAd:apt.ad,no:'ARZ-0501',baslik:'6. Kat Tavan Sızıntısı',aciklama:'6. kat B koridor tavanından su sızıyor, çatı izolasyonu bozulmuş',kat:'6',oncelik:'acil',durum:'devam',tarih:'2026-03-05',atanan:'Selim Aksoy',maliyetTahmini:8000,maliyetGercek:0},
+    {id:t+502,aptId:apt.id,aptAd:apt.ad,no:'ARZ-0502',baslik:'Asansör Kapı Sensörü',aciklama:'Asansör 3. katta kapı tam kapanmıyor, açık kalıyor',kat:'3',oncelik:'yuksek',durum:'acik',tarih:'2026-03-12',atanan:'Faruk Demir',maliyetTahmini:1500,maliyetGercek:0},
+    {id:t+503,aptId:apt.id,aptAd:apt.ad,no:'ARZ-0503',baslik:'Ana Elektrik Panosu',aciklama:'Bodrum elektrik panosunda sigortalar sık atıyor',kat:'Bodrum',oncelik:'acil',durum:'acik',tarih:'2026-03-08',atanan:'Selim Aksoy',maliyetTahmini:3500,maliyetGercek:0},
+    {id:t+504,aptId:apt.id,aptAd:apt.ad,no:'ARZ-0504',baslik:'4. Kat Radyatör Isınmıyor',aciklama:'4. kat merdiven arasındaki radyatör ısınmıyor',kat:'4',oncelik:'normal',durum:'kapandi',tarih:'2026-02-15',hedef:'2026-02-18',atanan:'Selim Aksoy',maliyetTahmini:800,maliyetGercek:650,kapanis:'2026-02-17'},
+    {id:t+505,aptId:apt.id,aptAd:apt.ad,no:'ARZ-0505',baslik:'Otopark Zemin Çatlağı',aciklama:'Otopark girişi zemin levhası çatlamış, tırmanma riski',kat:'-1',oncelik:'yuksek',durum:'acik',tarih:'2026-03-10',atanan:'Faruk Demir',maliyetTahmini:5000,maliyetGercek:0},
+    {id:t+506,aptId:apt.id,aptAd:apt.ad,no:'ARZ-0506',baslik:'2. Kat Ortak Tuvalet',aciklama:'2. kat ortak tuvalet sifonu tıkalı, kötü koku var',kat:'2',oncelik:'normal',durum:'tamam',tarih:'2025-12-22',hedef:'2025-12-24',atanan:'Selim Aksoy',maliyetTahmini:400,maliyetGercek:300,kapanis:'2025-12-23'},
+    {id:t+507,aptId:apt.id,aptAd:apt.ad,no:'ARZ-0507',baslik:'Bodrum Su Baskını Onarımı',aciklama:'Kasım yağışı sonrası bodrum zemin ve duvar hasarı tamiri',kat:'Bodrum',oncelik:'yuksek',durum:'kapandi',tarih:'2025-11-18',hedef:'2025-11-30',atanan:'Selim Aksoy',maliyetTahmini:12000,maliyetGercek:9800,kapanis:'2025-11-25'},
+    {id:t+508,aptId:apt.id,aptAd:apt.ad,no:'ARZ-0508',baslik:'Çatı Yağmur Olukları',aciklama:'Çatı yağmur olukları yaprak ve çamurla tıkalı',kat:'Çatı',oncelik:'normal',durum:'tamam',tarih:'2025-10-20',hedef:'2025-10-23',atanan:'Faruk Demir',maliyetTahmini:500,maliyetGercek:400,kapanis:'2025-10-22'},
+  ];
+
+  // ── SİGORTALAR ───────────────────────────
+  const sigortalar = [
+    {id:t+1101,aptId:apt.id,aptAd:apt.ad,tur:'dask',sirket:'Allianz Sigorta',no:'DASK-2025-GKS-001',bas:'2025-06-01',bit:'2026-06-01',prim:4800,acenta:'Yeşiltepe Sigorta Acentalık',acentaTel:'0216 400 40 41',not:'Bina deprem + konut paketi',tarih:'2025-05-28'},
+    {id:t+1102,aptId:apt.id,aptAd:apt.ad,tur:'asansor',sirket:'Mapfre Sigorta',no:'ASN-2025-GKS-002',bas:'2025-09-10',bit:'2026-03-10',prim:2200,acenta:'Yeşiltepe Sigorta Acentalık',acentaTel:'0216 400 40 41',not:'Muayene tarihi doldu — yenileme gerekli',tarih:'2025-09-05'},
+    {id:t+1103,aptId:apt.id,aptAd:apt.ad,tur:'yangin',sirket:'Axa Sigorta',no:'YNG-2025-GKS-003',bas:'2025-11-15',bit:'2026-11-15',prim:1800,acenta:'Güven Sigorta Ltd.',acentaTel:'0216 500 50 51',not:'Yangın sigortası aktif',tarih:'2025-11-12'},
+  ];
+
+  // ── TOPLANTILAR ──────────────────────────
+  const toplantılar = [
+    {id:t+1001,aptId:apt.id,aptAd:apt.ad,tur:'olagan',tarih:'2025-10-15',saat:'19:00',yer:'Apartman Toplantı Salonu',gundem:'2024-2025 hesap ibrası\nAidat belirleme\nYönetici seçimi\nÇatı onarımı bütçesi',katilim:19,durum:'tamamlandi',notlar:'Kerem Aslan oybirliğiyle yönetici seçildi. Aidat ₺1.500 belirlendi. Çatı için ₺90.000 bütçe ayrıldı.',kayitTarih:'2025-10-15'},
+    {id:t+1002,aptId:apt.id,aptAd:apt.ad,tur:'yonetim',tarih:'2025-12-05',saat:'20:00',yer:'Yönetim Ofisi',gundem:'Bodrum hasarı sigorta başvurusu\nKış bakım planı\nBorçlu sakinler görüşmesi',katilim:3,durum:'tamamlandi',notlar:'Sigorta başvurusu yapıldı. Hatice Aydın\'a yazılı uyarı gönderilmesine karar verildi.',kayitTarih:'2025-12-05'},
+    {id:t+1003,aptId:apt.id,aptAd:apt.ad,tur:'yonetim',tarih:'2026-02-10',saat:'19:30',yer:'Yönetim Ofisi',gundem:'Çatı teklif değerlendirmesi\nMart dönemi bütçe\nHatice Aydın icra kararı',katilim:3,durum:'tamamlandi',notlar:'İzoBuild teklifi onaylandı. Hatice Aydın için icra yoluna gidilmesine karar verildi.',kayitTarih:'2026-02-10'},
+    {id:t+1004,aptId:apt.id,aptAd:apt.ad,tur:'olaganustu',tarih:'2026-04-20',saat:'19:00',yer:'Apartman Toplantı Salonu',gundem:'Asansör modernizasyonu kararı\nOtopark zemin onarım paylaşımı\n2026 yılı 2. yarı bütçesi',katilim:0,durum:'planli',notlar:'',kayitTarih:'2026-03-15'},
+  ];
+
+  // ── FATURALAR (6 ay × 2) ─────────────────
+  const _fatDefs = [
+    ['2025-10','elektrik','İstanbul Elektrik Dağıtım A.Ş.',3800,'Ekim 2025 ortak alan elektriği','odendi'],
+    ['2025-10','dogalgaz','İGDAŞ',12400,'Ekim 2025 kalorifer doğalgazı','odendi'],
+    ['2025-11','elektrik','İstanbul Elektrik Dağıtım A.Ş.',4100,'Kasım 2025 ortak alan elektriği','odendi'],
+    ['2025-11','su','İSKİ',1650,'Kasım 2025 ortak su kullanımı','odendi'],
+    ['2025-12','elektrik','İstanbul Elektrik Dağıtım A.Ş.',4500,'Aralık 2025 ortak alan elektriği','odendi'],
+    ['2025-12','dogalgaz','İGDAŞ',16800,'Aralık 2025 kalorifer doğalgazı','odendi'],
+    ['2026-01','elektrik','İstanbul Elektrik Dağıtım A.Ş.',4300,'Ocak 2026 ortak alan elektriği','odendi'],
+    ['2026-01','dogalgaz','İGDAŞ',15200,'Ocak 2026 kalorifer doğalgazı','odendi'],
+    ['2026-02','elektrik','İstanbul Elektrik Dağıtım A.Ş.',4000,'Şubat 2026 ortak alan elektriği','odendi'],
+    ['2026-02','dogalgaz','İGDAŞ',13500,'Şubat 2026 kalorifer doğalgazı','odendi'],
+    ['2026-03','elektrik','İstanbul Elektrik Dağıtım A.Ş.',3600,'Mart 2026 ortak alan elektriği','bekliyor'],
+    ['2026-03','asansor','Lift Teknik A.Ş.',3200,'Mart 2026 asansör bakım sözleşmesi','bekliyor'],
+  ];
+  const _mLbl = {'2025-10':'Ekim 2025','2025-11':'Kasım 2025','2025-12':'Aralık 2025','2026-01':'Ocak 2026','2026-02':'Şubat 2026','2026-03':'Mart 2026'};
+  let _fid = t+1200;
+  const faturalar = _fatDefs.map((f,i) => {
+    _fid++;
+    return {id:_fid,aptId:apt.id,aptAd:apt.ad,tur:f[1],firma:f[2],donem:_mLbl[f[0]],
+      tarih:`${f[0]}-05`,son:`${f[0]}-20`,tutar:f[3],durum:f[5],
+      no:`FAT-${f[0].replace('-','')}-${String(i+1).padStart(3,'0')}`,not:f[4],kayitTarih:`${f[0]}-05`};
+  });
+
+  // ── FİNANS İŞLEMLERİ ────────────────────
+  const _finDefs = [
+    ['2025-10-15','gelir','aidat','Ekim 2025 Aidat Tahsilatı',33000,'22 daireden tahsilat (2 gecikmiş)'],
+    ['2025-10-31','gider','maas','Ekim 2025 Personel Maaşları',66500,'5 personel'],
+    ['2025-11-15','gelir','aidat','Kasım 2025 Aidat Tahsilatı',33000,'22 daireden tahsilat'],
+    ['2025-11-20','gider','onarim','Bodrum Su Baskını Onarımı',9800,'Sigorta başvurusu yapıldı'],
+    ['2025-11-30','gider','maas','Kasım 2025 Personel Maaşları',66500,'5 personel'],
+    ['2025-12-15','gelir','aidat','Aralık 2025 Aidat Tahsilatı',33000,'22 daireden tahsilat'],
+    ['2025-12-31','gider','maas','Aralık 2025 Personel Maaşları',66500,'5 personel'],
+    ['2026-01-15','gelir','aidat','Ocak 2026 Aidat Tahsilatı',33000,'22 daireden tahsilat'],
+    ['2026-01-31','gider','maas','Ocak 2026 Personel Maaşları',66500,'5 personel'],
+    ['2026-02-15','gelir','aidat','Şubat 2026 Aidat Tahsilatı',31500,'21 daireden tahsilat'],
+    ['2026-02-28','gider','maas','Şubat 2026 Personel Maaşları',66500,'5 personel'],
+    ['2026-03-15','gelir','aidat','Mart 2026 Aidat Tahsilatı',30000,'20 daireden tahsilat (4 gecikmiş)'],
+    ['2026-03-31','gider','maas','Mart 2026 Personel Maaşları',66500,'5 personel'],
+  ];
+  let _finid = t+1300;
+  const finansIslemler = _finDefs.map(f => ({
+    id:++_finid,aptId:apt.id,aptAd:apt.ad,tarih:f[0],tur:f[1],kat:f[2],aciklama:f[3],tutar:f[4],not:f[5]
+  }));
+
+  // ── DENETİMLER ───────────────────────────
+  const denetimler = [
+    {id:t+901,aptId:apt.id,aptAd:apt.ad,tarih:'2025-10-20',denetci:'Kerem Aslan',temizlik:8,guvenlik:7,teknik:7,cevre:9,altyapi:7,puan:76,notlar:'Genel durum iyi. Asansör muayene tarihi yaklaşıyor. Bodrum hafif nem sorunu.',onlem:'Asansör muayenesi Kasım\'da yaptırılacak. Bodrum nem izolasyonu değerlendirilecek.',sonraki:'2026-04-20'},
+    {id:t+902,aptId:apt.id,aptAd:apt.ad,tarih:'2026-01-10',denetci:'Kerem Aslan',temizlik:9,guvenlik:8,teknik:6,cevre:8,altyapi:7,puan:76,notlar:'Temizlik mükemmel. LED dönüşümü başarılı. Çatı izolasyonu hasarlı, onarım gerekli.',onlem:'Çatı izolasyon teklif alınması kararlaştırıldı.',sonraki:'2026-07-10'},
+    {id:t+903,aptId:apt.id,aptAd:apt.ad,tarih:'2026-03-05',denetci:'Kerem Aslan',temizlik:8,guvenlik:7,teknik:5,cevre:8,altyapi:6,puan:68,notlar:'Çatı onarımı devam ediyor. Asansör muayene gecikmesi var. Elektrik panosu sorunlu.',onlem:'Asansör bakım firmasıyla randevu alındı. Elektrik ustası çağrıldı.',sonraki:'2026-09-05'},
+  ];
+
+  // ── TEKLİFLER ────────────────────────────
+  const teklifler = [
+    {id:t+801,aptId:apt.id,aptAd:apt.ad,tarih:'2026-01-25',konu:'Çatı Su Yalıtımı',firma:'İzoBuild İnşaat',tutar:72000,kdv:20,kdvli:86400,gecerli:'2026-02-25',aciklama:'10 yıl garantili poliüretan kaplama — 220 m²',durum:'onaylandi'},
+    {id:t+802,aptId:apt.id,aptAd:apt.ad,tarih:'2026-01-28',konu:'Çatı Su Yalıtımı',firma:'ÇatıUsta Ltd.',tutar:81000,kdv:20,kdvli:97200,gecerli:'2026-02-28',aciklama:'8 yıl garantili bitümlü membran — 220 m²',durum:'reddedildi'},
+    {id:t+803,aptId:apt.id,aptAd:apt.ad,tarih:'2026-03-10',konu:'Asansör Modernizasyonu',firma:'Lift Teknik A.Ş.',tutar:55000,kdv:20,kdvli:66000,gecerli:'2026-04-10',aciklama:'Frekans konvertörü + yeni kapı sistemi',durum:'bekliyor'},
+  ];
+
+  // ── KARARLAR ─────────────────────────────
+  const kararlar = [
+    {id:t+851,aptId:apt.id,aptAd:apt.ad,tarih:'2025-10-15',no:'2025/001',tur:'olagan',katilim:19,oy:19,gundem:'Yönetici seçimi, aidat belirleme, çatı bütçesi, personel zam',metin:'KARAR METNİ\n\nGöksu Sitesi Olağan Kat Malikleri Kurulu Toplantısı\nTarih: 15.10.2025 | Katılım: 19/24 kat maliki\n\n1. Kerem Aslan yönetici olarak oybirliğiyle seçildi (1 yıl görev süresi).\n2. 2025-2026 dönemi aylık aidat ₺1.500 olarak belirlendi.\n3. Çatı izolasyon onarımı için ₺90.000 bütçe ayrılmasına karar verildi.\n4. Tüm personele %10 zam yapılmasına oybirliğiyle karar verildi.'},
+    {id:t+852,aptId:apt.id,aptAd:apt.ad,tarih:'2026-02-10',no:'2026/001',tur:'yonetim',katilim:3,oy:3,gundem:'Çatı teklif onayı, Hatice Aydın icra kararı',metin:'KARAR METNİ\n\nGöksu Sitesi Yönetim Kurulu Kararı\nTarih: 10.02.2026 | Katılım: 3 yönetim kurulu üyesi\n\n1. İzoBuild İnşaat\'ın ₺86.400 KDV dahil çatı izolasyon teklifi oybirliğiyle kabul edildi.\n2. Hatice Aydın (D.10) için birikmiş 4 aylık aidat borcu nedeniyle icra takibine başlanmasına karar verildi.'},
+  ];
+
+  // ── İCRA ─────────────────────────────────
+  const icralar = [
+    {id:t+861,aptId:apt.id,aptAd:apt.ad,borclu:'Hatice Aydın',daire:'10',avukat:'Av. Serdar Doğan',avukatTel:'0532 700 80 90',dosyaNo:'2026/İCR-0234',icraDairesi:'Üsküdar 2. İcra Müdürlüğü',tutar:6000,faiz:300,sebepTur:'aidat_borc',sebep:'Aidat Borcu',aciklama:'Aralık 2025 — Mart 2026 arası 4 aylık aidat borcu',durum:'devam',tarih:'2026-03-01',notlar:'Ödeme emri tebliğ edildi. Sakin itiraz etmedi.'},
+  ];
+
+  // ── ASANSÖRLER ───────────────────────────
+  const asansorler = [
+    {id:t+871,aptId:apt.id,aptAd:apt.ad,blok:'Ana Bina',asansorNo:'ASN-GKS-001',firma:'Lift Teknik A.Ş.',etiketTarih:'2025-09-10',sonTarih:'2026-03-10',bolum:'Muayene tarihi dolmuş — acil yenileme gerekli'},
+  ];
+
+  // ── STATE\'E YÜKLE ────────────────────────
+  S.apartmanlar    = [apt];
+  S.sakinler       = sakinler;
+  S.personel       = personel;
+  S.gorevler       = gorevler;
+  S.duyurular      = duyurular;
+  S.arizalar       = arizalar;
+  S.tahsilatlar    = tahsilatlar;
+  S.sigortalar     = sigortalar;
+  S.toplantılar    = toplantılar;
+  S.faturalar      = faturalar;
+  S.finansIslemler = finansIslemler;
+  S.denetimler     = denetimler;
+  S.teklifler      = teklifler;
+  S.kararlar       = kararlar;
+  S.icralar        = icralar;
+  S.asansorler     = asansorler;
+  S.aidatBorclandir = aidatBorclandir;
+  S.isletmeProjeler = [];
+  S.gelirTanimlari = [];
+  S.giderTanimlari = [];
+  S.projeler       = [];
+  S.gorevBildirimleri = [];
+  S.ayarlar = {
+    firma:'Göksu Sitesi Yönetimi', yonetici:'Kerem Aslan',
+    unvan:'Apartman Yöneticisi', tel:'0532 400 50 60',
+    mail:'yonetim@goksusitesi.com',
+    adres:'Yeşiltepe Mah. Gül Sok. No:5, Üsküdar, İstanbul'
+  };
+
+  save();
+  syncDropdowns();
+  selectedAptId = apt.id;
+  refreshUI();
+  goPage('dashboard');
+  toast('✅ Göksu Sitesi demo verisi yüklendi — 24 daire, 6 aylık kayıtlar hazır!', 'ok');
+}
+
+// ── ESKİ DEMO ARTIK KULLANILMIYOR (placeholder) ──
+function loadDemoData_OLD() {
+  const t = Date.now();
   const apt1 = { id: t+1, ad:'Yıldız Sitesi A Blok', adres:'Bağcılar Cad. No:12', mahalle:'Bağcılar', ilce:'Bağcılar', il:'İstanbul', daireSayisi:24, katSayisi:6, yon:'Ahmet Yıldız', yonTel:'0532 111 22 33', iban:'TR12 0001 0002 0003 0004 0005 06', insaatYili:'2005', aidat:1200, hizmetBedeli:3500, asansor:'var', durum:'aktif', bloklar:[{ad:'A Blok',asansorSayisi:1}], daireler:[] };
   const apt2 = { id: t+2, ad:'Güneş Residance', adres:'Atatürk Bul. No:45', mahalle:'Kadıköy', ilce:'Kadıköy', il:'İstanbul', daireSayisi:36, katSayisi:9, yon:'Fatma Demir', yonTel:'0533 222 33 44', iban:'TR34 0001 0002 0003 0004 0005 07', insaatYili:'2010', aidat:1800, hizmetBedeli:5200, asansor:'var', durum:'aktif', bloklar:[{ad:'B Blok',asansorSayisi:2}], daireler:[] };
 
