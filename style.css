@@ -1304,7 +1304,7 @@ select.fi,select.fs{
   .btn { min-height: 36px; }
   .act .btn { min-height: 32px; min-width: 32px; }
   .tw { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .tw table { min-width: 600px; }
+  .tw table { min-width: 340px; }
   .modal { max-height: 92vh; overflow-y: auto; }
   .sakin-kart { padding: 14px; }
 }
@@ -1753,3 +1753,378 @@ select.fi,select.fs{
   border-radius: 6px;
   font-size: 11px;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   MOBİL UYGULAMA RESPONSIVE — Kapsamlı Düzeltmeler
+   Hedef: Tüm sayfalarda 320px+ ekranlarda sıfır taşma
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Genel: overflow güvenliği ── */
+#main { overflow-x: hidden; }
+#content { overflow-x: hidden; }
+.modal-body { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* apt-switch dropdown: dar ekranda viewport taşmasını önle */
+.apt-switch-dropdown {
+  max-width: calc(100vw - 20px);
+  min-width: 200px;
+}
+
+/* ── @768px — Tablet genel düzeltmeler ── */
+@media (max-width: 768px) {
+
+  /* Apartman hero banner — mobilde dikey */
+  .apt-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px 20px;
+  }
+  .apt-hero-stats { flex-wrap: wrap; gap: 14px; }
+  .apt-hero-stat .ahs-val { font-size: 18px; }
+
+  /* Sakinler grid: 2-col → 1-col */
+  .apt-resident-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 8px;
+  }
+
+  /* Super admin stat grid: 4-col → 2-col */
+  .sa-stat-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* Super admin site rows: 6-col → 3-col (name | daireler | buttons) */
+  .sa-site-row {
+    grid-template-columns: 1fr auto auto;
+    gap: 6px;
+  }
+  .sa-site-row > :nth-child(3),
+  .sa-site-row > :nth-child(4),
+  .sa-site-row > :nth-child(5) { display: none; }
+  .sa-site-header > :nth-child(3),
+  .sa-site-header > :nth-child(4),
+  .sa-site-header > :nth-child(5) { display: none; }
+
+  /* Daire detay: dd-info-grid 3-col → 2-col */
+  .dd-info-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Borc ozet 4-col → 2-col */
+  .borc-ozet { grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  /* Daire info grid minwidth → smaller */
+  .daire-info-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+
+  /* Elevator pills: flex-wrap allowed */
+  .ep-wrap, .epc { flex-wrap: wrap; }
+
+  /* Filter bar: wrap */
+  .cari-filter-bar { flex-wrap: wrap; }
+
+  /* Rapor export: 1-col */
+  .export-grid { grid-template-columns: 1fr; }
+
+  /* Modal: full width with margin */
+  .modal { margin: 10px; max-width: calc(100vw - 20px) !important; }
+
+  /* Toplu ödeme rows: sakin + tutar + sil (hide daire, aidat, yöntem) */
+  .odeme-row {
+    grid-template-columns: 1fr 100px 32px;
+    gap: 6px;
+  }
+  .odeme-row > :nth-child(2),
+  .odeme-row > :nth-child(3),
+  .odeme-row > :nth-child(5) { display: none; }
+
+  /* Bank import rows: scrollable parent + compact grid */
+  .bank-row {
+    grid-template-columns: 80px 1fr 90px 32px;
+    gap: 6px;
+  }
+  .bank-row > :nth-child(4),
+  .bank-row > :nth-child(5),
+  .bank-row > :nth-child(6) { display: none; }
+}
+
+/* ── @640px — Geniş telefon düzeltmeleri ── */
+@media (max-width: 640px) {
+
+  /* Apartman resident grid: 1-col */
+  .apt-resident-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Aidat row 6-col: düşür 3-col: dönem | tutar | durum */
+  .aidat-row6 {
+    grid-template-columns: 1fr 90px 80px;
+    gap: 6px;
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+  .aidat-row6 > :nth-child(2),
+  .aidat-row6 > :nth-child(4),
+  .aidat-row6 > :nth-child(5) { display: none; }
+
+  /* dd-year-bar: wrap */
+  .dd-year-bar { flex-wrap: wrap; gap: 6px; }
+
+  /* dd-tabs-bar: smaller tabs */
+  .dd-tab { padding: 7px 12px; font-size: 12px; }
+
+  /* cari filter bar: stacked */
+  .cari-filter-bar { flex-direction: column; align-items: stretch; border-radius: var(--r8); }
+  .cari-filter-left { overflow-x: auto; }
+  .cari-date-range { border-left: none; border-top: 1px solid var(--border); padding: 8px 12px; font-size: 11.5px; }
+  .cari-filter-sep { display: none; }
+
+  /* dd-side-btns: 2 sütun */
+  .dd-side-btns { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+  .dsb-btn { flex: 1; min-width: 130px; justify-content: center; }
+}
+
+/* ── @600px — Telefon: kritik düzeltmeler ── */
+@media (max-width: 600px) {
+
+  /* Borc ozet 2-col */
+  .borc-ozet { grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .borc-ozet-card .bov { font-size: 18px; }
+
+  /* Bank import: tam genişlik scrollable kapsayıcı */
+  #banka-import-list,
+  #banka-import-wrap,
+  .bank-import-list {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .bank-row {
+    grid-template-columns: 80px 1fr 90px 32px;
+    min-width: 380px;
+    gap: 5px;
+  }
+  .bank-row > :nth-child(4),
+  .bank-row > :nth-child(5),
+  .bank-row > :nth-child(6) { display: none; }
+
+  /* Toplu ödeme: sakin adı + tutar + sil */
+  .odeme-row {
+    grid-template-columns: 1fr 100px 32px;
+  }
+  .odeme-row > :nth-child(2),
+  .odeme-row > :nth-child(3),
+  .odeme-row > :nth-child(5) { display: none; }
+
+  /* Sakin kart grid: 2-col korunuyor ≥600px, bu zaten 768'de 1fr ile çalışıyor */
+
+  /* dd-info-grid: 2-col */
+  .dd-info-grid { grid-template-columns: 1fr 1fr; }
+
+  /* dd-page: zaten 840px'de 1-col'a düşüyor */
+
+  /* Daire bilgi mini grid */
+  .daire-info-grid { grid-template-columns: 1fr 1fr; }
+
+  /* ep pills: min-width'i azalt */
+  .ep { min-width: 100px; padding: 9px 10px; flex: 1; }
+  .ep-n { font-size: 20px; }
+
+  /* Kanban: zaten 768'de 1-col */
+
+  /* Table wrapper: ensure scroll */
+  .tw { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Card header: wrap */
+  .card-h { flex-wrap: wrap; gap: 8px; }
+  .dds-head { flex-wrap: wrap; gap: 6px; }
+
+  /* Tabs: scrollable row */
+  .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; }
+  .tab { white-space: nowrap; padding: 6px 10px; font-size: 11.5px; }
+
+  /* Modal: full height scrollable */
+  .modal {
+    max-height: 96vh;
+    overflow-y: auto;
+    margin: 8px;
+    max-width: calc(100vw - 16px) !important;
+  }
+
+  /* Stat grid: 2-col (already set at 768, keep tighter) */
+  .sg { gap: 8px; }
+  .sc { padding: 12px 14px; }
+  .sc-val { font-size: 20px; }
+  .sc-lbl { font-size: 10.5px; }
+}
+
+/* ── @480px — Küçük telefon ── */
+@media (max-width: 480px) {
+
+  /* Sakin kart grid: 2-col → 1-col */
+  .sakin-kart-grid { grid-template-columns: 1fr; gap: 4px; }
+
+  /* Resident grid: tek sütun */
+  .apt-resident-grid { grid-template-columns: 1fr; }
+
+  /* Borc ozet: 2-col korunuyor (yeterince küçük) */
+  .borc-ozet-card { padding: 12px 10px; }
+  .borc-ozet-card .bov { font-size: 16px; }
+
+  /* ep pills: daha küçük */
+  .ep { min-width: 80px; padding: 8px 8px; }
+  .ep-n { font-size: 18px; letter-spacing: -0.5px; }
+  .ep-lbl { font-size: 9.5px; }
+
+  /* Daire hero */
+  .apt-hero { padding: 16px; gap: 12px; }
+  .apt-hero-ico { width: 48px; height: 48px; border-radius: 12px; }
+  .apt-hero-ico svg { width: 24px; height: 24px; }
+  .apt-hero-info h1 { font-size: 17px; }
+
+  /* dd-side-btns: tam sütun */
+  .dd-side-btns { flex-direction: column; }
+  .dsb-btn { min-width: 0; width: 100%; }
+
+  /* Aidat rows: daha dar */
+  .aidat-row6 { grid-template-columns: 1fr 80px; gap: 4px; padding: 7px 10px; }
+  .aidat-row6 > :nth-child(2),
+  .aidat-row6 > :nth-child(3),
+  .aidat-row6 > :nth-child(4),
+  .aidat-row6 > :nth-child(5) { display: none; }
+
+  /* dd tabs: küçük font */
+  .dd-tab { padding: 6px 8px; font-size: 11px; }
+
+  /* borc-hist-row: flex-wrap */
+  .borc-hist-row { flex-wrap: wrap; gap: 4px; font-size: 12px; }
+
+  /* Cari side buttons: tam genişlik */
+  .csb-btn { min-width: 0; width: 100%; justify-content: flex-start; }
+  .cari-side-btns { flex-direction: column; }
+
+  /* Cari accordion: 3-col daha sıkışık (700px'deki 3-col korunuyor, sadece px azaltıldı) */
+  .cari-acc-hdr,
+  .cari-daire-row,
+  .cari-kat-hdr {
+    grid-template-columns: 1fr 72px 72px;
+    font-size: 11.5px;
+    padding: 10px 12px;
+  }
+
+  /* Cari islem: 3-col sıkışık (tazminat zaten 700px'de gizli) */
+  .cari-islem-hdr,
+  .cari-islem-row {
+    grid-template-columns: 1fr 72px 72px;
+  }
+
+  /* ci-label-cell: kompakt */
+  .ci-label-cell { padding: 7px 8px 7px 10px; }
+  .ci-aciklama { font-size: 11.5px; }
+
+  /* Cari net val: küçük */
+  .cari-net-val { font-size: 24px; }
+
+  /* Stat cards: 2x2 */
+  .sg { grid-template-columns: 1fr 1fr; }
+
+  /* G3 → 1-col */
+  .g3 { grid-template-columns: 1fr; }
+
+  /* Form grids: tek sütun */
+  .f2, .f3 { grid-template-columns: 1fr; }
+
+  /* Modal: full screen */
+  .modal {
+    margin: 4px;
+    max-width: calc(100vw - 8px) !important;
+    border-radius: var(--r8);
+    padding: 14px;
+  }
+
+  /* Table: daha küçük font */
+  thead th { padding: 7px 8px; font-size: 9px; }
+  tbody td { padding: 8px 8px; font-size: 11.5px; }
+
+  /* Buttons: min-height touch target */
+  .btn { min-height: 38px; }
+
+  /* Page content: daha az padding */
+  #content { padding: 10px 8px; }
+
+  /* dd-profile card: compact */
+  .dd-profile-card, .cari-profile-card { padding: 16px 14px 14px; }
+  .dpc-no { font-size: 17px; }
+  .cari-net-lbl { font-size: 9.5px; }
+
+  /* Sa site rows: minimal */
+  .sa-site-row { grid-template-columns: 1fr auto; font-size: 12px; }
+  .sa-site-row > :not(:first-child):not(:last-child) { display: none; }
+  .sa-site-header > :not(:first-child):not(:last-child) { display: none; }
+}
+
+/* ── @380px — Ultra küçük telefon ── */
+@media (max-width: 380px) {
+
+  :root { --tb-h: 48px; }
+
+  /* Topbar: ikonu gizle */
+  #page-title { font-size: 12px; }
+
+  /* Content: minimum padding */
+  #content { padding: 8px 6px; }
+
+  /* ep pills: minimum */
+  .ep { min-width: 70px; padding: 7px 7px; }
+  .ep-n { font-size: 16px; }
+
+  /* Stat cards: compact */
+  .sc { padding: 10px 10px; }
+  .sc-val { font-size: 18px; }
+
+  /* borc ozet: 2-col küçük */
+  .borc-ozet { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .borc-ozet-card { padding: 10px 8px; }
+  .borc-ozet-card .bov { font-size: 15px; }
+
+  /* Cari profile avatar: küçük */
+  .cari-avatar { width: 46px; height: 46px; font-size: 15px; }
+
+  /* apt-switch dropdown: tam genişlik */
+  .apt-switch-dropdown { left: auto; right: 0; min-width: 200px; max-width: calc(100vw - 12px); }
+
+  /* dd info grid: 1-col */
+  .dd-info-grid { grid-template-columns: 1fr; }
+
+  /* Modal */
+  .modal { margin: 2px; max-width: 100% !important; border-radius: var(--r6); padding: 12px; }
+}
+
+/* ── Dokunmatik hedefler: min 44px yükseklik ── */
+@media (max-width: 768px) {
+  button, .btn, .tab, .dd-tab, .dsb-btn, .csb-btn,
+  .apt-switch-item, .role-card, .sakin-kart,
+  .cari-daire-row, .cari-kat-hdr, .borc-hist-row,
+  .tanim-item, .ilet-item { min-height: 44px; }
+
+  input[type="text"], input[type="number"], input[type="email"],
+  input[type="date"], input[type="tel"], select, textarea {
+    min-height: 40px;
+  }
+}
+
+/* ── Kaydırma çubuğu mobilde ince ── */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar { width: 3px; height: 3px; }
+  ::-webkit-scrollbar-thumb { background: var(--border-h); border-radius: 4px; }
+}
+
+/* ── gsb-dropdown: dar ekranda overflow koruması ── */
+.gsb-dropdown {
+  max-width: calc(100vw - 20px);
+}
+
+/* ── Cari accordion: 700px'deki kurallar 480px'de güncellendi
+   (yukarıdaki @480px bloğu geçerli) ── */
+
+/* ── Modals: içerik taşmasını engelle ── */
+.modal-wrap { overflow-x: hidden; }
+.modal form { overflow-x: hidden; }
+
+/* ── Tüm sayfalarda img ve video taşmayı önle ── */
+img, video, iframe, svg { max-width: 100%; }
