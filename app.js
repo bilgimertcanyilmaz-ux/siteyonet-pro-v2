@@ -7680,11 +7680,11 @@ function renderSakinCari(sk, opts) {
 
       <div id="daire-${uid}">
         ${(() => {
-          // genelIslemler'i gerçek kategorilerine göre grupla
+          // Borç (aidatIslemler) + Alacak (genelIslemler) TEK havuzda birleştir → kategoriye göre grupla
+          const tumIslemler = [...aidatIslemler, ...genelIslemler];
           const byKat = {};
-          genelIslemler.forEach(x => {
-            const kat = x.kategori
-              || (x.borcTutar > 0 ? 'Devir Borç' : 'Tahsilat');
+          tumIslemler.forEach(x => {
+            const kat = x.kategori || (x.borcTutar > 0 ? 'Devir Borç' : 'Tahsilat');
             if (!byKat[kat]) byKat[kat] = [];
             byKat[kat].push(x);
           });
@@ -7695,17 +7695,6 @@ function renderSakinCari(sk, opts) {
             return kategoriBlok(kat, items, bT, aT, bakT, uid + '_' + kat.replace(/\W+/g, '_'));
           }).join('');
         })()}
-        ${getGelirTanimlari().filter(t=>t.aktif!==false).map(gelirTanim => {
-          const katIslemler = aidatIslemler.filter(x => (x.kategori||'Aidat') === gelirTanim.ad);
-          if (!katIslemler.length) return '';
-          const katBorc = katIslemler.reduce((s,x)=>s+x.borcTutar,0);
-          const katBakiye = katBorc;
-          return kategoriBlok(gelirTanim.ad, katIslemler, katBorc, 0, katBakiye, uid+'_kat_'+gelirTanim.id);
-        }).join('')}
-        ${aidatIslemler.filter(x=>!getGelirTanimlari().find(t=>t.ad===(x.kategori||'Aidat'))).length ?
-          kategoriBlok('Diğer Tahakkuk', aidatIslemler.filter(x=>!getGelirTanimlari().find(t=>t.ad===(x.kategori||'Aidat'))),
-            aidatIslemler.filter(x=>!getGelirTanimlari().find(t=>t.ad===(x.kategori||'Aidat'))).reduce((s,x)=>s+x.borcTutar,0), 0,
-            aidatIslemler.filter(x=>!getGelirTanimlari().find(t=>t.ad===(x.kategori||'Aidat'))).reduce((s,x)=>s+x.borcTutar,0), uid+'_diger') : ''}
       </div>
     </div>
 
