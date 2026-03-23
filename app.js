@@ -7432,22 +7432,40 @@ function renderSakinCari(sk, opts) {
   const fazlaOdeme  = topAlacak > topBorc ? topAlacak - topBorc : 0;
 
   // ── İşlem satırı builder ──
-  // Her kayıt tek satır; borç kaydı → Borç sütununda, alacak kaydı → Alacak sütununda görünür.
-  function islemSatiri(ix, kategori) {
+  // Klasik muhasebe defteri: 7 sütun, yeni→eski sıra, her satırda o ana kadar kümülatif bakiye.
+  function islemSatiri(ix) {
     if (!ix.length) return `<div class="ci-empty">Bu kategoride işlem bulunmuyor.</div>`;
-    const nowStr = new Date().toISOString().slice(0,10);
+    const nowStr = new Date().toISOString().slice(0, 10);
 
-    // Her kayıt için tip belirle (borcTutar > 0 → borç, yoksa alacak)
+    // ISO tarihi → Türkçe görünüm (G.AA.YYYY)
+    const fmtD = d => {
+      if (!d) return '—';
+      const [y, m, g] = d.split('-');
+      return `${+g}.${m}.${y}`;
+    };
+
+    // Tarihe göre eskiden yeniye sırala, kümülatif bakiye hesapla
+    const sorted = [...ix].sort((a, b) => (a.evrakTarih || '') > (b.evrakTarih || '') ? 1 : -1);
     let cum = 0;
-    const rows = ix.map(x => {
+    const rows = sorted.map(x => {
       const tip = x.borcTutar > 0 ? 'borc' : 'alacak';
       const tutar = tip === 'borc' ? x.borcTutar : x.alacakTutar;
       cum += tip === 'borc' ? tutar : -tutar;
-      return {...x, _tip: tip, _tutar: tutar, _cum: cum};
-    });
+      return { ...x, _tip: tip, _tutar: tutar, _cum: cum };
+    }).reverse(); // Ekranda yeni → eski
+
+    // Para hücresi: sıfırsa "₺ —", değilse renkli tutar
+    const mc = (val, cls) => val > 0.009
+      ? `<span class="ci-tutar ${cls}">₺${fmt(val)}</span>`
+      : '';
+    const mcZ = (val, cls) => val > 0.009
+      ? `<span class="ci-tutar ${cls}">₺${fmt(val)}</span>`
+      : `<span class="ci-zero">₺ —</span>`;
 
     return `<div class="cari-islem-hdr">
-      <div>Tarih / Açıklama</div>
+      <div class="ci-hdr-tarih">Evrak Tarihi</div>
+      <div class="ci-hdr-son-odeme">Son Ödeme Tarihi</div>
+      <div>Açıklama</div>
       <div class="ci-hdr-borc">Borç</div>
       <div class="ci-hdr-tazminat">Tazminat</div>
       <div class="ci-hdr-alacak">Alacak</div>
@@ -7455,25 +7473,28 @@ function renderSakinCari(sk, opts) {
     </div>` + rows.map(r => {
       const isOverdue = r._tip === 'borc' && r.sonOdeme && r.sonOdeme < nowStr;
       const bakCls = r._cum > 0.01 ? 'bak-d' : r._cum < -0.01 ? 'bak-a' : 'bak-z';
-      const tazVal = r.tazminat > 0 ? `<span class="ci-tutar tazminat">₺${fmt(r.tazminat)}</span>` : '<span class="ci-dash">—</span>';
-      const vadeBadge = r._tip === 'borc' && r.sonOdeme
-        ? `<div class="ci-vade">${isOverdue ? '<span class="ci-overdue-badge">GECİKTİ</span>' : ''}<span class="ci-vade-dt" style="color:${isOverdue ? 'var(--err)' : 'var(--tx-3)'}">${r.sonOdeme}</span></div>`
+
+      // Son Ödeme Tarihi hücresi
+      const sonOdemeEl = r._tip === 'borc' && r.sonOdeme
+        ? `${isOverdue ? '<span class="ci-overdue-badge" style="margin-right:3px">GECİKTİ</span>' : ''}<span style="color:${isOverdue ? 'var(--err)' : 'inherit'}">${fmtD(r.sonOdeme)}</span>`
         : '';
+
+      // Bakiye hücresi
+      const bakVal = Math.abs(r._cum);
+      const bakEl = bakVal < 0.01
+        ? `<span class="ci-zero">₺ —</span>`
+        : `<span class="ci-tutar ${bakCls === 'bak-d' ? 'borc' : 'alacak'}">₺${fmt(bakVal)}</span>`;
+
       const editClick = r._srcType ? `onclick="openCariKayitEdit('${r._srcType}','${r._srcId}','${r._sakId}')" title="Kaydı düzenle"` : '';
       const editCls = r._srcType ? ' ci-editable' : '';
       return `<div class="cari-islem-row ci-${r._tip}${isOverdue ? ' row-overdue' : ''}${editCls}" ${editClick}>
-        <div class="ci-label-cell">
-          <span class="ci-tarih">${r.evrakTarih || '—'}</span>
-          <span class="ci-aciklama" title="${r.aciklama || ''}">${r.aciklama || '—'}</span>
-          ${vadeBadge}
-        </div>
-        <div class="ci-col-borc">${r._tip === 'borc' ? `<span class="ci-tutar borc">₺${fmt(r._tutar)}</span>` : '<span class="ci-dash">—</span>'}</div>
-        <div class="ci-col-tazminat">${tazVal}</div>
-        <div class="ci-col-alacak">${r._tip === 'alacak' ? `<span class="ci-tutar alacak">₺${fmt(r._tutar)}</span>` : '<span class="ci-dash">—</span>'}</div>
-        <div class="ci-cumbal ${bakCls}">
-          <span>₺${fmt(Math.abs(r._cum))}</span>
-          <span class="ci-bal-arr">${r._cum > 0.01 ? '▲' : r._cum < -0.01 ? '▼' : '='}</span>
-        </div>
+        <div class="ci-col-tarih">${fmtD(r.evrakTarih)}</div>
+        <div class="ci-col-son-odeme">${sonOdemeEl}</div>
+        <div class="ci-aciklama-cell" title="${r.aciklama || ''}">${r.aciklama || '—'}</div>
+        <div class="ci-col-borc">${mc(r._tip === 'borc' ? r._tutar : 0, 'borc')}</div>
+        <div class="ci-col-tazminat">${mcZ(r.tazminat || 0, 'tazminat')}</div>
+        <div class="ci-col-alacak">${mc(r._tip === 'alacak' ? r._tutar : 0, 'alacak')}</div>
+        <div class="ci-cumbal ${bakCls}">${bakEl}</div>
       </div>`;
     }).join('');
   }
