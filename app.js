@@ -2869,15 +2869,54 @@ async function callOpenAI(prompt) {
 // Ana çağrı fonksiyonu — sağlayıcıya göre yönlendir
 async function callAI(prompt) {
   const provider = getAIProvider();
+
+  // Key kontrolü — yoksa Ayarlar'a yönlendir
+  const keyMap = { gemini: AI_KEYS.gemini(), claude: AI_KEYS.anthropic(), openai: AI_KEYS.openai() };
+  if (!keyMap[provider]) {
+    const providerNames = { gemini:'Google Gemini', claude:'Anthropic Claude', openai:'OpenAI GPT' };
+    showAIKeyModal(providerNames[provider] || provider);
+    throw new Error('API anahtarı eksik');
+  }
+
   try {
-    if (provider === 'gemini')    return await callGemini(prompt);
-    if (provider === 'claude')    return await callClaude(prompt);
-    if (provider === 'openai')    return await callOpenAI(prompt);
-    return await callGemini(prompt); // fallback
+    if (provider === 'gemini')  return await callGemini(prompt);
+    if (provider === 'claude')  return await callClaude(prompt);
+    if (provider === 'openai')  return await callOpenAI(prompt);
+    return await callGemini(prompt);
   } catch (e) {
-    toast('AI hatası: ' + e.message, 'err');
+    // Sızdırılmış / geçersiz key hata mesajı
+    const leaked = e.message && (e.message.includes('leaked') || e.message.includes('API_KEY_INVALID') || e.message.includes('invalid'));
+    if (leaked) {
+      showAIKeyModal(null, '⚠️ API anahtarınız geçersiz veya sızdırılmış olarak işaretlendi. Lütfen yeni bir anahtar oluşturun.');
+    } else {
+      toast('AI hatası: ' + e.message, 'err');
+    }
     throw e;
   }
+}
+
+// API key eksik/geçersiz olduğunda modal göster
+function showAIKeyModal(providerName, customMsg) {
+  const msg = customMsg || `${providerName} API anahtarı girilmemiş.`;
+  // Varsa eski modalı kaldır
+  document.getElementById('_ai-key-modal')?.remove();
+  const div = document.createElement('div');
+  div.id = '_ai-key-modal';
+  div.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px';
+  div.innerHTML = `<div style="background:var(--surface);border-radius:16px;padding:28px 24px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);text-align:center">
+    <div style="font-size:36px;margin-bottom:12px">🤖</div>
+    <div style="font-size:16px;font-weight:700;color:var(--tx);margin-bottom:8px">Yapay Zeka API Anahtarı Gerekli</div>
+    <div style="font-size:13px;color:var(--tx-3);margin-bottom:20px;line-height:1.5">${msg}</div>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button onclick="document.getElementById('_ai-key-modal').remove()" style="padding:9px 18px;border-radius:8px;border:1.5px solid var(--border);background:var(--s2);color:var(--tx);cursor:pointer;font-size:13px;font-weight:600">Kapat</button>
+      <button onclick="document.getElementById('_ai-key-modal').remove();goPage('ayarlar')" style="padding:9px 18px;border-radius:8px;border:none;background:var(--brand);color:#fff;cursor:pointer;font-size:13px;font-weight:600">⚙️ Ayarlara Git</button>
+    </div>
+    <div style="margin-top:16px;padding:10px 12px;background:var(--s2);border-radius:8px;font-size:11px;color:var(--tx-3)">
+      Yeni anahtar: <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--brand);font-weight:600">aistudio.google.com</a>
+    </div>
+  </div>`;
+  div.addEventListener('click', e => { if (e.target === div) div.remove(); });
+  document.body.appendChild(div);
 }
 
 // 
