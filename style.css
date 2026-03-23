@@ -1016,12 +1016,12 @@ select.fi,select.fs{
 .ci-empty{padding:20px;font-size:12.5px;color:var(--tx-3);text-align:center;font-style:italic;}
 
 /* Düzenlenebilir satır */
+.cari-islem-row{position:relative;}
 .ci-editable{cursor:pointer;}
 .ci-editable:hover{background:var(--brand-10)!important;}
 .ci-editable:hover .ci-aciklama{color:var(--brand);}
-.ci-editable::after{content:'✏️';position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:11px;opacity:0;transition:opacity .15s;pointer-events:none;}
-.cari-islem-row{position:relative;}
-.ci-editable:hover::after{opacity:.55;}
+.ci-editable::after{content:'✏️';position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:12px;opacity:.25;transition:opacity .15s;pointer-events:none;}
+.ci-editable:hover::after{opacity:1;}
 
 /* Kategori flash animasyonu (borçlandırma sonrası) */
 @keyframes katFlash{0%{background:transparent}20%{background:rgba(26,86,219,.18)}60%{background:rgba(26,86,219,.1)}100%{background:transparent}}

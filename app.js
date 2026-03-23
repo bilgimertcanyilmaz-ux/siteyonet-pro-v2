@@ -7388,6 +7388,8 @@ function renderSakinCari(sk, opts) {
 
   // ── Ödemeler (alacak) ──
   const odemeler = (S.tahsilatlar || []).filter(t => t.sakId == sk.id || t.sakinId == sk.id);
+  // tip veya kategori alanını kategori olarak kullan; yoksa 'Tahsilat'
+  const tipToLabel = { aidat: 'Aidat', kira: 'Kira', diger: 'Diğer', genel: 'Genel Gider' };
   const genelIslemler = odemeler.map(o => ({
     evrakTarih: o.tarih || '',
     sonOdeme: '',
@@ -7395,6 +7397,7 @@ function renderSakinCari(sk, opts) {
     borcTutar: 0,
     alacakTutar: o.tutar || 0,
     tazminat: 0,
+    kategori: o.kategori || tipToLabel[o.tip] || 'Tahsilat',
     _srcType: 'tahsilat',
     _srcId: o.id,
     _sakId: sk.id
@@ -7477,8 +7480,10 @@ function renderSakinCari(sk, opts) {
 
   // ── Kategori (katlanabilir) HTML ──
   function kategoriBlok(label, islemler, borcT, alacakT, bakiyeT, uid) {
-    const katIcon = label === 'Genel'
-      ? `<svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:var(--tx-2);fill:none;stroke-width:2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`
+    const katIcon = label === 'Tahsilat'
+      ? `<svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:var(--ok);fill:none;stroke-width:2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M2 11h20"/><circle cx="6" cy="16" r="1.5" fill="var(--ok)" stroke="none"/></svg>`
+      : label === 'Devir Borç'
+      ? `<svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:var(--err);fill:none;stroke-width:2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`
       : `<svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:var(--brand);fill:none;stroke-width:2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`;
     return `
     <div>
@@ -7644,7 +7649,22 @@ function renderSakinCari(sk, opts) {
       </div>
 
       <div id="daire-${uid}">
-        ${kategoriBlok('Genel', genelIslemler, genelBorc, genelAlacak, genelBakiye, uid+'_genel')}
+        ${(() => {
+          // genelIslemler'i gerçek kategorilerine göre grupla
+          const byKat = {};
+          genelIslemler.forEach(x => {
+            const kat = x.kategori
+              || (x.borcTutar > 0 ? 'Devir Borç' : 'Tahsilat');
+            if (!byKat[kat]) byKat[kat] = [];
+            byKat[kat].push(x);
+          });
+          return Object.entries(byKat).map(([kat, items]) => {
+            const bT = items.reduce((s, x) => s + x.borcTutar, 0);
+            const aT = items.reduce((s, x) => s + x.alacakTutar, 0);
+            const bakT = bT - aT;
+            return kategoriBlok(kat, items, bT, aT, bakT, uid + '_' + kat.replace(/\W+/g, '_'));
+          }).join('');
+        })()}
         ${getGelirTanimlari().filter(t=>t.aktif!==false).map(gelirTanim => {
           const katIslemler = aidatIslemler.filter(x => (x.kategori||'Aidat') === gelirTanim.ad);
           if (!katIslemler.length) return '';
