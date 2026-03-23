@@ -2824,7 +2824,7 @@ function getAIProvider() {
 }
 
 // Gemini çağrısı
-async function callGemini(prompt, model = 'gemini-2.0-flash') {
+async function callGemini(prompt, model = 'gemini-1.5-flash') {
   const key = AI_KEYS.gemini();
   if (!key) throw new Error('Gemini API anahtarı girilmemiş — Ayarlar sayfasından ekleyin.');
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
