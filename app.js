@@ -2809,20 +2809,74 @@ function renderIcraRapor() {
 }
 
 
-// 
-// AI HELPER
-// 
-async function callAI(prompt) {
-  const apiKey = localStorage.getItem('syp_apikey') || '';
-  if (!apiKey) { toast('AI için Ayarlar sayfasından API anahtarı girin.','err'); throw new Error('API key missing'); }
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
+// ══════════════════════════════════════════════════
+// AI HELPER — çoklu sağlayıcı desteği
+// ══════════════════════════════════════════════════
+const AI_KEYS = {
+  gemini:    'AIzaSyBA0kSMAnuMWMaPpcOHQpa7KoojZCk5xlk',
+  anthropic: () => localStorage.getItem('syp_apikey_claude') || '',
+  openai:    () => localStorage.getItem('syp_apikey_openai') || ''
+};
+
+// Aktif sağlayıcı: localStorage'dan al, yoksa gemini
+function getAIProvider() {
+  return localStorage.getItem('syp_ai_provider') || 'gemini';
+}
+
+// Gemini çağrısı
+async function callGemini(prompt, model = 'gemini-2.0-flash') {
+  const key = AI_KEYS.gemini;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+  const r = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-    body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1000, messages:[{role:'user',content:prompt}] })
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
   });
   const d = await r.json();
   if (d.error) throw new Error(d.error.message);
-  return d.content?.map(c=>c.text||'').join('') || '';
+  return d.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
+// Claude (Anthropic) çağrısı
+async function callClaude(prompt) {
+  const key = AI_KEYS.anthropic();
+  if (!key) throw new Error('Claude API anahtarı girilmemiş');
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1024, messages: [{ role: 'user', content: prompt }] })
+  });
+  const d = await r.json();
+  if (d.error) throw new Error(d.error.message);
+  return d.content?.map(c => c.text || '').join('') || '';
+}
+
+// OpenAI çağrısı
+async function callOpenAI(prompt) {
+  const key = AI_KEYS.openai();
+  if (!key) throw new Error('OpenAI API anahtarı girilmemiş');
+  const r = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+    body: JSON.stringify({ model: 'gpt-4o-mini', max_tokens: 1024, messages: [{ role: 'user', content: prompt }] })
+  });
+  const d = await r.json();
+  if (d.error) throw new Error(d.error.message);
+  return d.choices?.[0]?.message?.content || '';
+}
+
+// Ana çağrı fonksiyonu — sağlayıcıya göre yönlendir
+async function callAI(prompt) {
+  const provider = getAIProvider();
+  try {
+    if (provider === 'gemini')    return await callGemini(prompt);
+    if (provider === 'claude')    return await callClaude(prompt);
+    if (provider === 'openai')    return await callOpenAI(prompt);
+    return await callGemini(prompt); // fallback
+  } catch (e) {
+    toast('AI hatası: ' + e.message, 'err');
+    throw e;
+  }
 }
 
 // 
