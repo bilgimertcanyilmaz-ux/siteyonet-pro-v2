@@ -6552,43 +6552,52 @@ function loadDemoData() {
 
   // ── 6 AY AİDAT BORÇLANDIRMA ───────────────
   // Ekim 2025 → Mart 2026
+  // sonOdeme: ay sonu (Excel modeliyle uyumlu)
   const _months = [
-    {donem:'2025-10',label:'Ekim 2025',   tarih:'2025-10-01',sonOdeme:'2025-10-10'},
-    {donem:'2025-11',label:'Kasım 2025',  tarih:'2025-11-01',sonOdeme:'2025-11-10'},
-    {donem:'2025-12',label:'Aralık 2025', tarih:'2025-12-01',sonOdeme:'2025-12-10'},
-    {donem:'2026-01',label:'Ocak 2026',   tarih:'2026-01-01',sonOdeme:'2026-01-10'},
-    {donem:'2026-02',label:'Şubat 2026',  tarih:'2026-02-01',sonOdeme:'2026-02-10'},
-    {donem:'2026-03',label:'Mart 2026',   tarih:'2026-03-01',sonOdeme:'2026-03-10'},
+    {donem:'2025-10',label:'Ekim 2025',   tarih:'2025-10-01',sonOdeme:'2025-10-31'},
+    {donem:'2025-11',label:'Kasım 2025',  tarih:'2025-11-01',sonOdeme:'2025-11-30'},
+    {donem:'2025-12',label:'Aralık 2025', tarih:'2025-12-01',sonOdeme:'2025-12-31'},
+    {donem:'2026-01',label:'Ocak 2026',   tarih:'2026-01-01',sonOdeme:'2026-01-31'},
+    {donem:'2026-02',label:'Şubat 2026',  tarih:'2026-02-01',sonOdeme:'2026-02-28'},
+    {donem:'2026-03',label:'Mart 2026',   tarih:'2026-03-01',sonOdeme:'2026-03-31'},
   ];
+  let _bid = t + 500;
   const aidatBorclandir = _months.map(m => ({
+    id: ++_bid,
     aptId:apt.id, aptAd:apt.ad, donem:m.donem, tarih:m.tarih,
-    sonOdeme:m.sonOdeme, sakinSayisi:24, toplamBorc:24*AID,
+    sonOdeme:m.sonOdeme,
+    aciklama: m.label + ' Aidat Bedeli',
+    sakinSayisi:24, toplamBorc:24*AID,
     detaylar: sakinler.map(s => ({sakId:s.id,ad:s.ad,daire:s.daire,tutar:AID,kategori:'Aidat'}))
   }));
 
   // ── TAHSİLATLAR ──────────────────────────
   // Her daire için ödenen ay indisleri (0=Ekim..5=Mart)
   // D3→[0,1,2,3]  D7→[0,1,2,3,4]  D10→[0,1]  D15→[0,1,2,3]  D20→[0,1,2,3,4]
+  // Borçlu olmayan dairelar 6 ay tam öder
   const _paid = {'3':[0,1,2,3],'7':[0,1,2,3,4],'10':[0,1],'15':[0,1,2,3],'20':[0,1,2,3,4]};
-  const _payDay = {'1':5,'2':3,'3':7,'4':8,'5':4,'6':6,'7':2,'8':9,'9':5,'10':8,
-                   '11':3,'12':7,'13':4,'14':6,'15':9,'16':5,'17':3,'18':7,'19':8,
-                   '20':4,'21':6,'22':2,'23':9,'24':5};
+  // Ödeme günü: ay ortası (10-20 arası) — borçlandırma ay başı, son ödeme ay sonu
+  const _payDay = {'1':12,'2':10,'3':14,'4':15,'5':11,'6':13,'7':10,'8':16,'9':12,'10':15,
+                   '11':10,'12':14,'13':11,'14':13,'15':16,'16':12,'17':10,'18':14,'19':15,
+                   '20':11,'21':13,'22':10,'23':16,'24':12};
   const _yontem = ['havale','nakit','eft','havale','havale','eft','nakit','havale'];
   const tahsilatlar = [];
   let _tid = t+600;
   sakinler.forEach(s => {
     const paidIdx = _paid[s.daire] || [0,1,2,3,4,5];
-    paidIdx.forEach((mi,pi) => {
+    paidIdx.forEach((mi) => {
       const m = _months[mi];
-      const day = String(_payDay[s.daire]||5).padStart(2,'0');
+      const day = String(_payDay[s.daire] || 12).padStart(2,'0');
       _tid++;
       tahsilatlar.push({
-        id:_tid, aptId:apt.id, aptAd:apt.ad,
-        sakId:s.id, sakinId:s.id, sakinAd:s.ad, daire:s.daire,
-        tutar:AID, tarih:`${m.donem}-${day}`,
-        tip:'aidat', donem:m.label,
-        yontem:_yontem[(+s.daire+mi)%_yontem.length],
-        not:`${m.label} Aidat Ödemesi`
+        id: _tid, aptId:apt.id, aptAd:apt.ad,
+        sakId: s.id, sakinId: s.id, sakinAd: s.ad, daire: s.daire,
+        tutar: AID, tarih: `${m.donem}-${day}`,
+        tip: 'aidat', donem: m.label,
+        kategori: 'Aidat',
+        yontem: _yontem[(+s.daire + mi) % _yontem.length],
+        not: `${m.label} Aidat Ödemesi`,
+        aciklama: `${m.label} Aidat Ödemesi`
       });
     });
   });
