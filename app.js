@@ -2813,7 +2813,7 @@ function renderIcraRapor() {
 // AI HELPER — çoklu sağlayıcı desteği
 // ══════════════════════════════════════════════════
 const AI_KEYS = {
-  gemini:    'AIzaSyBA0kSMAnuMWMaPpcOHQpa7KoojZCk5xlk',
+  gemini:    () => localStorage.getItem('syp_apikey_gemini') || '',
   anthropic: () => localStorage.getItem('syp_apikey_claude') || '',
   openai:    () => localStorage.getItem('syp_apikey_openai') || ''
 };
@@ -2825,7 +2825,8 @@ function getAIProvider() {
 
 // Gemini çağrısı
 async function callGemini(prompt, model = 'gemini-2.0-flash') {
-  const key = AI_KEYS.gemini;
+  const key = AI_KEYS.gemini();
+  if (!key) throw new Error('Gemini API anahtarı girilmemiş — Ayarlar sayfasından ekleyin.');
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
   const r = await fetch(url, {
     method: 'POST',
@@ -6052,8 +6053,18 @@ function loadSettings() {
   document.getElementById('set-tel').value = ay.tel||'';
   document.getElementById('set-mail').value = ay.mail||'';
   document.getElementById('set-adres').value = ay.adres||'';
-  const apiKey = localStorage.getItem('syp_apikey')||'';
-  document.getElementById('set-apikey').value = apiKey;
+  // AI ayarları
+  const providerEl = document.getElementById('set-ai-provider');
+  if (providerEl) {
+    providerEl.value = localStorage.getItem('syp_ai_provider') || 'gemini';
+    aiProviderChange();
+  }
+  const geminiEl = document.getElementById('set-apikey-gemini');
+  if (geminiEl) geminiEl.value = localStorage.getItem('syp_apikey_gemini') || '';
+  const claudeEl = document.getElementById('set-apikey-claude');
+  if (claudeEl) claudeEl.value = localStorage.getItem('syp_apikey_claude') || '';
+  const openaiEl = document.getElementById('set-apikey-openai');
+  if (openaiEl) openaiEl.value = localStorage.getItem('syp_apikey_openai') || '';
   // Supabase config
   const cfg = getSupabaseConfig();
   if (cfg) {
@@ -6094,14 +6105,45 @@ function saveSettings() {
 }
 
 function saveApiKey() {
-  const key = document.getElementById('set-apikey').value.trim();
-  if (key) { localStorage.setItem('syp_apikey', key); toast('API anahtarı kaydedildi.','ok'); }
-  else { localStorage.removeItem('syp_apikey'); toast('API anahtarı silindi.','warn'); }
+  // Geriye dönük uyumluluk
+  saveAISettings();
 }
 
-function toggleApiKey() {
-  const inp = document.getElementById('set-apikey');
-  inp.type = inp.type === 'password' ? 'text' : 'password';
+function saveAISettings() {
+  const provider = document.getElementById('set-ai-provider')?.value || 'gemini';
+  localStorage.setItem('syp_ai_provider', provider);
+
+  const geminiKey = document.getElementById('set-apikey-gemini')?.value.trim() || '';
+  const claudeKey = document.getElementById('set-apikey-claude')?.value.trim() || '';
+  const openaiKey = document.getElementById('set-apikey-openai')?.value.trim() || '';
+
+  if (geminiKey) localStorage.setItem('syp_apikey_gemini', geminiKey);
+  else localStorage.removeItem('syp_apikey_gemini');
+
+  if (claudeKey) localStorage.setItem('syp_apikey_claude', claudeKey);
+  else localStorage.removeItem('syp_apikey_claude');
+
+  if (openaiKey) localStorage.setItem('syp_apikey_openai', openaiKey);
+  else localStorage.removeItem('syp_apikey_openai');
+
+  const providerNames = { gemini: 'Google Gemini', claude: 'Anthropic Claude', openai: 'OpenAI GPT' };
+  toast(`AI ayarları kaydedildi — Aktif: ${providerNames[provider]}`, 'ok');
+}
+
+function toggleAIKey(provider) {
+  const inp = document.getElementById(`set-apikey-${provider}`);
+  if (inp) inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+// Geriye dönük uyumluluk
+function toggleApiKey() { toggleAIKey('gemini'); }
+
+function aiProviderChange() {
+  const provider = document.getElementById('set-ai-provider')?.value || 'gemini';
+  ['gemini', 'claude', 'openai'].forEach(p => {
+    const wrap = document.getElementById(`ai-key-wrap-${p}`);
+    if (wrap) wrap.style.display = p === provider ? '' : 'none';
+  });
 }
 
 function renderSetStats() {

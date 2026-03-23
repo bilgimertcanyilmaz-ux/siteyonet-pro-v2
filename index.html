@@ -490,15 +490,54 @@
       </div>
       <div class="card mb16">
         <div class="card-t mb14">Yapay Zeka (AI) Ayarları</div>
-        <div class="fgp">
-          <label class="lbl">Anthropic API Anahtarı</label>
-          <div class="api-key-wrap">
-            <input class="fi" id="set-apikey" type="password" placeholder="sk-ant-api03-…" autocomplete="off">
-            <button onclick="toggleApiKey()" title="Göster/Gizle"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;stroke-width:2;fill:none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
-          </div>
-          <div class="t3 mt6" style="font-size:11px">API anahtarı yerel depolamada (localStorage) saklanır, hiçbir yere gönderilmez.</div>
+
+        <!-- Aktif sağlayıcı seçimi -->
+        <div class="fgp mb12">
+          <label class="lbl">Aktif AI Sağlayıcısı</label>
+          <select class="fi" id="set-ai-provider" onchange="aiProviderChange()">
+            <option value="gemini">🔵 Google Gemini (Varsayılan)</option>
+            <option value="claude">🟣 Anthropic Claude</option>
+            <option value="openai">🟢 OpenAI GPT</option>
+          </select>
         </div>
-        <button class="btn bp mt12" onclick="saveApiKey()">API Anahtarını Kaydet</button>
+
+        <!-- Gemini key -->
+        <div class="fgp" id="ai-key-wrap-gemini">
+          <label class="lbl">Google Gemini API Anahtarı</label>
+          <div class="api-key-wrap">
+            <input class="fi" id="set-apikey-gemini" type="password" placeholder="AIzaSy…" autocomplete="off">
+            <button onclick="toggleAIKey('gemini')" title="Göster/Gizle"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;stroke-width:2;fill:none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          </div>
+          <div style="font-size:11px;color:var(--tx-3);margin-top:4px">Almak için: <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--brand)">aistudio.google.com</a></div>
+        </div>
+
+        <!-- Claude key -->
+        <div class="fgp" id="ai-key-wrap-claude" style="display:none">
+          <label class="lbl">Anthropic Claude API Anahtarı</label>
+          <div class="api-key-wrap">
+            <input class="fi" id="set-apikey-claude" type="password" placeholder="sk-ant-api03-…" autocomplete="off">
+            <button onclick="toggleAIKey('claude')" title="Göster/Gizle"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;stroke-width:2;fill:none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          </div>
+          <div style="font-size:11px;color:var(--tx-3);margin-top:4px">Almak için: <a href="https://console.anthropic.com" target="_blank" style="color:var(--brand)">console.anthropic.com</a></div>
+        </div>
+
+        <!-- OpenAI key -->
+        <div class="fgp" id="ai-key-wrap-openai" style="display:none">
+          <label class="lbl">OpenAI API Anahtarı</label>
+          <div class="api-key-wrap">
+            <input class="fi" id="set-apikey-openai" type="password" placeholder="sk-proj-…" autocomplete="off">
+            <button onclick="toggleAIKey('openai')" title="Göster/Gizle"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;stroke-width:2;fill:none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          </div>
+          <div style="font-size:11px;color:var(--tx-3);margin-top:4px">Almak için: <a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--brand)">platform.openai.com</a></div>
+        </div>
+
+        <div style="font-size:11px;color:var(--tx-3);margin-top:8px;padding:8px 10px;background:var(--s2);border-radius:6px">
+          🔒 API anahtarları yalnızca tarayıcınızın yerel deposunda (localStorage) saklanır, hiçbir sunucuya gönderilmez.
+        </div>
+        <button class="btn bp mt12" onclick="saveAISettings()">
+          <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+          AI Ayarlarını Kaydet
+        </button>
       </div>
     </div>
     <div>
