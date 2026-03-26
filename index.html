@@ -6,6 +6,7 @@
 <title>SiteYönet Pro</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600;700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -179,6 +180,7 @@
     <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
   </button>
   <div id="page-title">Dashboard</div>
+  <nav id="breadcrumb"></nav>
   <div id="global-site-bar"></div>
   <div id="topbar-right">
     <div id="apt-ctx-topbar"></div>
@@ -197,9 +199,7 @@
 </div>
 <div id="content">
 
-<!-- DASHBOARD --> <div id="page-dashboard" class="pg on"> <div id="ds-welcome"></div>
-<div id="ds-quick-actions"></div>
-<div id="ds-uyari-ozeti" style="margin-bottom:14px"></div>
+<!-- DASHBOARD --> <div id="page-dashboard" class="pg on"> <div id="ds-root"></div>
 <div class="sg" id="ds-stats"></div> <div class="card mb16"> <div class="card-h"><div><div class="card-t">💰 Apartman Hizmet Bedelleri</div><div class="card-s">Aktif apartmanların aylık hizmet bedelleri</div></div><button class="btn bg sm" onclick="goPage('apartmanlar')">Tümünü Gör <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button></div> <div id="ds-hizmet"></div> </div> <div class="g2 mb16"> <div class="card"> <div class="card-h"><div><div class="card-t">️ Son Apartmanlar</div><div class="card-s">En son eklenen kayıtlar</div></div><button class="btn bg sm" onclick="goPage('apartmanlar')">Tümünü Gör <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button></div> <div id="ds-apts"></div> </div> <div class="card"> <div class="card-h"><div><div class="card-t"> Açık Görevler</div><div class="card-s">Bekleyen işler</div></div><button class="btn bg sm" onclick="goPage('gorevler')">Tümünü Gör <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button></div> <div id="ds-govs"></div> </div> </div> <div class="g2"> <div class="card"> <div class="card-h"><div><div class="card-t"> Asansör Uyarıları</div><div class="card-s">Süresi dolmuş veya yaklaşan</div></div><button class="btn bg sm" onclick="goPage('asansor')">Tümünü Gör <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button></div> <div id="ds-asan"></div> </div> <div class="card"> <div class="card-h"><div><div class="card-t">Aktif İcralar</div><div class="card-s">Devam eden dosyalar</div></div><button class="btn bg sm" onclick="goPage('icra')">Tümünü Gör <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button></div> <div id="ds-icra"></div> </div> </div>
 <div class="g2 mt16"> <div class="card"> <div class="card-h"><div><div class="card-t">⚠️ Borçlu Sakinler</div><div class="card-s">En yüksek borçlular</div></div><button class="btn bg sm" onclick="goPage('tahsilat')">Tahsilat <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button></div> <div id="ds-borclu"></div> </div> <div class="card"> <div class="card-h"><div><div class="card-t">💳 Son Tahsilatlar</div><div class="card-s">En son ödeme kayıtları</div></div><button class="btn bg sm" onclick="goPage('tahsilat')">Tümünü Gör <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button></div> <div id="ds-tahsilat"></div> </div> </div>
 <div class="card" style="margin-top:14px"><div class="card-title">Son Finansal İşlemler</div><div id="ds-fin-list"><div class="emp">Yükleniyor...</div></div></div>
@@ -994,8 +994,9 @@
   <div class="tabs">
     <div class="tab on" data-tab="tah-liste">Borç Listesi</div>
     <div class="tab" data-tab="tah-toplu">Toplu Tahsilat</div>
-    <div class="tab" data-tab="tah-banka">Banka Hareketi</div>
-    <div class="tab" data-tab="tah-gecmis">Ödeme Geçmişi</div>
+    <div class="tab" data-tab="tah-borc-makbuz">Borç Makbuzları</div>
+    <div class="tab" data-tab="tah-tahsilat-makbuz">Tahsilat Makbuzları</div>
+    <div class="tab" data-tab="tah-banka">Banka Entegrasyonu</div>
   </div>
 
   <!-- BORÇ LİSTESİ -->
@@ -1065,8 +1066,10 @@
     </div>
   </div>
 
-  <!-- BANKA HAREKETİ -->
+  <!-- BANKA ENTEGRASYONİ -->
   <div id="tah-banka" style="display:none">
+    <!-- Önceden yüklenen dosyalar -->
+    <div id="bank-dosya-gecmis" class="card mb14" style="display:none"></div>
     <div class="g2" style="gap:18px">
       <div>
         <div class="card mb14">
@@ -1117,21 +1120,48 @@
     </div>
   </div>
 
-  <!-- ÖDEME GEÇMİŞİ -->
-  <div id="tah-gecmis" style="display:none">
-    <div class="fbc mb12">
-      <div class="fc g8">
-        <div class="srch" style="width:240px"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="tah-g-srch" placeholder="Sakin veya makbuz ara…" oninput="renderOdemeGecmis()"></div>
-        <select class="fi sm" id="tah-g-tip" onchange="renderOdemeGecmis()" style="width:auto;padding:6px 10px"><option value="">Tüm Tipler</option><option value="aidat">Aidat</option><option value="borc">Borç</option><option value="banka">Banka</option></select>
+  <!-- BORÇ MAKBUZLARI -->
+  <div id="tah-borc-makbuz" style="display:none">
+    <div class="fbc mb12" style="flex-wrap:wrap;gap:10px">
+      <div class="fc g8" style="flex-wrap:wrap">
+        <div class="srch" style="width:220px"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="bm-srch" placeholder="Sakin veya daire ara…" oninput="renderBorcMakbuz()"></div>
+        <select class="fi sm" id="bm-f-kat" onchange="renderBorcMakbuz()" style="width:auto;padding:6px 10px"><option value="">Tüm Kategoriler</option></select>
+        <input type="date" class="fi sm" id="bm-f-bas" onchange="renderBorcMakbuz()" style="width:auto" title="Başlangıç Tarihi">
+        <input type="date" class="fi sm" id="bm-f-bit" onchange="renderBorcMakbuz()" style="width:auto" title="Bitiş Tarihi">
       </div>
       <div class="fc g8">
-        <span id="tah-g-toplam" class="t3" style="font-size:12px"></span>
-        <button class="btn bg sm" onclick="exportOdemeGecmis()">📥 Excel İndir</button>
+        <span id="bm-toplam" class="t3" style="font-size:12px"></span>
+        <button class="btn bg sm" onclick="exportBorcMakbuz()"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Excel İndir</button>
       </div>
     </div>
     <div class="card"><div class="tw"><table>
-      <thead><tr><th>Makbuz No</th><th>Sakin</th><th>Daire</th><th>Tip</th><th>Dönem</th><th>Tutar</th><th>Yöntem</th><th>Tarih</th><th>Not</th><th>İşlem</th></tr></thead>
-      <tbody id="tah-g-tbody"></tbody>
+      <thead><tr><th>#</th><th>Sakin</th><th>Daire</th><th>Apartman</th><th>Kategori</th><th>Dönem</th><th>Tutar</th><th>Borçlandırma Tarihi</th><th>Son Ödeme Tarihi</th><th>İşlemler</th></tr></thead>
+      <tbody id="bm-tbody"></tbody>
+    </table></div></div>
+  </div>
+
+  <!-- TAHSİLAT MAKBUZLARI -->
+  <div id="tah-tahsilat-makbuz" style="display:none">
+    <div class="fbc mb12" style="flex-wrap:wrap;gap:10px">
+      <div class="fc g8" style="flex-wrap:wrap">
+        <div class="srch" style="width:220px"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="tm-srch" placeholder="Sakin veya makbuz ara…" oninput="renderTahsilatMakbuz()"></div>
+        <select class="fi sm" id="tm-f-kaynak" onchange="renderTahsilatMakbuz()" style="width:auto;padding:6px 10px">
+          <option value="">Tüm Kaynaklar</option>
+          <option value="manuel">Manuel Giriş</option>
+          <option value="excel">Excel İçe Aktarma</option>
+          <option value="banka">Banka Entegrasyonu</option>
+        </select>
+        <input type="date" class="fi sm" id="tm-f-bas" onchange="renderTahsilatMakbuz()" style="width:auto" title="Başlangıç Tarihi">
+        <input type="date" class="fi sm" id="tm-f-bit" onchange="renderTahsilatMakbuz()" style="width:auto" title="Bitiş Tarihi">
+      </div>
+      <div class="fc g8">
+        <span id="tm-toplam" class="t3" style="font-size:12px"></span>
+        <button class="btn bg sm" onclick="exportTahsilatMakbuz()"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Excel İndir</button>
+      </div>
+    </div>
+    <div class="card"><div class="tw"><table>
+      <thead><tr><th>Makbuz No</th><th>Sakin</th><th>Daire</th><th>Apartman</th><th>Tip</th><th>Dönem</th><th>Tutar</th><th>Tarih</th><th>Giriş Kaynağı</th><th>Not</th><th>İşlemler</th></tr></thead>
+      <tbody id="tm-tbody"></tbody>
     </table></div></div>
   </div>
   </div>
@@ -1954,6 +1984,34 @@
 
 <div class="ov" id="mod-ilerleme"> <div class="modal"> <div class="modal-h"><div class="modal-t"> Görev İlerlemesi</div><button class="modal-x" onclick="closeModal('mod-ilerleme')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div> <div id="mod-ilerleme-body"></div> <div class="modal-f"> <button class="btn bp" onclick="saveIlerleme()"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Güncelle</button> <button class="btn bg" onclick="closeModal('mod-ilerleme')">Kapat</button> </div> </div>
 </div>
+<!-- MAKBUZ DÜZENLEME MODAL -->
+<div class="ov" id="makbuz-edit-modal">
+  <div class="md" style="max-width:560px;padding:0;background:transparent;box-shadow:none;border:none">
+    <div id="makbuz-edit-content"></div>
+    <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:12px 20px 20px">
+      <button class="btn bp sm" onclick="window._makbuzEditSaveFn && window._makbuzEditSaveFn()">
+        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Kaydet
+      </button>
+      <button class="btn bg sm" onclick="closeModal('makbuz-edit-modal')">İptal</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAKBUZ ÖNİZLEME MODAL -->
+<div class="ov" id="makbuz-onizle-modal">
+  <div class="md" style="max-width:560px;padding:0;background:transparent;box-shadow:none;border:none">
+    <div id="makbuz-onizle-content"></div>
+    <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:12px 20px 20px">
+      <button class="btn bp sm" onclick="printMakbuzOnizle()">
+        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Yazdır / PDF
+      </button>
+      <button class="btn bg sm" onclick="closeModal('makbuz-onizle-modal')">Kapat</button>
+    </div>
+  </div>
+</div>
+
 <script src="app.js"></script>
 </body>
 </html>
