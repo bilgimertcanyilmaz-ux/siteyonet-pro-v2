@@ -4395,38 +4395,66 @@ function importBankaHareketi(input){
 }
 
 function parseBankFile(file){
-  const reader=new FileReader();
-  reader.onload=(e)=>{
-    const text=e.target.result;
-    bankRows=[];
-    const lines=text.split('\n').filter(l=>l.trim());
-    lines.forEach((line,i)=>{
-      if(i===0&&(line.toLowerCase().includes('tarih')||line.toLowerCase().includes('date')))return;
-      const parts=line.split(/[,;	]/).map(x=>x.trim().replace(/^"|"$/g,''));
-      if(parts.length<2)return;
-      const [tarih,aciklama,...rest]=parts;
-      const tutarStr=rest.find(x=>x.replace(/[.,\-\s]/g,'').match(/^\d+$/));
-      const tutar=parseFloat((tutarStr||'0').replace(',','.'));
-      if(!tarih||!tutar)return;
-      const esl=autoEslesir(aciklama||'');
-      bankRows.push({id:Date.now()+i,tarih,aciklama:aciklama||'',tutar,eslesme:esl,tip:tutar>0?'gelir':'gider',durum:esl?'eslesemedi':'beklemede'});
-    });
-    // Dosyayı state'e kaydet
-    if(!S.bankDosyalar) S.bankDosyalar=[];
-    const dosyaId=Date.now();
-    window._currentBankDosyaId=dosyaId;
-    const gelirT=bankRows.filter(r=>r.tutar>0).reduce((s,r)=>s+r.tutar,0);
-    const giderT=bankRows.filter(r=>r.tutar<0).reduce((s,r)=>s+Math.abs(r.tutar),0);
-    S.bankDosyalar.push({
-      id:dosyaId, ad:file.name,
-      yuklemeTarih:today(), aptId:selectedAptId,
-      satirSayisi:bankRows.length, gelir:gelirT, gider:giderT, onaylanan:0,
-      satirlar:bankRows.map(r=>({...r,eslesme:r.eslesme?r.eslesme.id:null}))
-    });
-    save(); renderBankRows(); renderBankDosyalar();
-    toast(`${bankRows.length} hareket yüklendi.`,'ok');
-  };
-  reader.readAsText(file,'UTF-8');
+  const isXlsx=/\.(xlsx|xls|xlsm)$/i.test(file.name);
+  if(isXlsx){
+    if(typeof XLSX==='undefined'){toast('XLSX kütüphanesi yüklenemedi.','err');return;}
+    const reader=new FileReader();
+    reader.onload=(e)=>{
+      try{
+        const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+        _bankProcessRows(rows,file);
+      }catch(err){toast('Excel okunamadı: '+err.message,'err');}
+    };
+    reader.readAsArrayBuffer(file);
+  }else{
+    const reader=new FileReader();
+    reader.onload=(e)=>{
+      const lines=e.target.result.split('\n').filter(l=>l.trim());
+      const rows=lines.map(l=>l.split(/[,;\t]/).map(x=>x.trim().replace(/^"|"$/g,'')));
+      _bankProcessRows(rows,file);
+    };
+    reader.readAsText(file,'UTF-8');
+  }
+}
+
+function _bankProcessRows(rows,file){
+  bankRows=[];
+  // Header satırını atla
+  let start=0;
+  if(rows.length>0){
+    const hdr=rows[0].map(c=>String(c).toLowerCase());
+    if(hdr.some(c=>c.includes('tarih')||c.includes('date')||c.includes('açıklama')||c.includes('tutar')))start=1;
+  }
+  rows.slice(start).forEach((parts,i)=>{
+    if(!parts||parts.length<2)return;
+    const tarih=String(parts[0]||'').trim();
+    const aciklama=String(parts[1]||'').trim();
+    // Tutar: 3. sütun öncelikli, sonra diğerleri
+    let tutar=0;
+    for(let j=2;j<parts.length;j++){
+      const v=parseFloat(String(parts[j]||'').replace(/\s/g,'').replace(',','.'));
+      if(!isNaN(v)&&v!==0){tutar=v;break;}
+    }
+    if(!tarih||tutar===0)return;
+    const esl=autoEslesir(aciklama);
+    bankRows.push({id:Date.now()+i,tarih,aciklama,tutar,eslesme:esl,tip:tutar>0?'gelir':'gider',durum:'beklemede'});
+  });
+  if(!S.bankDosyalar)S.bankDosyalar=[];
+  const dosyaId=Date.now();
+  window._currentBankDosyaId=dosyaId;
+  const gelirT=bankRows.filter(r=>r.tutar>0).reduce((s,r)=>s+r.tutar,0);
+  const giderT=bankRows.filter(r=>r.tutar<0).reduce((s,r)=>s+Math.abs(r.tutar),0);
+  S.bankDosyalar.push({
+    id:dosyaId,ad:file.name,
+    yuklemeTarih:today(),aptId:selectedAptId,
+    satirSayisi:bankRows.length,gelir:gelirT,gider:giderT,onaylanan:0,
+    satirlar:bankRows.map(r=>({...r,eslesme:r.eslesme?r.eslesme.id:null}))
+  });
+  save();renderBankRows();renderBankDosyalar();
+  if(bankRows.length>0)toast(`✓ ${bankRows.length} hareket yüklendi.`,'ok');
+  else toast('Hiç hareket bulunamadı. Sütun sırası: Tarih, Açıklama, Tutar','warn');
 }
 
 function autoEslesir(aciklama){

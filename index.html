@@ -1071,54 +1071,62 @@
     <!-- Önceden yüklenen dosyalar -->
     <div id="bank-dosya-gecmis" class="card mb14" style="display:none"></div>
 
-    <!-- Üst araçlar: Yükleme (sol) + Kurallar & Manuel (sağ) -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+    <!-- Kompakt üst araçlar -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
 
-      <!-- Sol: Yükleme -->
-      <div class="card">
-        <div class="fbc mb10">
-          <div class="card-t">🏦 Banka Hareketi Yükle</div>
-          <button class="btn bg xs" onclick="bankSablonIndir()" title="Örnek Excel şablonu indir" style="gap:5px">
-            <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Şablon İndir
-          </button>
+      <!-- Sol: Kompakt yükleme -->
+      <div class="card" style="padding:12px 14px">
+        <div class="fbc mb8">
+          <span style="font-size:13px;font-weight:700;color:var(--tx-1)">🏦 Banka Hareketi Yükle</span>
+          <button class="btn bg xs" onclick="bankSablonIndir()" style="font-size:11px;padding:4px 8px">⬇ Şablon</button>
         </div>
-        <div class="t3 mb10" style="font-size:12px">Excel (.xlsx, .csv) veya banka hesap dökümünüzü yükleyin. Sistem otomatik eşleştirir.</div>
-        <div class="bank-drop" id="bank-drop-zone" onclick="document.getElementById('bank-file-input').click()" ondrop="handleBankDrop(event)" ondragover="handleBankDragOver(event)" ondragleave="this.classList.remove('drag')">
-          <div class="bank-drop-ico">📊</div>
-          <div style="font-size:13px;font-weight:600;color:var(--tx-2)">Excel veya CSV dosyasını sürükle / tıkla</div>
-          <div style="font-size:11px;color:var(--tx-3);margin-top:6px">Desteklenen: .xlsx, .csv, .txt | Ziraat, Garanti, İş Bankası formatı</div>
+        <!-- Mini drop zone -->
+        <div id="bank-drop-zone" onclick="document.getElementById('bank-file-input').click()" ondrop="handleBankDrop(event)" ondragover="handleBankDragOver(event)" ondragleave="this.classList.remove('drag')" style="border:2px dashed var(--bd);border-radius:8px;padding:10px 12px;text-align:center;cursor:pointer;background:var(--bg);transition:border-color .2s">
+          <div style="font-size:20px;line-height:1;margin-bottom:3px">📊</div>
+          <div style="font-size:12px;font-weight:600;color:var(--tx-2)">Excel / CSV sürükle veya tıkla</div>
+          <div style="font-size:10.5px;color:var(--tx-3);margin-top:2px">.xlsx .csv .txt desteklenir</div>
         </div>
         <input type="file" id="bank-file-input" accept=".csv,.xlsx,.txt,.xls" style="display:none" onchange="importBankaHareketi(this)">
-        <div class="sep mt12 mb12"></div>
-        <div class="card-t mb8">Manuel Satır Ekle</div>
-        <div class="f3 fg">
-          <div class="fgp"><label class="lbl">Tarih</label><input type="date" class="fi" id="bank-m-tarih"></div>
-          <div class="fgp"><label class="lbl">Açıklama</label><input class="fi" id="bank-m-aciklama" placeholder="Ödeme açıklaması"></div>
-          <div class="fgp"><label class="lbl">Tutar (₺)</label><input type="number" class="fi" id="bank-m-tutar" placeholder="+ gelir / - gider"></div>
+        <!-- Inline manuel ekle -->
+        <div style="display:grid;grid-template-columns:100px 1fr 80px 28px;gap:5px;align-items:end;margin-top:8px">
+          <div>
+            <div style="font-size:10px;color:var(--tx-3);margin-bottom:2px">Tarih</div>
+            <input type="date" class="fi" id="bank-m-tarih" style="font-size:11px;padding:4px 6px">
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--tx-3);margin-bottom:2px">Açıklama</div>
+            <input class="fi" id="bank-m-aciklama" placeholder="Ödeme açıklaması" style="font-size:11px;padding:4px 6px">
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--tx-3);margin-bottom:2px">Tutar (₺)</div>
+            <input type="number" class="fi" id="bank-m-tutar" placeholder="±" style="font-size:11px;padding:4px 6px">
+          </div>
+          <button class="btn bp" onclick="bankManuelEkle()" style="padding:5px 0;font-size:15px;font-weight:700;height:31px;margin-top:auto;border-radius:6px">+</button>
         </div>
-        <button class="btn bg sm mt8" onclick="bankManuelEkle()">+ Satır Ekle</button>
       </div>
 
-      <!-- Sağ: Eşleştirme Kuralları -->
-      <div class="card" style="display:flex;flex-direction:column;gap:0">
-        <div class="card-t mb12">📌 Eşleştirme Kuralları</div>
-        <div style="display:flex;flex-direction:column;gap:10px;flex:1">
-          <div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--bd)">
-            <span style="font-size:18px;line-height:1">🔍</span>
-            <div><div style="font-size:12.5px;font-weight:600;color:var(--tx-1);margin-bottom:2px">Otomatik Daire Eşleşme</div><div style="font-size:12px;color:var(--tx-3)">Açıklamada daire no varsa (Örn: "D5", "Daire 12") otomatik eşleşir</div></div>
+      <!-- Sağ: Kompakt kurallar -->
+      <div class="card" style="padding:12px 14px">
+        <div class="fbc mb8">
+          <span style="font-size:13px;font-weight:700;color:var(--tx-1)">📌 Eşleştirme Kuralları</span>
+          <button class="btn bg xs" onclick="bankHepsiniEslesir()" style="font-size:11px;padding:4px 8px">🔍 Eşleştir</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div style="display:flex;gap:7px;align-items:center;padding:6px 8px;background:var(--bg);border-radius:6px;border:1px solid var(--bd)">
+            <span style="font-size:13px">🔍</span>
+            <div style="font-size:11.5px;color:var(--tx-2)"><b style="color:var(--tx-1)">Daire eşleşmesi</b> — "D5", "Daire 12" otomatik tanınır</div>
           </div>
-          <div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--bd)">
-            <span style="font-size:18px;line-height:1">👤</span>
-            <div><div style="font-size:12.5px;font-weight:600;color:var(--tx-1);margin-bottom:2px">İsim Tanıma</div><div style="font-size:12px;color:var(--tx-3)">Açıklamada sakin adı geçiyorsa otomatik tanır ve eşleştirir</div></div>
+          <div style="display:flex;gap:7px;align-items:center;padding:6px 8px;background:var(--bg);border-radius:6px;border:1px solid var(--bd)">
+            <span style="font-size:13px">👤</span>
+            <div style="font-size:11.5px;color:var(--tx-2)"><b style="color:var(--tx-1)">İsim tanıma</b> — Sakin adı açıklamada geçiyorsa eşleşir</div>
           </div>
-          <div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--bd)">
-            <span style="font-size:18px;line-height:1">✓</span>
-            <div><div style="font-size:12.5px;font-weight:600;color:var(--tx-1);margin-bottom:2px">Anlık Onaylama</div><div style="font-size:12px;color:var(--tx-3)">Her satırı ayrı onaylayın — gelir anında tahsilata, gider finansa işlenir</div></div>
+          <div style="display:flex;gap:7px;align-items:center;padding:6px 8px;background:var(--bg);border-radius:6px;border:1px solid var(--bd)">
+            <span style="font-size:13px">⚡</span>
+            <div style="font-size:11.5px;color:var(--tx-2)"><b style="color:var(--tx-1)">Anlık onaylama</b> — ✓ butonuyla gelir→tahsilat, gider→finans</div>
           </div>
-          <div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:rgba(37,99,235,.04);border-radius:8px;border:1px solid rgba(37,99,235,.15)">
-            <span style="font-size:18px;line-height:1">💡</span>
-            <div><div style="font-size:12.5px;font-weight:600;color:var(--tx-1);margin-bottom:2px">İpucu</div><div style="font-size:12px;color:var(--tx-3)">Şablon İndir butonuyla doğru sütun formatında Excel hazırlayın</div></div>
+          <div style="display:flex;gap:7px;align-items:center;padding:6px 8px;background:rgba(37,99,235,.04);border-radius:6px;border:1px solid rgba(37,99,235,.14)">
+            <span style="font-size:13px">💡</span>
+            <div style="font-size:11.5px;color:rgba(37,99,235,.85)">Sütun sırası: <b>Tarih · Açıklama · Tutar</b> · Daire · Sakin</div>
           </div>
         </div>
       </div>
