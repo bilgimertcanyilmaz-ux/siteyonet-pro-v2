@@ -148,6 +148,7 @@
   <div class="sb-sec">
     <div class="sb-sec-lbl">Finans & Raporlar</div>
     <div class="ni" data-p="tahsilat" data-role="yonetici" data-tip="Tahsilat &amp; Borç"><div class="nico"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M2 11h20"/><circle cx="7" cy="16" r="2"/><line x1="11" y1="14" x2="18" y2="14"/><line x1="11" y1="18" x2="16" y2="18"/></svg></div>Tahsilat & Borç<span class="nbadge rd" id="bdg-borc" style="display:none">0</span></div>
+    <div class="ni" data-p="finansal-durum" data-role="yonetici" data-tip="Finansal Durum"><div class="nico"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>Finansal Durum</div>
     <div class="ni" data-p="finans" data-role="yonetici sakin" data-tip="Gelir/Gider"><div class="nico"><svg viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22"/><path d="M5 8l7-6 7 6"/><path d="M5 16l7 6 7-6"/></svg></div>Gelir/Gider<span class="nbadge" id="bdg-fin" style="display:none">!</span></div>
     <div class="ni" data-p="raporlar" data-role="yonetici" data-tip="Raporlar &amp; Analiz"><div class="nico"><svg viewBox="0 0 24 24"><path d="M3 21h18"/><rect x="5" y="13" width="4" height="8"/><rect x="10" y="8" width="4" height="13"/><rect x="15" y="4" width="4" height="17"/></svg></div>Raporlar & Analiz</div>
     <div class="ni" data-p="toplu-borc" data-role="yonetici" data-tip="Toplu Borçlandırma"><div class="nico"><svg viewBox="0 0 24 24"><path d="M8 6H6a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1"/><path d="M10 4H8a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"/><path d="M12 2h6a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/><line x1="15" y1="5" x2="15" y2="8"/><circle cx="15" cy="10" r=".5" fill="currentColor"/></svg></div>Toplu Borçlandır</div>
@@ -2001,6 +2002,52 @@
 </div>
 
 <!-- KİŞİ CARİ SAYFA -->
+<div id="page-finansal-durum" class="pg">
+  <!-- ÖZET KARTLAR -->
+  <div id="fd-stats" style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px"></div>
+
+  <!-- FİLTRELER + GRAFİK SATIRI -->
+  <div style="display:grid;grid-template-columns:1fr 180px;gap:16px;margin-bottom:14px;align-items:start">
+    <div>
+      <div class="fc g8 mb10" style="flex-wrap:wrap">
+        <div class="srch" style="width:200px"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="fd-srch" placeholder="Sakin veya daire ara…" oninput="renderFinansalDurum()"></div>
+        <select class="fi sm" id="fd-f-apt" onchange="renderFinansalDurum()" style="width:auto;padding:6px 10px"><option value="">Tüm Apartmanlar</option></select>
+        <select class="fi sm" id="fd-f-durum" onchange="renderFinansalDurum()" style="width:auto;padding:6px 10px">
+          <option value="">Tüm Durumlar</option>
+          <option value="temiz">✅ Temiz</option>
+          <option value="borclu">⚠️ Borçlu</option>
+          <option value="gecikti">🔴 Gecikmiş</option>
+          <option value="icra">⚖️ İcrada</option>
+        </select>
+      </div>
+      <div id="fd-harf-list" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px"></div>
+    </div>
+    <div id="fd-chart-wrap"></div>
+  </div>
+
+  <!-- TABLO -->
+  <div class="card mb14"><div class="tw"><table>
+    <thead><tr>
+      <th style="width:32px"><input type="checkbox" id="fd-sel-all" onchange="fdSelAll(this)" style="cursor:pointer"></th>
+      <th>Daire</th><th>Sakin Adı</th><th>Tip</th>
+      <th style="text-align:right">Toplam Borç</th>
+      <th>Gecikme</th><th>Son Ödeme</th>
+      <th style="min-width:110px">Tahsilat Oranı</th>
+      <th>Durum</th><th>İşlemler</th>
+    </tr></thead>
+    <tbody id="fd-tbody"></tbody>
+  </table></div></div>
+
+  <!-- TOPLU İŞLEM ÇUBUĞU -->
+  <div id="fd-bulk-bar" style="display:none;position:sticky;bottom:16px;background:#1e293b;color:#fff;border-radius:12px;padding:12px 18px;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:50">
+    <span id="fd-sel-count" style="font-size:13px;font-weight:600;flex:1">0 sakin seçildi</span>
+    <button onclick="fdBulkSMS()" style="background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:7px;padding:7px 13px;cursor:pointer;font-size:12.5px">📱 Toplu SMS</button>
+    <button onclick="fdBulkExcel()" style="background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:7px;padding:7px 13px;cursor:pointer;font-size:12.5px">📊 Excel</button>
+    <button onclick="fdBulkPDF()" style="background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:7px;padding:7px 13px;cursor:pointer;font-size:12.5px">📄 Hesap Ekstresi</button>
+    <button onclick="_fdSelected.clear();updateFdBulkBar();renderFinansalDurum()" style="background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.15);border-radius:7px;padding:7px 10px;cursor:pointer;font-size:12px">✕</button>
+  </div>
+</div>
+
 <div id="page-sakin-cari" class="pg">
   <div id="sakin-cari-content"></div>
 </div>
@@ -2249,6 +2296,12 @@
     </div>
   </div>
 </div>
+
+<!-- FİNANSAL DURUM DRAWER -->
+<div id="fd-drawer" style="position:fixed;top:0;right:-440px;width:420px;height:100vh;background:#fff;box-shadow:-4px 0 32px rgba(0,0,0,.14);z-index:1200;transition:right .28s cubic-bezier(.4,0,.2,1);overflow-y:auto;display:flex;flex-direction:column">
+  <div id="fd-drawer-content" style="flex:1"></div>
+</div>
+<div id="fd-drawer-overlay" onclick="fdDrawerClose()" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:1199;backdrop-filter:blur(2px)"></div>
 
 <script src="app.js"></script>
 </body>

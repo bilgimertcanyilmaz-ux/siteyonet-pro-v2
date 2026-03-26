@@ -615,7 +615,7 @@ window.addEventListener('popstate', function(e) {
 //
 // NAVIGATION
 //
-const PAGE_TITLES = { dashboard:'Anasayfa', apartmanlar:'Apartmanlar', karar:'Karar Metni Oluşturucu', isletme:'İşletme Projesi', 'isl-detay':'İşletme Projesi Detay', denetim:'Denetim Raporları', 'den-detay':'Denetim Raporu Detay', asansor:'Asansör Etiket Kontrolü', 'asan-detay':'Asansör Detay', teklifler:'Teklifler', gorevler:'Görev Yönetimi', icra:'İcra Listesi', finans:'Gelir / Gider Takibi', ayarlar:'Ayarlar', sakinler:'Sakin Yönetimi', personel:'Personel Yönetimi', duyurular:'Duyuru & İletişim', ariza:'Arıza & Bakım Yönetimi', tahsilat:'Tahsilat & Borç Takibi', raporlar:'Raporlar & Analitik', 'ai-asistan':'AI Yönetim Asistanı', sigorta:'Sigorta Takibi', toplanti:'Toplantı Yönetimi', fatura:'Fatura & Hizmet Yönetimi', superadmin:'Süper Admin Paneli', 'apt-detay':'Apartman Detay', 'daire-detay':'Daire Detay', 'sakin-cari':'Kişilere Göre Finansal Durum', 'tanimlama':'Evrak Kategorisi', 'proje':'Proje & Tadilat Takibi', 'iletisim':'İletişim Merkezi', 'toplu-borc':'Toplu Borçlandırma' };
+const PAGE_TITLES = { dashboard:'Anasayfa', apartmanlar:'Apartmanlar', karar:'Karar Metni Oluşturucu', isletme:'İşletme Projesi', 'isl-detay':'İşletme Projesi Detay', denetim:'Denetim Raporları', 'den-detay':'Denetim Raporu Detay', asansor:'Asansör Etiket Kontrolü', 'asan-detay':'Asansör Detay', teklifler:'Teklifler', gorevler:'Görev Yönetimi', icra:'İcra Listesi', finans:'Gelir / Gider Takibi', ayarlar:'Ayarlar', sakinler:'Sakin Yönetimi', personel:'Personel Yönetimi', duyurular:'Duyuru & İletişim', ariza:'Arıza & Bakım Yönetimi', tahsilat:'Tahsilat & Borç Takibi', raporlar:'Raporlar & Analitik', 'ai-asistan':'AI Yönetim Asistanı', sigorta:'Sigorta Takibi', toplanti:'Toplantı Yönetimi', fatura:'Fatura & Hizmet Yönetimi', superadmin:'Süper Admin Paneli', 'apt-detay':'Apartman Detay', 'daire-detay':'Daire Detay', 'finansal-durum':'Finansal Durum', 'sakin-cari':'Kişilere Göre Finansal Durum', 'tanimlama':'Evrak Kategorisi', 'proje':'Proje & Tadilat Takibi', 'iletisim':'İletişim Merkezi', 'toplu-borc':'Toplu Borçlandırma' };
 
 function goPage(p) {
  if (!window._navRestoring) {
@@ -671,6 +671,7 @@ function goPage(p) {
  if (p==='karar') renderKararlar();
  if (p==='icra') { renderIcra(); renderIcraRapor(); }
   if (p==='finans') { renderFinans(); renderFinansRapor(); if(typeof finGiderFormuHazirla==='function')finGiderFormuHazirla(); }
+  if (p==='finansal-durum') { _fdSelected = new Set(); renderFinansalDurum(); }
   if (p==='ayarlar') { loadSettings(); renderSetStats(); }
   if (p==='sakinler') { renderSakinler(); initTopluDaireForm(); }
   if (p==='toplu-borc') { renderTopluBorcPage(); }
@@ -740,7 +741,7 @@ document.querySelectorAll('.ov').forEach(o => o.addEventListener('click', e => {
 // 
 // DROPDOWNS — central sync
 // 
-const DD_IDS = ['kar-apt','isl-apt','den-apt','asan-apt','tek-apt','gov-apt','icra-apt','icra-f-apt','tek-f-apt','kar-f-apt','gov-f-apt', 'sak-apt', 'per-apt', 'duy-apt', 'arz-apt', 'arz-f-apt', 'tah-o-apt', 'sig-apt', 'top-apt', 'fat-apt', 'fg-apt', 'gg-apt', 'fin-f-apt', 'sig-f-apt', 'top-f-apt', 'fat-f-apt', 'toplu-blok'];
+const DD_IDS = ['kar-apt','isl-apt','den-apt','asan-apt','tek-apt','gov-apt','icra-apt','icra-f-apt','tek-f-apt','kar-f-apt','gov-f-apt', 'sak-apt', 'per-apt', 'duy-apt', 'arz-apt', 'arz-f-apt', 'tah-o-apt', 'sig-apt', 'top-apt', 'fat-apt', 'fg-apt', 'gg-apt', 'fin-f-apt', 'fd-f-apt', 'sig-f-apt', 'top-f-apt', 'fat-f-apt', 'toplu-blok'];
 
 function syncDropdowns() {
  DD_IDS.forEach(id => {
@@ -7080,6 +7081,302 @@ function renderFinans() {
       <td><button class="act-btn rd" onclick="delFinans(${f.id})" title="Sil"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></td>
     </tr>`;
   }).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// FİNANSAL DURUM SAYFASI
+// ══════════════════════════════════════════════════════
+let _fdHarf = '';
+let _fdSelected = new Set();
+
+function renderFinansalDurum() {
+  const aptId = (document.getElementById('fd-f-apt')||{}).value||'';
+  const durumF = (document.getElementById('fd-f-durum')||{}).value||'';
+  const srch = ((document.getElementById('fd-srch')||{}).value||'').toLowerCase();
+
+  // Sakin verisini zenginleştir
+  let sakinler = (S.sakinler||[]).map(sk=>{
+    if (aptId && sk.aptId != aptId) return null;
+    if (srch && !sk.ad.toLowerCase().includes(srch) && !(sk.daire||'').toString().includes(srch)) return null;
+    if (_fdHarf && !(sk.ad||'').toUpperCase().startsWith(_fdHarf)) return null;
+
+    const borc = sk.borc||0;
+    const odemeler = (S.tahsilatlar||[]).filter(t=>t.sakId==sk.id||t.sakinId==sk.id);
+    const toplamOdeme = odemeler.reduce((s,t)=>s+(t.tutar||0),0);
+    const sortedOde = odemeler.slice().sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||''));
+    const sonOdeme = sortedOde[0]?.tarih||null;
+
+    // Borç detayları
+    const borcKayitlari=[];
+    (S.aidatBorclandir||[]).forEach(kayit=>{
+      if(aptId && kayit.aptId!=aptId) return;
+      (kayit.detaylar||[]).forEach(d=>{
+        if(d.sakId==sk.id) borcKayitlari.push({...d,donem:kayit.donem,sonOdeme:kayit.sonOdeme,tarih:kayit.tarih});
+      });
+    });
+
+    // Gecikme gün hesabı
+    let gecikmeGun=0;
+    if(borc>0){
+      const now=new Date();
+      borcKayitlari.forEach(b=>{
+        if(b.sonOdeme){const d=Math.floor((now-new Date(b.sonOdeme))/86400000);if(d>gecikmeGun)gecikmeGun=d;}
+      });
+      if(!gecikmeGun&&borcKayitlari.length) gecikmeGun=1;
+    }
+
+    // Tahsilat oranı
+    const toplamBorclandir=borcKayitlari.reduce((s,b)=>s+(b.tutar||0),0);
+    let tahsilatOran = toplamBorclandir>0 ? Math.min(100,Math.round(toplamOdeme/toplamBorclandir*100)) : (borc<=0?100:0);
+
+    // Durum
+    const icrada=(S.icralar||[]).some(i=>i.sakId==sk.id||String(i.daireNo)===String(sk.daire));
+    let durumStr = icrada?'icra': borc<=0?'temiz': gecikmeGun>30?'gecikti':'borclu';
+
+    return {...sk,toplamBorc:borc,toplamOdeme,sonOdeme,gecikmeGun,tahsilatOran,durumStr,borcKayitlari,odemeler};
+  }).filter(Boolean);
+
+  // Durum filtresi
+  if(durumF) sakinler=sakinler.filter(sk=>sk.durumStr===durumF);
+  sakinler.sort((a,b)=>b.toplamBorc-a.toplamBorc);
+
+  // İstatistikler
+  const toplamBorc=sakinler.reduce((s,sk)=>s+sk.toplamBorc,0);
+  const toplamTahsil=sakinler.reduce((s,sk)=>s+sk.toplamOdeme,0);
+  const gecikmBorc=sakinler.filter(sk=>sk.gecikmeGun>0).reduce((s,sk)=>s+sk.toplamBorc,0);
+  const borcluSayi=sakinler.filter(sk=>sk.toplamBorc>0).length;
+
+  _renderFdStats(toplamBorc,toplamTahsil,gecikmBorc,sakinler.length,borcluSayi);
+  _renderFdChart(borcluSayi,sakinler.length-borcluSayi);
+  _renderFdHarfFilter(sakinler);
+  _renderFdTablo(sakinler);
+}
+
+function _renderFdStats(toplamBorc,tahsil,gecik,toplamSakin,borclu){
+  const net=tahsil-toplamBorc;
+  const el=document.getElementById('fd-stats');if(!el)return;
+  el.innerHTML=[
+    {label:'Toplam Borç',val:'₺'+fmt(toplamBorc),clr:'#dc2626',bg:'#fef2f2',bd:'#fecaca',ico:'💸'},
+    {label:'Tahsil Edilen',val:'₺'+fmt(tahsil),clr:'#16a34a',bg:'#f0fdf4',bd:'#86efac',ico:'✅'},
+    {label:'Geciken Borç',val:'₺'+fmt(gecik),clr:'#d97706',bg:'#fffbeb',bd:'#fde68a',ico:'⏰'},
+    {label:'Net Bakiye',val:(net>=0?'+':'')+'₺'+fmt(Math.abs(net)),clr:net>=0?'#2563eb':'#dc2626',bg:'#eff6ff',bd:'#bfdbfe',ico:'📊'},
+    {label:'Borçlu Sakin',val:borclu+' / '+toplamSakin,clr:'#7c3aed',bg:'#faf5ff',bd:'#ddd6fe',ico:'👤'},
+  ].map(c=>`<div style="background:${c.bg};border:1.5px solid ${c.bd};border-radius:12px;padding:14px 16px;cursor:default">
+    <div style="font-size:20px;margin-bottom:5px">${c.ico}</div>
+    <div style="font-size:10px;font-weight:700;color:${c.clr};text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">${c.label}</div>
+    <div style="font-size:19px;font-weight:800;color:${c.clr};white-space:nowrap">${c.val}</div>
+  </div>`).join('');
+}
+
+function _renderFdChart(borclu,temiz){
+  const wrap=document.getElementById('fd-chart-wrap');if(!wrap)return;
+  const total=borclu+temiz;
+  if(!total){wrap.innerHTML='';return;}
+  const r=56,cx=80,cy=75;
+  const borcluA=borclu/total*Math.PI*2;
+  function arcPath(sa,ea,fill){
+    if(Math.abs(ea-sa)>=Math.PI*2-0.001){
+      return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}"/>`;
+    }
+    const x1=cx+r*Math.cos(sa-Math.PI/2),y1=cy+r*Math.sin(sa-Math.PI/2);
+    const x2=cx+r*Math.cos(ea-Math.PI/2),y2=cy+r*Math.sin(ea-Math.PI/2);
+    const lg=ea-sa>Math.PI?1:0;
+    return `<path d="M${cx} ${cy} L${x1} ${y1} A${r} ${r} 0 ${lg} 1 ${x2} ${y2}Z" fill="${fill}"/>`;
+  }
+  const pct=Math.round(borclu/total*100);
+  wrap.innerHTML=`<div style="text-align:center">
+    <svg width="160" height="150" viewBox="0 0 160 150">
+      ${arcPath(0,borcluA,'#ef4444')}${arcPath(borcluA,Math.PI*2,'#22c55e')}
+      <circle cx="${cx}" cy="${cy}" r="34" fill="#fff"/>
+      <text x="${cx}" y="${cy-4}" text-anchor="middle" font-size="17" font-weight="800" fill="#1e293b">${pct}%</text>
+      <text x="${cx}" y="${cy+12}" text-anchor="middle" font-size="9.5" fill="#64748b">Borçlu</text>
+    </svg>
+    <div style="display:flex;gap:8px;justify-content:center;font-size:10.5px;color:var(--tx-2);margin-top:-4px">
+      <span><span style="display:inline-block;width:9px;height:9px;background:#ef4444;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Borçlu (${borclu})</span>
+      <span><span style="display:inline-block;width:9px;height:9px;background:#22c55e;border-radius:2px;margin-right:3px;vertical-align:middle"></span>Temiz (${temiz})</span>
+    </div>
+  </div>`;
+}
+
+function _renderFdHarfFilter(sakinler){
+  const el=document.getElementById('fd-harf-list');if(!el)return;
+  const harfler=[...new Set(sakinler.map(sk=>(sk.ad||'').charAt(0).toUpperCase()).filter(h=>/[A-ZÇĞİÖŞÜ]/.test(h)))].sort();
+  const btn=(h,label,active)=>`<button onclick="fdHarfSec('${h}')" style="padding:4px 8px;border-radius:5px;border:1.5px solid ${active?'var(--brand)':'var(--bd)'};background:${active?'var(--brand)':'var(--bg)'};color:${active?'#fff':'var(--tx-2)'};cursor:pointer;font-size:11.5px;font-weight:600;transition:all .1s">${label}</button>`;
+  el.innerHTML=btn('','Tümü',!_fdHarf)+harfler.map(h=>btn(h,h,_fdHarf===h)).join('');
+}
+
+function fdHarfSec(h){_fdHarf=h;renderFinansalDurum();}
+
+function _renderFdTablo(sakinler){
+  const tbody=document.getElementById('fd-tbody');if(!tbody)return;
+  if(!sakinler.length){tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--tx-3)">Sakin bulunamadı</td></tr>';return;}
+  const db={temiz:'<span class="b b-gr" style="font-size:10px">✅ Temiz</span>',borclu:'<span class="b b-am" style="font-size:10px">⚠️ Borçlu</span>',gecikti:'<span class="b b-rd" style="font-size:10px">🔴 Gecikmiş</span>',icra:'<span style="background:#7c3aed;color:#fff;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600">⚖️ İcra</span>'};
+  tbody.innerHTML=sakinler.map(sk=>{
+    const isSel=_fdSelected.has(sk.id);
+    const gecikStr=sk.gecikmeGun>0?`<span style="color:var(--err);font-weight:700">${sk.gecikmeGun} gün</span>`:'—';
+    const sonOStr=sk.sonOdeme?new Date(sk.sonOdeme+'T00:00').toLocaleDateString('tr-TR'):'—';
+    const oranClr=sk.tahsilatOran>=100?'#22c55e':sk.tahsilatOran>=50?'#f59e0b':'#ef4444';
+    const bar=`<div style="display:flex;align-items:center;gap:6px"><div style="flex:1;background:#e5e7eb;border-radius:4px;height:6px;overflow:hidden"><div style="width:${sk.tahsilatOran}%;background:${oranClr};height:100%;border-radius:4px"></div></div><span style="font-size:10.5px;font-weight:700;color:${oranClr};white-space:nowrap">${sk.tahsilatOran}%</span></div>`;
+    return `<tr style="cursor:pointer;transition:background .1s" onclick="fdDrawerOpen(${sk.id})" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
+      <td onclick="event.stopPropagation()"><input type="checkbox" ${isSel?'checked':''} onchange="fdToggleSel(${sk.id},this)" style="cursor:pointer"></td>
+      <td style="font-weight:700;font-size:13px">${sk.daire||'—'}</td>
+      <td><a href="javascript:void(0)" onclick="event.stopPropagation();goSakinCari(${sk.id})" style="color:var(--brand);font-weight:600;font-size:13px;text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${sk.ad}</a></td>
+      <td style="font-size:11.5px;color:var(--tx-3)">${sk.tip||'Malik'}</td>
+      <td style="font-weight:700;color:${sk.toplamBorc>0?'var(--err)':'var(--ok)'};font-size:13px;text-align:right">${sk.toplamBorc>0?'₺'+fmt(sk.toplamBorc):'—'}</td>
+      <td style="font-size:12.5px">${gecikStr}</td>
+      <td style="font-size:11.5px;color:var(--tx-3)">${sonOStr}</td>
+      <td style="min-width:110px">${bar}</td>
+      <td>${db[sk.durumStr]||db.temiz}</td>
+      <td onclick="event.stopPropagation()"><div style="display:flex;gap:3px">
+        <button onclick="goPage('toplu-borc')" title="Borçlandır" style="background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;border-radius:5px;padding:3px 7px;font-size:10.5px;cursor:pointer;white-space:nowrap">+Borç</button>
+        <button onclick="goPage('tahsilat')" title="Tahsilat Al" style="background:#dcfce7;color:#16a34a;border:1px solid #86efac;border-radius:5px;padding:3px 7px;font-size:10.5px;cursor:pointer">Tahsil</button>
+        <button onclick="fdDrawerOpen(${sk.id})" title="Detay" style="background:var(--bg);color:var(--tx-2);border:1px solid var(--bd);border-radius:5px;padding:3px 7px;font-size:10.5px;cursor:pointer">📋</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function fdToggleSel(sakId,cb){
+  if(cb.checked)_fdSelected.add(sakId);else _fdSelected.delete(sakId);
+  updateFdBulkBar();
+}
+function fdSelAll(cb){
+  document.querySelectorAll('#fd-tbody input[type=checkbox]').forEach((c,i)=>{
+    c.checked=cb.checked;
+  });
+  // Re-scan after checking
+  document.querySelectorAll('#fd-tbody input[type=checkbox]').forEach(c=>{
+    const tr=c.closest('tr');
+    const aEl=tr&&tr.querySelector('a[onclick]');
+    if(!aEl)return;
+    const m=aEl.getAttribute('onclick').match(/\d+/);
+    if(!m)return;
+    const id=+m[0];
+    if(cb.checked)_fdSelected.add(id);else _fdSelected.delete(id);
+  });
+  updateFdBulkBar();
+}
+function updateFdBulkBar(){
+  const bar=document.getElementById('fd-bulk-bar');
+  const cnt=document.getElementById('fd-sel-count');
+  if(!bar)return;
+  bar.style.display=_fdSelected.size>0?'flex':'none';
+  if(cnt)cnt.textContent=_fdSelected.size+' sakin seçildi';
+}
+function fdBulkSMS(){if(!_fdSelected.size)return;toast(`📱 ${_fdSelected.size} sakine SMS bildirimi gönderildi.`,'ok');}
+function fdBulkExcel(){toast('📊 Excel dışa aktarma hazırlanıyor…','ok');}
+function fdBulkPDF(){toast('📄 Hesap ekstreleri hazırlanıyor…','ok');}
+
+// ── FINANSAL DURUM DRAWER ──────────────────────────────
+function fdDrawerOpen(sakId){
+  const sk=(S.sakinler||[]).find(s=>s.id===+sakId);
+  if(!sk)return;
+  const drawer=document.getElementById('fd-drawer');
+  const ov=document.getElementById('fd-drawer-overlay');
+  if(drawer)drawer.style.right='0';
+  if(ov)ov.style.display='block';
+
+  const odemeler=(S.tahsilatlar||[]).filter(t=>t.sakId==sk.id||t.sakinId==sk.id).slice().sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||''));
+  const toplamOdeme=odemeler.reduce((s,t)=>s+(t.tutar||0),0);
+
+  const borcKayitlari=[];
+  (S.aidatBorclandir||[]).forEach(kayit=>{
+    (kayit.detaylar||[]).forEach(d=>{
+      if(d.sakId==sk.id)borcKayitlari.push({...d,donem:kayit.donem,sonOdeme:kayit.sonOdeme});
+    });
+  });
+
+  // Son 6 ay ödeme grid
+  const months=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date();d.setMonth(d.getMonth()-i);
+    const m=d.toISOString().substring(0,7);
+    const paid=odemeler.some(o=>(o.tarih||'').startsWith(m));
+    months.push({m,paid});
+  }
+
+  const initials=(sk.ad||'?').split(' ').map(w=>w[0]||'').slice(0,2).join('').toUpperCase();
+  const borc=sk.borc||0;
+  const aptAd=(S.apartmanlar||[]).find(a=>a.id==sk.aptId)?.ad||'';
+
+  document.getElementById('fd-drawer-content').innerHTML=`
+    <div style="padding:20px 20px 90px">
+      <!-- Başlık -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;flex-shrink:0">${initials}</div>
+          <div>
+            <div style="font-size:15px;font-weight:700;color:var(--tx-1)">${sk.ad}</div>
+            <div style="font-size:11.5px;color:var(--tx-3);margin-top:1px">Daire ${sk.daire||'?'} · ${sk.tip||'Malik'} · ${aptAd}</div>
+          </div>
+        </div>
+        <button onclick="fdDrawerClose()" style="background:var(--bg);border:1px solid var(--bd);border-radius:6px;padding:5px 9px;cursor:pointer;color:var(--tx-3);font-size:14px;flex-shrink:0">✕</button>
+      </div>
+
+      <!-- Borç / Tahsilat özet -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+        <div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:9.5px;font-weight:700;color:#b91c1c;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Toplam Borç</div>
+          <div style="font-size:22px;font-weight:800;color:#dc2626">₺${fmt(borc)}</div>
+        </div>
+        <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:9.5px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Tahsil Edilen</div>
+          <div style="font-size:22px;font-weight:800;color:#16a34a">₺${fmt(toplamOdeme)}</div>
+        </div>
+      </div>
+
+      <!-- Son 6 ay ödeme durumu -->
+      <div style="background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:14px">
+        <div style="font-size:11.5px;font-weight:600;color:var(--tx-2);margin-bottom:10px">Son 6 Ay Ödeme Durumu</div>
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:5px">
+          ${months.map(m=>`<div style="text-align:center">
+            <div style="width:36px;height:36px;border-radius:8px;margin:0 auto 5px;background:${m.paid?'#dcfce7':'#fee2e2'};border:1.5px solid ${m.paid?'#86efac':'#fca5a5'};display:flex;align-items:center;justify-content:center;font-size:15px">${m.paid?'✓':'✗'}</div>
+            <div style="font-size:9px;color:var(--tx-3);font-weight:600">${m.m.slice(5)}</div>
+          </div>`).join('')}
+        </div>
+      </div>
+
+      <!-- Borç detayı -->
+      ${borcKayitlari.length?`<div style="margin-bottom:14px">
+        <div style="font-size:11.5px;font-weight:600;color:var(--tx-2);margin-bottom:8px">Borç Kalemleri</div>
+        <div style="border:1px solid var(--bd);border-radius:8px;overflow:hidden">
+          ${borcKayitlari.map((b,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;${i?'border-top:1px solid var(--bd)':''}">
+            <div>
+              <div style="font-size:12.5px;font-weight:600;color:var(--tx-1)">${b.donem||'—'} · ${b.kategori||'Aidat'}</div>
+              ${b.sonOdeme?`<div style="font-size:10.5px;color:var(--tx-3)">Son ödeme: ${b.sonOdeme}</div>`:''}
+            </div>
+            <div style="font-weight:700;color:var(--err);font-size:13px">₺${fmt(b.tutar||0)}</div>
+          </div>`).join('')}
+        </div>
+      </div>`:''}
+
+      <!-- Son ödemeler -->
+      ${odemeler.length?`<div style="margin-bottom:14px">
+        <div style="font-size:11.5px;font-weight:600;color:var(--tx-2);margin-bottom:8px">Son Ödemeler</div>
+        <div style="border:1px solid var(--bd);border-radius:8px;overflow:hidden">
+          ${odemeler.slice(0,6).map((o,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;${i?'border-top:1px solid var(--bd)':''}">
+            <div>
+              <div style="font-size:12.5px;font-weight:600;color:var(--tx-1)">${o.not||o.aciklama||o.tip||'Ödeme'}</div>
+              <div style="font-size:10.5px;color:var(--tx-3)">${o.tarih||'—'} · ${o.yontem||o.kaynak||'—'}</div>
+            </div>
+            <div style="font-weight:700;color:#16a34a;font-size:13px">+₺${fmt(o.tutar||0)}</div>
+          </div>`).join('')}
+        </div>
+      </div>`:'<div style="text-align:center;padding:16px;color:var(--tx-3);font-size:12.5px;background:var(--bg);border-radius:8px;margin-bottom:14px">Henüz ödeme kaydı yok</div>'}
+    </div>
+
+    <!-- Sabit alt aksiyon -->
+    <div style="position:sticky;bottom:0;padding:14px 20px;background:#fff;border-top:1px solid var(--bd);display:flex;gap:8px">
+      <button class="btn bp sm" onclick="goPage('tahsilat')" style="flex:1">💰 Hızlı Tahsilat</button>
+      <button class="btn bg sm" onclick="fdDrawerClose();goSakinCari(${sk.id})" style="flex:1">📊 Hesap Ekstresi</button>
+    </div>`;
+}
+
+function fdDrawerClose(){
+  const d=document.getElementById('fd-drawer');
+  const ov=document.getElementById('fd-drawer-overlay');
+  if(d)d.style.right='-440px';
+  if(ov)ov.style.display='none';
 }
 
 function renderFinansRapor() {
