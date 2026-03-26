@@ -4494,6 +4494,9 @@ function bankHepsiniEslesir(){
 
 function bankSatirOnayla(id){
   const r=bankRows.find(x=>x.id===id);if(!r||r.durum==='onaylandi')return;
+  // Validasyon
+  if(r.tutar>0&&!r.eslesme){toast('Önce eşleşen sakini seçin.','err');openBankSakinModal(id);return;}
+  if(r.tutar<0&&!r.giderKat){toast('Önce gider türünü seçin.','err');return;}
   r.durum='onaylandi';
   const aptId=selectedAptId;
   if(!aptId){save();renderBankRows();toast('Hareket onaylandı.','ok');return;}
@@ -4501,7 +4504,6 @@ function bankSatirOnayla(id){
   if(!makbuzNo)makbuzNo=5000;
   const uid=Date.now();
   if(r.tutar>0&&r.eslesme){
-    // Gelir → tahsilat kaydı + sakin borç düşümü
     makbuzNo++;
     S.tahsilatlar=S.tahsilatlar||[];
     S.tahsilatlar.push({id:uid,no:'B-'+makbuzNo,sakId:r.eslesme.id,sakAd:r.eslesme.ad,
@@ -4510,17 +4512,16 @@ function bankSatirOnayla(id){
     const sk=S.sakinler.find(x=>x.id==r.eslesme.id);
     if(sk&&sk.borc>0)sk.borc=Math.max(0,(sk.borc||0)-r.tutar);
   }
-  // Her hareket finansa işlenir
   S.finansIslemler=S.finansIslemler||[];
   S.finansIslemler.push({id:uid+1,aptId:+aptId,aptAd:apt?.ad||'',
     tarih:r.tarih,tur:r.tutar>0?'gelir':'gider',
-    kat:r.tutar>0?'aidat':'diger',
+    kat:r.tutar>0?'aidat':(r.giderKat||'Diğer').toLowerCase(),
     tutar:Math.abs(r.tutar),aciklama:r.aciklama,belge:'Banka'});
-  // Dosya geçmişini güncelle
   const dosya=(S.bankDosyalar||[]).find(d=>d.id===window._currentBankDosyaId);
   if(dosya){dosya.onaylanan=(dosya.onaylanan||0)+1;dosya.satirlar=bankRows.map(rr=>({...rr,eslesme:rr.eslesme?rr.eslesme.id:null}));}
   save();renderBankRows();
-  toast(r.tutar>0?'✓ Gelir işlendi → Tahsilat & Finans':'✓ Gider işlendi → Finans','ok');
+  const taraf=r.tutar>0?r.eslesme.ad+' (D:'+r.eslesme.daire+')':(r.giderKat||'Gider');
+  toast(`✓ ${taraf} → ${r.tutar>0?'Tahsilat & Finans':'Finans'} işlendi`,'ok');
 }
 
 function bankSatirReddet(id){
@@ -4531,6 +4532,48 @@ function bankSatirAta(id,sakId){
   const r=bankRows.find(x=>x.id===id);if(!r)return;
   r.eslesme=sakId?S.sakinler.find(x=>x.id==sakId)||null:null;
   renderBankRows();
+}
+
+// ── BANKA SAKİN SEÇİM MODAL ──────────────────────────
+function openBankSakinModal(rowId){
+  window._bankSakinRowId=rowId;
+  const aptId=selectedAptId;
+  window._bankSakinList=S.sakinler.filter(x=>x.aptId==aptId);
+  _renderBankSakinModal('');
+  const inp=document.getElementById('bank-sakin-srch');
+  if(inp)inp.value='';
+  openModal('bank-sakin-modal');
+}
+
+function _renderBankSakinModal(q){
+  const list=document.getElementById('bank-sakin-list');if(!list)return;
+  const r=bankRows.find(x=>x.id===window._bankSakinRowId);
+  const currentId=r?.eslesme?.id;
+  const sakinler=(window._bankSakinList||[]).filter(sk=>{
+    if(!q)return true;
+    const s=q.toLowerCase();
+    return sk.ad.toLowerCase().includes(s)||String(sk.daire||'').includes(s);
+  });
+  if(!sakinler.length){list.innerHTML='<div style="padding:28px;text-align:center;color:var(--tx-3);font-size:13px">Sakin bulunamadı</div>';return;}
+  list.innerHTML=sakinler.map(sk=>{
+    const isSelected=sk.id===currentId;
+    const borcStr=sk.borc>0?`<span style="color:var(--err);font-weight:600">₺${fmt(sk.borc)} borç</span>`:`<span style="color:#16a34a">Borçsuz</span>`;
+    const initials=sk.ad.split(' ').map(w=>w[0]||'').slice(0,2).join('').toUpperCase();
+    return `<div onclick="bankSakinSec(${sk.id})" style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:8px;cursor:pointer;border:1.5px solid ${isSelected?'var(--brand)':'transparent'};background:${isSelected?'rgba(37,99,235,.05)':'transparent'};transition:all .12s" onmouseover="this.style.background='var(--bg)';this.style.borderColor='var(--bd)'" onmouseout="this.style.background='${isSelected?'rgba(37,99,235,.05)':'transparent'}';this.style.borderColor='${isSelected?'var(--brand)':'transparent'}'">
+      <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;flex-shrink:0">${initials}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--tx-1)">${sk.ad}</div>
+        <div style="font-size:11.5px;color:var(--tx-3);margin-top:1px">Daire ${sk.daire||'?'} &nbsp;·&nbsp; ${borcStr}</div>
+      </div>
+      ${isSelected?'<span style="color:var(--brand);font-size:16px;font-weight:700">✓</span>':''}
+    </div>`;
+  }).join('');
+}
+
+function bankSakinSec(sakId){
+  const rowId=window._bankSakinRowId;if(!rowId)return;
+  bankSatirAta(rowId,sakId);
+  closeModal('bank-sakin-modal');
 }
 
 function bankOnayliKaydet(){
@@ -4576,32 +4619,60 @@ function renderBankRows(){
   const onaylanan=bankRows.filter(r=>r.durum==='onaylandi').length;
   if(ozet)ozet.innerHTML=`<span style="font-size:12px;color:var(--tx-3)">${bankRows.length} hareket</span>&nbsp;&nbsp;<span style="color:#16a34a;font-size:12px;font-weight:600">↑ ₺${fmt(gelir)}</span>&nbsp;&nbsp;<span style="color:var(--err);font-size:12px;font-weight:600">↓ ₺${fmt(gider)}</span>&nbsp;&nbsp;${bekleyen?`<span class="b b-gy" style="font-size:10.5px">${bekleyen} bekliyor</span>`:''}${onaylanan?`&nbsp;<span class="b b-gr" style="font-size:10.5px">${onaylanan} onaylı</span>`:''}`;
   if(!bankRows.length){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--tx-3);font-size:13px">📂 Henüz banka hareketi yüklenmedi. Excel/CSV yükleyin veya manuel ekleyin.</div>';return;}
-  const aptId=selectedAptId;
-  const sakinler=S.sakinler.filter(x=>x.aptId==aptId);
+  const giderKatlar=['Bakım','Temizlik','Elektrik','Su','Doğalgaz','Asansör','Sigorta','Personel','Vergi','Malzeme','Diğer'];
+
   el.innerHTML=bankRows.map(r=>{
     const onaylandi=r.durum==='onaylandi';
+
+    /* ── ONAYLANDI: kompakt özet satırı ── */
+    if(onaylandi){
+      const taraf=r.tutar>0&&r.eslesme
+        ?`${r.eslesme.ad} <span style="color:var(--tx-3)">(D:${r.eslesme.daire||'?'})</span>`
+        :(r.giderKat||'Gider');
+      const tutarClrD=r.tutar>0?'#16a34a':'var(--err)';
+      return `<div style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--bd);background:rgba(34,197,94,.03);border-left:3px solid #86efac">
+        <span style="color:#16a34a;font-size:15px;font-weight:700;flex-shrink:0">✓</span>
+        <span style="font-size:11px;color:var(--tx-3);white-space:nowrap;flex-shrink:0">${r.tarih||''}</span>
+        <span style="font-size:12.5px;color:var(--tx-2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.aciklama}</span>
+        <span style="font-weight:700;color:${tutarClrD};font-size:12.5px;white-space:nowrap;flex-shrink:0">${r.tutar>0?'+':''}₺${fmt(Math.abs(r.tutar))}</span>
+        <span style="color:var(--tx-3);font-size:12px;flex-shrink:0">→</span>
+        <span style="font-size:12.5px;color:#16a34a;font-weight:600;white-space:nowrap;flex-shrink:0">${taraf}</span>
+        <button onclick="bankSatirReddet(${r.id})" title="Listeden kaldır" style="background:none;border:none;color:var(--tx-3);cursor:pointer;font-size:13px;padding:0 2px;flex-shrink:0;opacity:.4;line-height:1" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.4">✕</button>
+      </div>`;
+    }
+
+    /* ── BEKLEYEN: tam etkileşimli satır ── */
+    const isGelir=r.tutar>=0;
     const tutarClr=r.tutar>0?'#16a34a':'var(--err)';
-    const rowBg=onaylandi?'background:linear-gradient(90deg,rgba(34,197,94,.04),transparent);':'';
-    const rowBd=onaylandi?'border-left:3px solid #86efac;':'border-left:3px solid transparent;';
-    const sakinSec=`<select class="fi" style="padding:4px 8px;font-size:11.5px;width:140px;border-radius:6px" ${onaylandi?'disabled':''} onchange="bankSatirAta(${r.id},this.value)">
-      <option value="">— Sakin seç —</option>
-      ${sakinler.map(sk=>`<option value="${sk.id}"${r.eslesme?.id==sk.id?' selected':''}>${sk.ad} (D:${sk.daire||'?'})</option>`).join('')}
-    </select>`;
-    const tipSec=`<select class="fi" style="padding:4px 6px;font-size:11.5px;width:82px;border-radius:6px" ${onaylandi?'disabled':''} onchange="bankRows.find(x=>x.id==${r.id}).tip=this.value">
+
+    // Gelir → sakin seç butonu; Gider → kategori seç
+    const eslCol=isGelir
+      ?`<button onclick="openBankSakinModal(${r.id})" style="display:flex;align-items:center;gap:6px;width:100%;padding:5px 9px;background:${r.eslesme?'#f0fdf4':'var(--bg)'};border:1.5px solid ${r.eslesme?'#86efac':'var(--bd)'};border-radius:7px;cursor:pointer;font-size:11.5px;color:${r.eslesme?'#16a34a':'var(--tx-3)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:all .15s" onmouseover="this.style.borderColor='var(--brand)'" onmouseout="this.style.borderColor='${r.eslesme?'#86efac':'var(--bd)'}'">
+          <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none;flex-shrink:0"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg>
+          <span style="overflow:hidden;text-overflow:ellipsis">${r.eslesme?`${r.eslesme.ad} (D:${r.eslesme.daire||'?'})`:'Sakin seç…'}</span>
+        </button>`
+      :`<select class="fi" style="font-size:11px;padding:4px 6px;border-radius:7px;width:100%;border-color:${r.giderKat?'var(--bd)':'#fca5a5'}" onchange="bankRows.find(x=>x.id==${r.id}).giderKat=this.value;renderBankRows()">
+          <option value="">— Gider türü —</option>
+          ${giderKatlar.map(k=>`<option value="${k}"${r.giderKat===k?' selected':''}>${k}</option>`).join('')}
+        </select>`;
+
+    // Tip değiştirince sakin/kat sıfırla
+    const tipSec=`<select class="fi" style="font-size:11px;padding:4px 5px;border-radius:7px" onchange="const rr=bankRows.find(x=>x.id==${r.id});rr.tip=this.value;rr.eslesme=null;rr.giderKat='';renderBankRows()">
       <option value="gelir"${r.tip==='gelir'?' selected':''}>Gelir</option>
       <option value="gider"${r.tip==='gider'?' selected':''}>Gider</option>
     </select>`;
-    const onaylaBtn=!onaylandi
-      ?`<button onclick="bankSatirOnayla(${r.id})" title="Onayla ve İşle" style="background:#dcfce7;color:#16a34a;border:1.5px solid #86efac;padding:5px 10px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;line-height:1">✓</button>`
-      :`<span title="İşlendi" style="color:#16a34a;font-size:16px;font-weight:700;padding:0 6px">✓</span>`;
+
+    const canApprove=isGelir?!!r.eslesme:!!r.giderKat;
+    const onaylaBtn=`<button onclick="bankSatirOnayla(${r.id})" title="${canApprove?'Onayla ve işle':(isGelir?'Önce sakin seçin':'Önce gider türü seçin')}" style="background:${canApprove?'#dcfce7':'#f3f4f6'};color:${canApprove?'#16a34a':'#9ca3af'};border:1.5px solid ${canApprove?'#86efac':'#e5e7eb'};padding:5px 11px;border-radius:6px;font-size:13px;font-weight:700;cursor:${canApprove?'pointer':'default'};line-height:1;white-space:nowrap">✓</button>`;
     const silBtn=`<button onclick="bankSatirReddet(${r.id})" title="Sil" style="background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;padding:5px 8px;border-radius:6px;font-size:12px;cursor:pointer;line-height:1">✕</button>`;
-    return `<div style="display:grid;grid-template-columns:92px 1fr 108px 150px 90px 72px;gap:8px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--bd);${rowBg}${rowBd}">
-      <div style="font-size:11.5px;color:var(--tx-3);white-space:nowrap">${r.tarih||'—'}</div>
+
+    return `<div style="display:grid;grid-template-columns:90px 1fr 108px 160px 78px 76px;gap:7px;align-items:center;padding:9px 14px;border-bottom:1px solid var(--bd);border-left:3px solid transparent">
+      <div style="font-size:11px;color:var(--tx-3);white-space:nowrap">${r.tarih||'—'}</div>
       <div style="font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--tx-1)" title="${r.aciklama}">${r.aciklama}</div>
       <div style="font-weight:700;color:${tutarClr};font-size:13px;text-align:right;white-space:nowrap">${r.tutar>0?'+':''}₺${fmt(Math.abs(r.tutar))}</div>
-      ${sakinSec}
+      ${eslCol}
       ${tipSec}
-      <div style="display:flex;gap:5px;justify-content:flex-end;align-items:center">${onaylaBtn}${silBtn}</div>
+      <div style="display:flex;gap:4px;justify-content:flex-end;align-items:center">${onaylaBtn}${silBtn}</div>
     </div>`;
   }).join('');
 }

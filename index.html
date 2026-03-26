@@ -1144,11 +1144,11 @@
         </div>
       </div>
       <!-- Tablo başlık -->
-      <div style="display:grid;grid-template-columns:92px 1fr 108px 150px 90px 72px;gap:8px;padding:7px 14px;background:var(--bg);border-radius:7px;border:1px solid var(--bd);margin-bottom:4px">
+      <div style="display:grid;grid-template-columns:90px 1fr 108px 160px 78px 76px;gap:7px;padding:7px 14px;background:var(--bg);border-radius:7px;border:1px solid var(--bd);margin-bottom:4px">
         <div style="font-size:11px;font-weight:600;color:var(--tx-3)">Tarih</div>
         <div style="font-size:11px;font-weight:600;color:var(--tx-3)">Açıklama</div>
         <div style="font-size:11px;font-weight:600;color:var(--tx-3);text-align:right">Tutar</div>
-        <div style="font-size:11px;font-weight:600;color:var(--tx-3)">Eşleşen Sakin</div>
+        <div style="font-size:11px;font-weight:600;color:var(--tx-3)">Sakin / Gider Türü</div>
         <div style="font-size:11px;font-weight:600;color:var(--tx-3)">Tip</div>
         <div style="font-size:11px;font-weight:600;color:var(--tx-3);text-align:right">İşlem</div>
       </div>
@@ -2022,6 +2022,28 @@
 
 <div class="ov" id="mod-ilerleme"> <div class="modal"> <div class="modal-h"><div class="modal-t"> Görev İlerlemesi</div><button class="modal-x" onclick="closeModal('mod-ilerleme')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div> <div id="mod-ilerleme-body"></div> <div class="modal-f"> <button class="btn bp" onclick="saveIlerleme()"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Güncelle</button> <button class="btn bg" onclick="closeModal('mod-ilerleme')">Kapat</button> </div> </div>
 </div>
+<!-- BANKA SAKİN SEÇİM MODAL -->
+<div class="ov" id="bank-sakin-modal">
+  <div class="md" style="max-width:420px;padding:0;overflow:hidden">
+    <!-- Başlık + Arama -->
+    <div style="padding:16px 18px 12px;border-bottom:1px solid var(--bd)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--tx-1)">Sakin Seç</div>
+          <div style="font-size:11.5px;color:var(--tx-3);margin-top:1px">İsim veya daire numarasıyla arayın</div>
+        </div>
+        <button onclick="closeModal('bank-sakin-modal')" style="background:var(--bg);border:1px solid var(--bd);border-radius:6px;padding:5px 8px;cursor:pointer;color:var(--tx-3);font-size:14px;line-height:1">✕</button>
+      </div>
+      <div style="position:relative">
+        <svg viewBox="0 0 24 24" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--tx-3);stroke-width:2;fill:none"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="fi" id="bank-sakin-srch" placeholder="İsim veya daire ara…" oninput="_renderBankSakinModal(this.value)" style="padding-left:32px;font-size:13px">
+      </div>
+    </div>
+    <!-- Sakin listesi -->
+    <div id="bank-sakin-list" style="max-height:380px;overflow-y:auto;padding:8px 10px"></div>
+  </div>
+</div>
+
 <!-- MAKBUZ DÜZENLEME MODAL -->
 <div class="ov" id="makbuz-edit-modal">
   <div class="md" style="max-width:560px;padding:0;background:transparent;box-shadow:none;border:none">
