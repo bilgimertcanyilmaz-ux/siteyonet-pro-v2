@@ -4465,8 +4465,34 @@ function bankHepsiniEslesir(){
 }
 
 function bankSatirOnayla(id){
-  const r=bankRows.find(x=>x.id===id);if(!r)return;
-  r.durum='onaylandi';renderBankRows();
+  const r=bankRows.find(x=>x.id===id);if(!r||r.durum==='onaylandi')return;
+  r.durum='onaylandi';
+  const aptId=selectedAptId;
+  if(!aptId){save();renderBankRows();toast('Hareket onaylandı.','ok');return;}
+  const apt=S.apartmanlar.find(a=>a.id==aptId);
+  if(!makbuzNo)makbuzNo=5000;
+  const uid=Date.now();
+  if(r.tutar>0&&r.eslesme){
+    // Gelir → tahsilat kaydı + sakin borç düşümü
+    makbuzNo++;
+    S.tahsilatlar=S.tahsilatlar||[];
+    S.tahsilatlar.push({id:uid,no:'B-'+makbuzNo,sakId:r.eslesme.id,sakAd:r.eslesme.ad,
+      aptId:+aptId,aptAd:apt?.ad||'',daire:r.eslesme.daire,
+      tip:'aidat',donem:'',tutar:r.tutar,tarih:r.tarih,yontem:'banka',not:r.aciklama,kaynak:'banka'});
+    const sk=S.sakinler.find(x=>x.id==r.eslesme.id);
+    if(sk&&sk.borc>0)sk.borc=Math.max(0,(sk.borc||0)-r.tutar);
+  }
+  // Her hareket finansa işlenir
+  S.finansIslemler=S.finansIslemler||[];
+  S.finansIslemler.push({id:uid+1,aptId:+aptId,aptAd:apt?.ad||'',
+    tarih:r.tarih,tur:r.tutar>0?'gelir':'gider',
+    kat:r.tutar>0?'aidat':'diger',
+    tutar:Math.abs(r.tutar),aciklama:r.aciklama,belge:'Banka'});
+  // Dosya geçmişini güncelle
+  const dosya=(S.bankDosyalar||[]).find(d=>d.id===window._currentBankDosyaId);
+  if(dosya){dosya.onaylanan=(dosya.onaylanan||0)+1;dosya.satirlar=bankRows.map(rr=>({...rr,eslesme:rr.eslesme?rr.eslesme.id:null}));}
+  save();renderBankRows();
+  toast(r.tutar>0?'✓ Gelir işlendi → Tahsilat & Finans':'✓ Gider işlendi → Finans','ok');
 }
 
 function bankSatirReddet(id){
@@ -4475,8 +4501,8 @@ function bankSatirReddet(id){
 
 function bankSatirAta(id,sakId){
   const r=bankRows.find(x=>x.id===id);if(!r)return;
-  r.eslesme=S.sakinler.find(x=>x.id==sakId)||null;
-  r.durum='onaylandi';renderBankRows();
+  r.eslesme=sakId?S.sakinler.find(x=>x.id==sakId)||null:null;
+  renderBankRows();
 }
 
 function bankOnayliKaydet(){
@@ -4518,31 +4544,55 @@ function renderBankRows(){
   const ozet=document.getElementById('bank-ozet');
   const gelir=bankRows.filter(r=>r.tutar>0).reduce((s,r)=>s+r.tutar,0);
   const gider=bankRows.filter(r=>r.tutar<0).reduce((s,r)=>s+Math.abs(r.tutar),0);
+  const bekleyen=bankRows.filter(r=>r.durum!=='onaylandi').length;
   const onaylanan=bankRows.filter(r=>r.durum==='onaylandi').length;
-  if(ozet)ozet.textContent=`${bankRows.length} hareket · Gelir: ₺${fmt(gelir)} · Gider: ₺${fmt(gider)} · ${onaylanan} onaylı`;
-  if(!bankRows.length){el.innerHTML='<div style="text-align:center;padding:24px;color:var(--tx-3);font-size:13px">Banka hareketi yüklenmedi</div>';return;}
+  if(ozet)ozet.innerHTML=`<span style="font-size:12px;color:var(--tx-3)">${bankRows.length} hareket</span>&nbsp;&nbsp;<span style="color:#16a34a;font-size:12px;font-weight:600">↑ ₺${fmt(gelir)}</span>&nbsp;&nbsp;<span style="color:var(--err);font-size:12px;font-weight:600">↓ ₺${fmt(gider)}</span>&nbsp;&nbsp;${bekleyen?`<span class="b b-gy" style="font-size:10.5px">${bekleyen} bekliyor</span>`:''}${onaylanan?`&nbsp;<span class="b b-gr" style="font-size:10.5px">${onaylanan} onaylı</span>`:''}`;
+  if(!bankRows.length){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--tx-3);font-size:13px">📂 Henüz banka hareketi yüklenmedi. Excel/CSV yükleyin veya manuel ekleyin.</div>';return;}
   const aptId=selectedAptId;
   const sakinler=S.sakinler.filter(x=>x.aptId==aptId);
   el.innerHTML=bankRows.map(r=>{
-    const cls=r.tip==='gelir'?'gelir-row':r.tip==='gider'?'gider-row':'bekle-row';
-    const durumBadge=r.durum==='onaylandi'?'<span class="b b-gr" style="font-size:10px">Onaylı</span>':'<span class="b b-gy" style="font-size:10px">Beklemede</span>';
-    const sakinSec=`<select class="fi" style="padding:3px 6px;font-size:10.5px;width:110px" onchange="bankSatirAta(${r.id},this.value)">
-      <option value="">— Sakin —</option>
+    const onaylandi=r.durum==='onaylandi';
+    const tutarClr=r.tutar>0?'#16a34a':'var(--err)';
+    const rowBg=onaylandi?'background:linear-gradient(90deg,rgba(34,197,94,.04),transparent);':'';
+    const rowBd=onaylandi?'border-left:3px solid #86efac;':'border-left:3px solid transparent;';
+    const sakinSec=`<select class="fi" style="padding:4px 8px;font-size:11.5px;width:140px;border-radius:6px" ${onaylandi?'disabled':''} onchange="bankSatirAta(${r.id},this.value)">
+      <option value="">— Sakin seç —</option>
       ${sakinler.map(sk=>`<option value="${sk.id}"${r.eslesme?.id==sk.id?' selected':''}>${sk.ad} (D:${sk.daire||'?'})</option>`).join('')}
     </select>`;
-    return `<div class="bank-row ${cls}">
-      <div style="font-size:11px;color:var(--tx-3)">${r.tarih||'—'}</div>
-      <div style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.aciklama}">${r.aciklama}</div>
-      <div style="font-weight:700;color:${r.tutar>0?'var(--ok)':'var(--err)'};font-size:12.5px">${r.tutar>0?'+':''}₺${fmt(Math.abs(r.tutar))}</div>
+    const tipSec=`<select class="fi" style="padding:4px 6px;font-size:11.5px;width:82px;border-radius:6px" ${onaylandi?'disabled':''} onchange="bankRows.find(x=>x.id==${r.id}).tip=this.value">
+      <option value="gelir"${r.tip==='gelir'?' selected':''}>Gelir</option>
+      <option value="gider"${r.tip==='gider'?' selected':''}>Gider</option>
+    </select>`;
+    const onaylaBtn=!onaylandi
+      ?`<button onclick="bankSatirOnayla(${r.id})" title="Onayla ve İşle" style="background:#dcfce7;color:#16a34a;border:1.5px solid #86efac;padding:5px 10px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;line-height:1">✓</button>`
+      :`<span title="İşlendi" style="color:#16a34a;font-size:16px;font-weight:700;padding:0 6px">✓</span>`;
+    const silBtn=`<button onclick="bankSatirReddet(${r.id})" title="Sil" style="background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;padding:5px 8px;border-radius:6px;font-size:12px;cursor:pointer;line-height:1">✕</button>`;
+    return `<div style="display:grid;grid-template-columns:92px 1fr 108px 150px 90px 72px;gap:8px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--bd);${rowBg}${rowBd}">
+      <div style="font-size:11.5px;color:var(--tx-3);white-space:nowrap">${r.tarih||'—'}</div>
+      <div style="font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--tx-1)" title="${r.aciklama}">${r.aciklama}</div>
+      <div style="font-weight:700;color:${tutarClr};font-size:13px;text-align:right;white-space:nowrap">${r.tutar>0?'+':''}₺${fmt(Math.abs(r.tutar))}</div>
       ${sakinSec}
-      <div><select class="fi" style="padding:3px 6px;font-size:10.5px;width:80px" onchange="bankRows.find(x=>x.id==${r.id}).tip=this.value"><option value="gelir"${r.tip==='gelir'?' selected':''}>Gelir</option><option value="gider"${r.tip==='gider'?' selected':''}>Gider</option></select></div>
-      <div>${durumBadge}</div>
-      <div class="act">
-        ${r.durum!=='onaylandi'?`<button class="btn bgn xs" onclick="bankSatirOnayla(${r.id})" title="Onayla">✓</button>`:''}
-        <button class="btn xs" style="background:var(--err-bg);color:var(--err);border:1px solid var(--err)" onclick="bankSatirReddet(${r.id})" title="Sil">✕</button>
-      </div>
+      ${tipSec}
+      <div style="display:flex;gap:5px;justify-content:flex-end;align-items:center">${onaylaBtn}${silBtn}</div>
     </div>`;
   }).join('');
+}
+
+function bankSablonIndir(){
+  if(typeof XLSX==='undefined'){toast('XLSX kütüphanesi yüklenemedi.','err');return;}
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet([
+    ['Tarih','Açıklama','Tutar','Daire No','Sakin Adı'],
+    ['2024-01-15','Ocak Ayı Aidat - Daire 5',850,'5','Ahmet Yılmaz'],
+    ['2024-01-16','D12 Şubat Aidat Ödemesi',1200,'12','Fatma Kaya'],
+    ['2024-01-17','Asansör Bakım Gideri',-450,'',''],
+    ['2024-01-18','Boya Badana Faturası',-1800,'',''],
+    ['2024-01-20','Daire 3 Aidat',850,'3','Mehmet Demir'],
+  ]);
+  ws['!cols']=[{wch:14},{wch:42},{wch:14},{wch:12},{wch:24}];
+  XLSX.utils.book_append_sheet(wb,ws,'Banka Hareketleri');
+  XLSX.writeFile(wb,'banka-hareketi-sablonu.xlsx');
+  toast('Şablon indirildi.','ok');
 }
 function _relativeDate(tarih) {
   if (!tarih) return '—';

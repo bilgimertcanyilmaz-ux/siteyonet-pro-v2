@@ -1070,52 +1070,82 @@
   <div id="tah-banka" style="display:none">
     <!-- Önceden yüklenen dosyalar -->
     <div id="bank-dosya-gecmis" class="card mb14" style="display:none"></div>
-    <div class="g2" style="gap:18px">
-      <div>
-        <div class="card mb14">
-          <div class="card-t mb8">🏦 Banka Hareketi Yükle</div>
-          <div class="t3 mb12" style="font-size:12px">Excel (.xlsx, .csv) veya banka hesap dökümünüzü yükleyin. Sistem otomatik eşleştirir.</div>
-          <div class="bank-drop" id="bank-drop-zone" onclick="document.getElementById('bank-file-input').click()" ondrop="handleBankDrop(event)" ondragover="handleBankDragOver(event)" ondragleave="this.classList.remove('drag')">
-            <div class="bank-drop-ico">📊</div>
-            <div style="font-size:13px;font-weight:600;color:var(--tx-2)">Excel veya CSV dosyasını sürükle / tıkla</div>
-            <div style="font-size:11px;color:var(--tx-3);margin-top:6px">Desteklenen: .xlsx, .csv, .txt | Ziraat, Garanti, İş Bankası formatı</div>
-          </div>
-          <input type="file" id="bank-file-input" accept=".csv,.xlsx,.txt,.xls" style="display:none" onchange="importBankaHareketi(this)">
-          <div class="sep mt12 mb12"></div>
-          <div class="card-t mb8">Manuel Satır Ekle</div>
-          <div class="f3 fg">
-            <div class="fgp"><label class="lbl">Tarih</label><input type="date" class="fi" id="bank-m-tarih"></div>
-            <div class="fgp"><label class="lbl">Açıklama</label><input class="fi" id="bank-m-aciklama" placeholder="Ödeme açıklaması"></div>
-            <div class="fgp"><label class="lbl">Tutar (₺)</label><input type="number" class="fi" id="bank-m-tutar" placeholder="+ gelir / - gider"></div>
-          </div>
-          <button class="btn bg sm mt8" onclick="bankManuelEkle()">+ Satır Ekle</button>
+
+    <!-- Üst araçlar: Yükleme (sol) + Kurallar & Manuel (sağ) -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+
+      <!-- Sol: Yükleme -->
+      <div class="card">
+        <div class="fbc mb10">
+          <div class="card-t">🏦 Banka Hareketi Yükle</div>
+          <button class="btn bg xs" onclick="bankSablonIndir()" title="Örnek Excel şablonu indir" style="gap:5px">
+            <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Şablon İndir
+          </button>
         </div>
-        <div class="card">
-          <div class="card-t mb8">📌 Eşleştirme Kuralları</div>
-          <div style="font-size:12px;color:var(--tx-3);line-height:1.8">
-            <div>• Açıklamada daire no varsa (Örn: "D5", "Daire 12") otomatik eşleşir</div>
-            <div>• Sakin adı geçiyorsa otomatik tanır</div>
-            <div>• Eşleşmeyen satırlar "Beklemede" kalır, manuel atayabilirsiniz</div>
-            <div>• Onaylanan satırlar hem tahsilata hem finansa işlenir</div>
+        <div class="t3 mb10" style="font-size:12px">Excel (.xlsx, .csv) veya banka hesap dökümünüzü yükleyin. Sistem otomatik eşleştirir.</div>
+        <div class="bank-drop" id="bank-drop-zone" onclick="document.getElementById('bank-file-input').click()" ondrop="handleBankDrop(event)" ondragover="handleBankDragOver(event)" ondragleave="this.classList.remove('drag')">
+          <div class="bank-drop-ico">📊</div>
+          <div style="font-size:13px;font-weight:600;color:var(--tx-2)">Excel veya CSV dosyasını sürükle / tıkla</div>
+          <div style="font-size:11px;color:var(--tx-3);margin-top:6px">Desteklenen: .xlsx, .csv, .txt | Ziraat, Garanti, İş Bankası formatı</div>
+        </div>
+        <input type="file" id="bank-file-input" accept=".csv,.xlsx,.txt,.xls" style="display:none" onchange="importBankaHareketi(this)">
+        <div class="sep mt12 mb12"></div>
+        <div class="card-t mb8">Manuel Satır Ekle</div>
+        <div class="f3 fg">
+          <div class="fgp"><label class="lbl">Tarih</label><input type="date" class="fi" id="bank-m-tarih"></div>
+          <div class="fgp"><label class="lbl">Açıklama</label><input class="fi" id="bank-m-aciklama" placeholder="Ödeme açıklaması"></div>
+          <div class="fgp"><label class="lbl">Tutar (₺)</label><input type="number" class="fi" id="bank-m-tutar" placeholder="+ gelir / - gider"></div>
+        </div>
+        <button class="btn bg sm mt8" onclick="bankManuelEkle()">+ Satır Ekle</button>
+      </div>
+
+      <!-- Sağ: Eşleştirme Kuralları -->
+      <div class="card" style="display:flex;flex-direction:column;gap:0">
+        <div class="card-t mb12">📌 Eşleştirme Kuralları</div>
+        <div style="display:flex;flex-direction:column;gap:10px;flex:1">
+          <div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--bd)">
+            <span style="font-size:18px;line-height:1">🔍</span>
+            <div><div style="font-size:12.5px;font-weight:600;color:var(--tx-1);margin-bottom:2px">Otomatik Daire Eşleşme</div><div style="font-size:12px;color:var(--tx-3)">Açıklamada daire no varsa (Örn: "D5", "Daire 12") otomatik eşleşir</div></div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--bd)">
+            <span style="font-size:18px;line-height:1">👤</span>
+            <div><div style="font-size:12.5px;font-weight:600;color:var(--tx-1);margin-bottom:2px">İsim Tanıma</div><div style="font-size:12px;color:var(--tx-3)">Açıklamada sakin adı geçiyorsa otomatik tanır ve eşleştirir</div></div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--bd)">
+            <span style="font-size:18px;line-height:1">✓</span>
+            <div><div style="font-size:12.5px;font-weight:600;color:var(--tx-1);margin-bottom:2px">Anlık Onaylama</div><div style="font-size:12px;color:var(--tx-3)">Her satırı ayrı onaylayın — gelir anında tahsilata, gider finansa işlenir</div></div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:rgba(37,99,235,.04);border-radius:8px;border:1px solid rgba(37,99,235,.15)">
+            <span style="font-size:18px;line-height:1">💡</span>
+            <div><div style="font-size:12.5px;font-weight:600;color:var(--tx-1);margin-bottom:2px">İpucu</div><div style="font-size:12px;color:var(--tx-3)">Şablon İndir butonuyla doğru sütun formatında Excel hazırlayın</div></div>
           </div>
         </div>
       </div>
-      <div>
-        <div class="card">
-          <div class="fbc mb12">
-            <div><div class="card-t">Banka Hareketleri</div><div class="card-s" id="bank-ozet"></div></div>
-            <div class="fc g8">
-              <button class="btn bg xs" onclick="bankHepsiniEslesir()">🔍 Tümünü Eşleştir</button>
-              <button class="btn bp xs" onclick="bankOnayliKaydet()">✅ Onaylıları Kaydet</button>
-            </div>
-          </div>
-          <div class="bank-hdr" style="display:grid;grid-template-columns:90px 1fr 100px 120px 90px 100px 40px;gap:6px">
-            <div>Tarih</div><div>Açıklama</div><div>Tutar</div><div>Eşleşen Sakin</div><div>Tip</div><div>Durum</div><div></div>
-          </div>
-          <div id="bank-hareket-liste" style="max-height:450px;overflow-y:auto">
-            <div style="text-align:center;padding:32px;color:var(--tx-3);font-size:13px">Banka dosyası yüklenmedi</div>
-          </div>
+    </div>
+
+    <!-- Tam genişlik: Banka Hareketleri listesi -->
+    <div class="card">
+      <div class="fbc mb14">
+        <div>
+          <div class="card-t">Banka Hareketleri</div>
+          <div id="bank-ozet" class="card-s" style="margin-top:4px"></div>
         </div>
+        <div class="fc g8">
+          <button class="btn bg sm" onclick="bankHepsiniEslesir()">🔍 Tümünü Eşleştir</button>
+        </div>
+      </div>
+      <!-- Tablo başlık -->
+      <div style="display:grid;grid-template-columns:92px 1fr 108px 150px 90px 72px;gap:8px;padding:7px 14px;background:var(--bg);border-radius:7px;border:1px solid var(--bd);margin-bottom:4px">
+        <div style="font-size:11px;font-weight:600;color:var(--tx-3)">Tarih</div>
+        <div style="font-size:11px;font-weight:600;color:var(--tx-3)">Açıklama</div>
+        <div style="font-size:11px;font-weight:600;color:var(--tx-3);text-align:right">Tutar</div>
+        <div style="font-size:11px;font-weight:600;color:var(--tx-3)">Eşleşen Sakin</div>
+        <div style="font-size:11px;font-weight:600;color:var(--tx-3)">Tip</div>
+        <div style="font-size:11px;font-weight:600;color:var(--tx-3);text-align:right">İşlem</div>
+      </div>
+      <div id="bank-hareket-liste" style="max-height:520px;overflow-y:auto;border-radius:0 0 8px 8px">
+        <div style="text-align:center;padding:40px;color:var(--tx-3);font-size:13px">📂 Banka dosyası yüklenmedi</div>
       </div>
     </div>
   </div>
