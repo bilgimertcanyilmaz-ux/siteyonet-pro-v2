@@ -1,12 +1,124 @@
 ﻿// ═══════════════════════════════════════════
 // SUPABASE ENTEGRASYONU
 // ═══════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
+// GLOBAL HATA YÖNETİMİ & ERROR BOUNDARY
+// ══════════════════════════════════════════════════════════
+window.addEventListener('error', function(e) {
+  if (e.error && e.error.message && e.error.message.includes('ResizeObserver')) return;
+  console.error('[SYP Hata]', e.filename, e.lineno, e.error ? e.error.message : e.message);
+  if (typeof toast === 'function') {
+    toast('Beklenmeyen bir hata oluştu. Sayfayı yenileyebilirsiniz.', 'err');
+  }
+});
+
+window.addEventListener('unhandledrejection', function(e) {
+  const msg = (e.reason && e.reason.message) ? e.reason.message : String(e.reason || '');
+  console.error('[SYP Promise Hata]', msg);
+  if (msg.toLowerCase().includes('supabase') || msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network')) {
+    if (typeof toast === 'function') toast('Sunucu bağlantısı kesildi. Veriler lokal kaydedildi.', 'warn');
+  }
+  e.preventDefault();
+});
+
+// ══════════════════════════════════════════════════════════
+// GÜVENLİK KATMANI
+// ══════════════════════════════════════════════════════════
+
+/**
+ * HTML Escape — XSS koruması.
+ * Kullanıcıdan gelen TÜM string'ler innerHTML'e yazılmadan bu fonksiyondan geçmeli.
+ */
+function he(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
+ * Çift Submit Koruması — aynı işlem 800ms içinde iki kez tetiklenemez.
+ * Kullanım: saveOdeme gibi fonksiyonların başına _guardCheck() ekle.
+ */
+let _submitting = false;
+function _guardCheck() {
+  if (_submitting) { toast('İşlem devam ediyor, lütfen bekleyin...', 'warn'); return false; }
+  _submitting = true;
+  setTimeout(() => { _submitting = false; }, 800);
+  return true;
+}
+
+/**
+ * Güvenli Makbuz Numarası Üreticisi
+ * S.makbuzSayac'ı state'e kaydeder — sayfa yenilenince sıfırlanmaz.
+ */
+function genMakbuzNo(prefix) {
+  prefix = prefix || 'M';
+  if (!S.makbuzSayac || S.makbuzSayac < 5000) S.makbuzSayac = (makbuzNo || 5000);
+  S.makbuzSayac++;
+  makbuzNo = S.makbuzSayac;
+  return prefix + '-' + String(S.makbuzSayac).padStart(6, '0');
+}
+
+/**
+ * Merkezi Validasyon — tüm form kaydetme fonksiyonlarında kullanılır.
+ */
+const Validate = {
+  required(v, label) {
+    if (v === null || v === undefined || String(v).trim() === '')
+      throw new Error((label || 'Alan') + ' zorunludur');
+    return v;
+  },
+  positiveNumber(v, label) {
+    const n = parseFloat(v);
+    if (isNaN(n) || n <= 0) throw new Error((label || 'Tutar') + ' sıfırdan büyük olmalıdır');
+    if (n > 99999999) throw new Error((label || 'Tutar') + ' çok büyük bir değer');
+    return n;
+  },
+  nonNegativeNumber(v, label) {
+    const n = parseFloat(v);
+    if (isNaN(n) || n < 0) throw new Error((label || 'Değer') + ' geçerli bir sayı olmalıdır');
+    return n;
+  },
+  date(v, label) {
+    if (!v) return v;
+    if (isNaN(new Date(v).getTime())) throw new Error((label || 'Tarih') + ' geçerli bir tarih olmalıdır');
+    return v;
+  },
+  maxLength(v, max, label) {
+    if (v && String(v).length > max)
+      throw new Error((label || 'Alan') + ' en fazla ' + max + ' karakter olabilir');
+    return v;
+  },
+  phone(v) {
+    if (v && !/^[\d\s\-\+\(\)]{7,15}$/.test(v.trim()))
+      throw new Error('Telefon formatı geçersiz');
+    return v;
+  }
+};
+
+function runValidation(fn) {
+  try { fn(); return true; }
+  catch(e) { toast(e.message, 'err'); _submitting = false; return false; }
+}
+
 let _supabase = null;
 let _currentUser = null;
 
 function getSupabaseConfig() {
   try {
-    const cfg = localStorage.getItem('syp_sb_config');
+    // sessionStorage önce (güvenli), yoksa localStorage'dan taşı (geriye dönük)
+    let cfg = sessionStorage.getItem('syp_sb_config');
+    if (!cfg) {
+      const legacy = localStorage.getItem('syp_sb_config');
+      if (legacy) {
+        sessionStorage.setItem('syp_sb_config', legacy);
+        localStorage.removeItem('syp_sb_config');
+        cfg = legacy;
+      }
+    }
     return cfg ? JSON.parse(cfg) : null;
   } catch(e) { return null; }
 }
@@ -31,15 +143,28 @@ function updateConnBadge(status, text) {
 
 async function saveToSupabase() {
   if (!_supabase || !_currentUser) return;
-  try {
-    const { error } = await _supabase.from('syp_data').upsert({
-      id: _currentUser.id,
-      user_id: _currentUser.id,
-      data: S,
-      updated_at: new Date().toISOString()
-    });
-    if (error) console.error('Supabase save error:', error);
-  } catch(e) { console.error('Supabase save exception:', e); }
+  const MAX_RETRY = 3;
+  for (let attempt = 1; attempt <= MAX_RETRY; attempt++) {
+    try {
+      const { error } = await _supabase.from('syp_data').upsert({
+        id: _currentUser.id,
+        user_id: _currentUser.id,
+        data: S,
+        updated_at: new Date().toISOString()
+      });
+      if (!error) return; // Başarılı
+      if (error.code === 'PGRST301' || error.status === 401) {
+        if (typeof toast === 'function') toast('Oturumunuz sona erdi. Lütfen tekrar giriş yapın.', 'err');
+        if (typeof authCikis === 'function') setTimeout(authCikis, 2000);
+        return;
+      }
+      console.warn('[SYP] Supabase save attempt ' + attempt + ' failed:', error.message);
+    } catch(e) {
+      console.warn('[SYP] Supabase save network error attempt ' + attempt + ':', e.message);
+    }
+    if (attempt < MAX_RETRY) await new Promise(function(r) { setTimeout(r, 1000 * attempt); });
+  }
+  console.error('[SYP] Supabase save başarısız (3 deneme). localStorage backup aktif.');
 }
 
 async function loadFromSupabase() {
@@ -157,7 +282,7 @@ function saveSupabaseConfig() {
   const err = document.getElementById('setup-err');
   if (!url || !key) { err.textContent='URL ve Key gerekli.'; err.style.display='block'; return; }
   if (!url.includes('supabase.co')) { err.textContent='Geçerli bir Supabase URL girin.'; err.style.display='block'; return; }
-  localStorage.setItem('syp_sb_config', JSON.stringify({ url, key }));
+  sessionStorage.setItem('syp_sb_config', JSON.stringify({ url, key }));
   err.style.display = 'none';
   if (!initSupabase(url, key)) { err.textContent='Bağlantı kurulamadı.'; err.style.display='block'; return; }
   document.getElementById('supabase-setup-screen').classList.add('hidden');
@@ -169,7 +294,7 @@ async function updateSupabaseConfig() {
   const url = document.getElementById('set-sb-url').value.trim();
   const key = document.getElementById('set-sb-key').value.trim();
   if (!url || !key) { toast('URL ve Key gerekli.', 'err'); return; }
-  localStorage.setItem('syp_sb_config', JSON.stringify({ url, key }));
+  sessionStorage.setItem('syp_sb_config', JSON.stringify({ url, key }));
   if (!initSupabase(url, key)) { toast('Bağlantı kurulamadı.', 'err'); return; }
   toast('Supabase bağlantısı güncellendi. Lütfen tekrar giriş yapın.', 'ok');
   setTimeout(() => authCikis(), 1500);
@@ -498,9 +623,13 @@ function loadState() {
   if (S._ledgerMigrated === undefined) S._ledgerMigrated = false;
   initTanimlar();
 }
+let _saveDebounceTimer = null;
 function save() {
+  // localStorage'a anında yaz (offline backup)
   try { localStorage.setItem('syp5', JSON.stringify(S)); } catch(e) {}
-  saveToSupabase();
+  // Supabase'e debounce ile yaz (300ms içinde birden fazla save → tek write)
+  if (_saveDebounceTimer) clearTimeout(_saveDebounceTimer);
+  _saveDebounceTimer = setTimeout(function() { saveToSupabase(); }, 300);
   refreshUI();
 }
 
@@ -689,6 +818,10 @@ function goPage(p) {
  if (p==='icra') { renderIcra(); renderIcraRapor(); }
   if (p==='finans') { renderFinans(); renderFinansRapor(); if(typeof finGiderFormuHazirla==='function')finGiderFormuHazirla(); }
   if (p==='finansal-durum') { _fdSelected = new Set(); renderFinansalDurum(); }
+  if (p==='sakin-cari') {
+    const sk = S.sakinler.find(s=>s.id===(_currentCariId||0));
+    if (sk && typeof renderSakinCari==='function') renderSakinCari(sk);
+  }
   if (p==='ayarlar') { loadSettings(); renderSetStats(); }
   if (p==='sakinler') { renderSakinler(); initTopluDaireForm(); }
   if (p==='toplu-borc') { renderTopluBorcPage(); }
@@ -908,7 +1041,7 @@ function renderDashboard() {
     ? borcluList.map(sk=>mkRow(initials(sk.ad), sk.ad, (sk.aptAd||'—')+' · D.'+sk.daire, '₺'+fmt(sk.borc||0), '#dc2626', `goDaireDetay(${sk.id})`)).join('')
     : empRow('Borçlu sakin bulunmuyor');
 
-  const sonTahsilatlar = (S.tahsilatlar||[]).slice().sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||'')).slice(0,6);
+  const sonTahsilatlar = (S.tahsilatlar||[]).filter(t=>t.status!=='cancelled').slice().sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||'')).slice(0,6);
   const tahsilatHtml = sonTahsilatlar.length
     ? sonTahsilatlar.map(t=>mkRow(initials(t.sakAd||t.sakinAd||'?'), t.sakAd||t.sakinAd||'—', (t.aptAd||'—')+' · '+(t.tarih||'—'), '₺'+fmt(t.tutar||0), '#059669')).join('')
     : empRow('Henüz tahsilat kaydı yok');
@@ -941,7 +1074,7 @@ function renderDashboard() {
       + `<div class="ds-hizmet-total"><span>Aylık Toplam</span><span>₺${fmt(toplamH)}</span></div>`
     : empRow('Hizmet bedeli girilmiş apartman yok');
 
-  const finIslemler = (S.finansIslemler||[]).slice().sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||'')).slice(0,6);
+  const finIslemler = (S.finansIslemler||[]).filter(f=>f.status!=='cancelled').slice().sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||'')).slice(0,6);
   const finHtml = finIslemler.length
     ? finIslemler.map(f=>{ const g=f.tur==='gelir'; return mkRow(`<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`, f.aciklama||f.kat||'—', (f.aptAd||'—')+' · '+(f.tarih||'—')+` · <span class="b ${g?'b-gr':'b-rd'}" style="font-size:10px">${g?'Gelir':'Gider'}</span>`, (g?'+':'-')+'₺'+fmt(f.tutar||0), g?'#059669':'#dc2626'); }).join('')
       + `<div style="text-align:center;padding:10px 0 2px"><button class="btn bg sm" onclick="goPage('finans')" style="gap:5px">Tüm İşlemleri Gör <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button></div>`
@@ -1028,7 +1161,7 @@ function renderApts() {
  document.getElementById('apt-count').textContent = `${list.length} / ${S.apartmanlar.length} sonuç`;
  const tb = document.getElementById('apt-tbody');
  if (!list.length) { tb.innerHTML = `<tr><td colspan="8">${emp('️','Apartman bulunamadı')}</td></tr>`; return; }
- tb.innerHTML = list.map(a => `<tr> <td><span style="cursor:pointer;font-weight:600;color:var(--brand)" onclick="goAptDetay(${a.id})">${a.ad}</span></td> <td class="t2" style="font-size:11.5px">${a.adres}${a.ilce?', '+a.ilce:''}${a.il?', '+a.il:''}</td> <td>${a.daireSayisi}</td> <td>${a.yon||'—'}</td> <td style="font-weight:700;color:var(--ok)">${a.aidat?'₺'+fmt(a.aidat):'—'}</td> <td style="font-weight:700;color:var(--brand)">${a.hizmetBedeli?'₺'+fmt(a.hizmetBedeli):'—'}</td> <td><span class="b ${a.asansor==='evet'?'b-gr':'b-gy'}">${a.asansor==='evet'?'Var':'Yok'}</span></td> <td><span class="b ${a.durum==='aktif'?'b-gr':'b-rd'}">${a.durum==='aktif'?' Aktif':' Pasif'}</span></td> <td><div class="act"> <button class="btn bg xs" onclick="goAptDetay(${a.id})" title="Sayfayı Aç" style="color:var(--brand)"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button> <button class="btn bg xs" onclick="openAptModal(${a.id})" title="Düzenle"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button> <button class="btn ${a.durum==='aktif'?'brd':'bgn'} xs" onclick="toggleApt(${a.id})" title="${a.durum==='aktif'?'Pasife Al':'Aktif Et'}">${a.durum==='aktif'?'Pasif':'Aktif'}</button> <button class="btn xs" style="background:var(--err-bg);color:var(--err);border:1px solid var(--err)" onclick="delApt(${a.id})" title="Sil"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button> </div></td> </tr>`).join('');
+ tb.innerHTML = list.map(a => `<tr> <td><span style="cursor:pointer;font-weight:600;color:var(--brand)" onclick="goAptDetay(${a.id})">${he(a.ad)}</span></td> <td class="t2" style="font-size:11.5px">${he(a.adres)}${a.ilce?', '+he(a.ilce):''}${a.il?', '+he(a.il):''}</td> <td>${a.daireSayisi}</td> <td>${a.yon||'—'}</td> <td style="font-weight:700;color:var(--ok)">${a.aidat?'₺'+fmt(a.aidat):'—'}</td> <td style="font-weight:700;color:var(--brand)">${a.hizmetBedeli?'₺'+fmt(a.hizmetBedeli):'—'}</td> <td><span class="b ${a.asansor==='evet'?'b-gr':'b-gy'}">${a.asansor==='evet'?'Var':'Yok'}</span></td> <td><span class="b ${a.durum==='aktif'?'b-gr':'b-rd'}">${a.durum==='aktif'?' Aktif':' Pasif'}</span></td> <td><div class="act"> <button class="btn bg xs" onclick="goAptDetay(${a.id})" title="Sayfayı Aç" style="color:var(--brand)"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button> <button class="btn bg xs" onclick="openAptModal(${a.id})" title="Düzenle"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button> <button class="btn ${a.durum==='aktif'?'brd':'bgn'} xs" onclick="toggleApt(${a.id})" title="${a.durum==='aktif'?'Pasife Al':'Aktif Et'}">${a.durum==='aktif'?'Pasif':'Aktif'}</button> <button class="btn xs" style="background:var(--err-bg);color:var(--err);border:1px solid var(--err)" onclick="delApt(${a.id})" title="Sil"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button> </div></td> </tr>`).join('');
 }
 
 function renderAptKart() {
@@ -1075,10 +1208,16 @@ function openAptModal(id = null) {
 }
 
 function saveApt() {
+  if (!_guardCheck()) return;
   const ad = document.getElementById('apt-ad').value.trim();
   const adres = document.getElementById('apt-adres').value.trim();
   const ds = parseInt(document.getElementById('apt-daire').value)||0;
-  if (!ad || !adres || ds < 1) { toast('Ad, adres ve daire sayısı zorunlu!','err'); return; }
+  if (!runValidation(() => {
+    Validate.required(ad, 'Apartman adı');
+    Validate.maxLength(ad, 100, 'Apartman adı');
+    Validate.required(adres, 'Adres');
+    if (ds < 1) throw new Error('Daire sayısı en az 1 olmalıdır');
+  })) return;
   // Blok verilerini topla
   const bloklar = blokRows.map(function(b, i) {
     const adEl = document.getElementById('blok-ad-' + i);
@@ -2915,14 +3054,14 @@ function renderIcraRapor() {
 // AI HELPER — çoklu sağlayıcı desteği
 // ══════════════════════════════════════════════════
 const AI_KEYS = {
-  gemini:    () => localStorage.getItem('syp_apikey_gemini') || '',
-  anthropic: () => localStorage.getItem('syp_apikey_claude') || '',
-  openai:    () => localStorage.getItem('syp_apikey_openai') || ''
+  gemini:    () => sessionStorage.getItem('syp_apikey_gemini') || '',
+  anthropic: () => sessionStorage.getItem('syp_apikey_claude') || '',
+  openai:    () => sessionStorage.getItem('syp_apikey_openai') || ''
 };
 
 // Aktif sağlayıcı: localStorage'dan al, yoksa gemini
 function getAIProvider() {
-  return localStorage.getItem('syp_ai_provider') || 'gemini';
+  return sessionStorage.getItem('syp_ai_provider') || 'gemini';
 }
 
 // Gemini çağrısı
@@ -3457,6 +3596,7 @@ function saveTopluDaireler() {
 
 
 function saveSakin() {
+  if (!_guardCheck()) return;
   const ad = document.getElementById('sak-ad')?.value.trim();
   const tip = document.getElementById('sak-tip-hidden')?.value || 'malik';
   const aptId = selectedAptId;
@@ -4805,18 +4945,28 @@ Yeni borç tutarı girin (₺):`);
 }
 
 function saveOdeme() {
+  if (!_guardCheck()) return;
   const sakId=document.getElementById('tah-o-sakin')?.value;
-  const tutar=parseFloat(document.getElementById('tah-o-tutar')?.value)||0;
-  if(!sakId||!tutar){ toast('Sakin ve tutar zorunludur.','err'); return; }
+  let tutar = parseFloat(document.getElementById('tah-o-tutar')?.value)||0;
+  if (!runValidation(() => {
+    Validate.required(sakId, 'Sakin');
+    tutar = Validate.positiveNumber(document.getElementById('tah-o-tutar')?.value, 'Tutar');
+    Validate.date(document.getElementById('tah-o-tarih')?.value, 'Tarih');
+  })) return;
   const sk=S.sakinler.find(x=>x.id==sakId);
+  // FIFO borca dağıtım — AllocationService varsa kullan
+  let _allocation = { allocations: [], unallocated: tutar };
+  if (typeof AllocationService !== 'undefined') {
+    _allocation = AllocationService.allocate(sakId, document.getElementById('tah-o-apt')?.value || sk?.aptId, tutar);
+  }
   if(sk && (sk.borc||0)>0) {
     sk.borc=Math.max(0,(sk.borc||0)-tutar);
   }
-  makbuzNo++;
+  const _makbuzNo = genMakbuzNo('M');
   const aptId=document.getElementById('tah-o-apt')?.value;
   const apt=S.apartmanlar.find(a=>a.id==aptId);
   S.tahsilatlar.push({
-    id:Date.now(), no:'M-'+makbuzNo,
+    id:Date.now(), no:_makbuzNo,
     sakId:+sakId, sakAd:sk?sk.ad:'—',
     aptId:aptId?+aptId:null, aptAd:apt?apt.ad:'—',
     daire:sk?sk.daire:'—',
@@ -4824,10 +4974,12 @@ function saveOdeme() {
     donem:document.getElementById('tah-o-donem')?.value||'',
     tutar, tarih:document.getElementById('tah-o-tarih')?.value||today(),
     yontem:document.getElementById('tah-o-yontem')?.value,
-    not:document.getElementById('tah-o-not')?.value||''
+    not:document.getElementById('tah-o-not')?.value||'',
+    collection_allocations: _allocation.allocations,
+    unallocated: _allocation.unallocated
   });
   ['tah-o-tutar','tah-o-donem','tah-o-not'].forEach(i=>{ const el=document.getElementById(i); if(el) el.value=''; });
-  save(); goTab('tah-liste'); toast('Ödeme kaydedildi. Makbuz: M-'+makbuzNo,'ok');
+  save(); goTab('tah-liste'); toast('Ödeme kaydedildi. Makbuz: '+_makbuzNo,'ok');
 }
 
 function renderOdemeGecmis() {
@@ -4841,14 +4993,14 @@ function renderOdemeGecmis() {
   const tipLbl={aidat:'Aidat',borc:'Borç Ödemesi',avans:'Avans',diger:'Diğer'};
   const yonLbl={nakit:'Nakit',banka:'Banka',eft:'EFT',kredi:'K.Kartı'};
   tb.innerHTML=list.slice().reverse().map(o=>`<tr>
-    <td style="font-family:monospace;font-size:11px;color:var(--brand)">${o.no}</td>
-    <td>${o.sakAd}</td>
-    <td>${o.aptAd}</td>
-    <td>${o.daire||'—'}</td>
-    <td><span class="b b-bl">${tipLbl[o.tip]||o.tip}</span></td>
-    <td>${o.donem||'—'}</td>
+    <td style="font-family:monospace;font-size:11px;color:var(--brand)">${he(o.no)}</td>
+    <td>${he(o.sakAd)}</td>
+    <td>${he(o.aptAd)}</td>
+    <td>${he(o.daire||'—')}</td>
+    <td><span class="b b-bl">${he(tipLbl[o.tip]||o.tip||'—')}</span></td>
+    <td>${he(o.donem||'—')}</td>
     <td style="font-weight:700;color:var(--ok)">₺${fmt(o.tutar)}</td>
-    <td>${yonLbl[o.yontem]||o.yontem}</td>
+    <td>${he(yonLbl[o.yontem]||o.yontem||'—')}</td>
     <td class="t2" style="font-size:11px">${o.tarih}</td>
     <td><button class="btn xs" style="background:var(--err-bg);color:var(--err);border:1px solid var(--err)" onclick="delOdeme(${o.id})" title="Sil"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></td>
   </tr>`).join('');
@@ -4907,6 +5059,7 @@ function softCancelCollection(id) {
   toast(`İptal edildi: ${t.no || ''} · Borç geri eklendi: ₺${fmt(eskiTutar)}`, 'warn');
   if (typeof renderTahsilatMakbuz === 'function') renderTahsilatMakbuz();
   if (typeof renderOdemeGecmis   === 'function') renderOdemeGecmis();
+  setTimeout(() => { if (typeof renderDashboard === 'function') renderDashboard(); }, 50);
 }
 
 // ── BORÇ MAKBUZLARI ──────────────────────────────────
@@ -4965,11 +5118,11 @@ function renderBorcMakbuz() {
   if (!rows.length) { tb.innerHTML=`<tr><td colspan="10">${emp('📄','Borç kaydı bulunamadı')}</td></tr>`; return; }
   tb.innerHTML = rows.map((r,i)=>`<tr>
     <td style="font-family:monospace;font-size:11px;color:var(--tx-3)">${String(i+1).padStart(4,'0')}</td>
-    <td><strong>${r.sakAd}</strong></td>
-    <td style="font-weight:700;color:var(--brand)">${r.daire}</td>
-    <td class="t2" style="font-size:11px">${r.aptAd}</td>
-    <td><span class="b b-bl" style="font-size:10px">${r.kategori}</span></td>
-    <td class="t2" style="font-size:11px">${r.donem}</td>
+    <td><strong>${he(r.sakAd)}</strong></td>
+    <td style="font-weight:700;color:var(--brand)">${he(r.daire)}</td>
+    <td class="t2" style="font-size:11px">${he(r.aptAd)}</td>
+    <td><span class="b b-bl" style="font-size:10px">${he(r.kategori)}</span></td>
+    <td class="t2" style="font-size:11px">${he(r.donem)}</td>
     <td style="font-weight:700;color:var(--err)">₺${fmt(r.tutar)}</td>
     <td class="t2" style="font-size:11px">${r.tarih||'—'}</td>
     <td class="t2" style="font-size:11px">${r.sonOdeme||'—'}</td>
@@ -5360,16 +5513,16 @@ function renderTahsilatMakbuz() {
   tb.innerHTML = list.map(o=>{
     const kSrc = kaynakBilgi(o.yontem);
     return `<tr>
-      <td style="font-family:monospace;font-size:11px;color:var(--brand)">${o.no||'—'}</td>
-      <td><strong>${o.sakAd||'—'}</strong></td>
-      <td style="font-weight:700;color:var(--brand)">${o.daire||'—'}</td>
-      <td class="t2" style="font-size:11px">${o.aptAd||'—'}</td>
-      <td><span class="b b-gr" style="font-size:10px">${tipLbl[o.tip]||o.tip||'—'}</span></td>
-      <td class="t2" style="font-size:11px">${o.donem||'—'}</td>
+      <td style="font-family:monospace;font-size:11px;color:var(--brand)">${he(o.no||'—')}</td>
+      <td><strong>${he(o.sakAd||'—')}</strong></td>
+      <td style="font-weight:700;color:var(--brand)">${he(o.daire||'—')}</td>
+      <td class="t2" style="font-size:11px">${he(o.aptAd||'—')}</td>
+      <td><span class="b b-gr" style="font-size:10px">${he(tipLbl[o.tip]||o.tip||'—')}</span></td>
+      <td class="t2" style="font-size:11px">${he(o.donem||'—')}</td>
       <td style="font-weight:700;color:var(--ok)">₺${fmt(o.tutar)}</td>
       <td class="t2" style="font-size:11px">${o.tarih||'—'}</td>
       <td><span class="b ${kSrc.cls}" style="font-size:10px">${kSrc.label}</span>${o.yontem&&yonLbl[o.yontem]?` <span class="t2" style="font-size:10px">(${yonLbl[o.yontem]})</span>`:''}</td>
-      <td class="t2" style="font-size:11px;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${o.not||'—'}</td>
+      <td class="t2" style="font-size:11px;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${he(o.not||'—')}</td>
       <td style="white-space:nowrap">
         <button class="btn bg xs" onclick="openTahsilatOnizle(${o.id})" title="Önizle" style="padding:4px 8px"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
         <button class="btn bg xs" onclick="editTahsilatMakbuz(${o.id})" title="Düzenle" style="padding:4px 8px;margin-left:3px"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;stroke-width:2;fill:none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
@@ -7137,6 +7290,7 @@ function softCancelFinans(id) {
 
   save(); toast(`İptal edildi: ${f.kat || turLbl} · ₺${fmt(tutar)}`, 'warn');
   renderFinans();
+  setTimeout(() => { if (typeof renderDashboard === 'function') renderDashboard(); }, 50);
 }
 
 function renderFinans() {
@@ -7201,10 +7355,10 @@ function renderFinans() {
     const kdvInfo = f.kdvOran ? `<span title="KDV %${f.kdvOran}" style="font-size:10px;color:var(--tx-3);margin-left:3px">+%${f.kdvOran}</span>` : '';
     return `<tr>
       <td style="white-space:nowrap;font-size:12px">${tarihStr}</td>
-      <td style="font-size:12px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.aptAd||'—'}</td>
+      <td style="font-size:12px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${he(f.aptAd||'—')}</td>
       <td>${turBadge}</td>
-      <td style="font-size:12px">${f.kat||'—'}</td>
-      <td style="font-size:12px;color:var(--tx-2);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${kisi}">${kisi||'—'}</td>
+      <td style="font-size:12px">${he(f.kat||'—')}</td>
+      <td style="font-size:12px;color:var(--tx-2);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${he(kisi)}">${he(kisi||'—')}</td>
       <td style="font-size:11px;color:var(--tx-3)">${belge||'—'}</td>
       <td style="font-weight:600;color:${tutarClr};text-align:right;white-space:nowrap;font-size:12.5px">${pfx}₺${fmtMoney(net2)}${kdvInfo}</td>
       <td style="font-weight:700;color:${tutarClr};text-align:right;white-space:nowrap;font-size:13px">${pfx}₺${fmtMoney(toplam)}</td>
@@ -7564,15 +7718,15 @@ function loadSettings() {
   // AI ayarları
   const providerEl = document.getElementById('set-ai-provider');
   if (providerEl) {
-    providerEl.value = localStorage.getItem('syp_ai_provider') || 'gemini';
+    providerEl.value = sessionStorage.getItem('syp_ai_provider') || 'gemini';
     aiProviderChange();
   }
   const geminiEl = document.getElementById('set-apikey-gemini');
-  if (geminiEl) geminiEl.value = localStorage.getItem('syp_apikey_gemini') || '';
+  if (geminiEl) geminiEl.value = sessionStorage.getItem('syp_apikey_gemini') || '';
   const claudeEl = document.getElementById('set-apikey-claude');
-  if (claudeEl) claudeEl.value = localStorage.getItem('syp_apikey_claude') || '';
+  if (claudeEl) claudeEl.value = sessionStorage.getItem('syp_apikey_claude') || '';
   const openaiEl = document.getElementById('set-apikey-openai');
-  if (openaiEl) openaiEl.value = localStorage.getItem('syp_apikey_openai') || '';
+  if (openaiEl) openaiEl.value = sessionStorage.getItem('syp_apikey_openai') || '';
   // Supabase config
   const cfg = getSupabaseConfig();
   if (cfg) {
@@ -7619,19 +7773,19 @@ function saveApiKey() {
 
 function saveAISettings() {
   const provider = document.getElementById('set-ai-provider')?.value || 'gemini';
-  localStorage.setItem('syp_ai_provider', provider);
+  sessionStorage.setItem('syp_ai_provider', provider);
 
   const geminiKey = document.getElementById('set-apikey-gemini')?.value.trim() || '';
   const claudeKey = document.getElementById('set-apikey-claude')?.value.trim() || '';
   const openaiKey = document.getElementById('set-apikey-openai')?.value.trim() || '';
 
-  if (geminiKey) localStorage.setItem('syp_apikey_gemini', geminiKey);
+  if (geminiKey) sessionStorage.setItem('syp_apikey_gemini', geminiKey);
   else localStorage.removeItem('syp_apikey_gemini');
 
-  if (claudeKey) localStorage.setItem('syp_apikey_claude', claudeKey);
+  if (claudeKey) sessionStorage.setItem('syp_apikey_claude', claudeKey);
   else localStorage.removeItem('syp_apikey_claude');
 
-  if (openaiKey) localStorage.setItem('syp_apikey_openai', openaiKey);
+  if (openaiKey) sessionStorage.setItem('syp_apikey_openai', openaiKey);
   else localStorage.removeItem('syp_apikey_openai');
 
   const providerNames = { gemini: 'Google Gemini', claude: 'Anthropic Claude', openai: 'OpenAI GPT' };
@@ -9701,6 +9855,7 @@ function openHizliOdeme(sakId, donem) {
 }
 
 function saveHizliOdeme() {
+  if (!_guardCheck()) return;
   const sakId = +document.getElementById('ho-sak-id').value;
   const tutar = parseFloat(document.getElementById('ho-tutar').value) || 0;
   const donem = document.getElementById('ho-donem').value.trim();
@@ -10085,6 +10240,7 @@ function tbpTemizle() {
 }
 
 function saveTopluBorcPage() {
+  if (!_guardCheck()) return;
   const aptId = document.getElementById('tbp-apt')?.value;
   if (!aptId) { toast('Site seçin.','err'); return; }
   const donem = document.getElementById('tbp-donem')?.value;
@@ -10371,12 +10527,12 @@ function saveDaireNot(sakId) {
 }
 
 // ── ROL SİSTEMİ ────────────────────────────────
-let currentRole = localStorage.getItem('syp_role') || '';
+let currentRole = sessionStorage.getItem('syp_role') || '';
 
 function selectRole(role) {
   currentRole = role;
   window._initialHash = window.location.hash;
-  localStorage.setItem('syp_role', role);
+  sessionStorage.setItem('syp_role', role);
   document.getElementById('role-screen')?.classList.add('hidden');
   document.getElementById('main').style.display = '';
   applyRole(role);
@@ -11118,6 +11274,161 @@ function migrateLegacyDataToLedger() {
   }
 }
 
+// ══════════════════════════════════════════════════════════
+// ALLOCATION SERVICE — FIFO Kısmi Ödeme & Borca Dağıtım
+// ══════════════════════════════════════════════════════════
+const AllocationService = {
+
+  /**
+   * Kişinin ödenmemiş borçlarını eskiden yeniye (FIFO) sıralar
+   */
+  getPendingDebts(personId, aptId) {
+    const debts = [];
+    (S.aidatBorclandir || []).forEach(kayit => {
+      if (aptId && String(kayit.aptId) !== String(aptId)) return;
+      (kayit.detaylar || []).forEach(d => {
+        if (String(d.sakId) !== String(personId)) return;
+        if (d.status === 'cancelled' || d.status === 'paid') return;
+        const remaining = d.remaining !== undefined ? d.remaining : (d.tutar || 0);
+        if (remaining <= 0.005) return;
+        debts.push({
+          kayitId:   String(kayit.aptId) + '_' + kayit.donem,
+          donem:     kayit.donem || '',
+          sonOdeme:  kayit.sonOdeme || '',
+          kategori:  d.kategori || 'Aidat',
+          tutar:     d.tutar || 0,
+          remaining,
+          _detayRef: d
+        });
+      });
+    });
+    // FIFO: en eski vade tarihi önce
+    return debts.sort((a, b) =>
+      (a.sonOdeme || a.donem || '').localeCompare(b.sonOdeme || b.donem || '')
+    );
+  },
+
+  /**
+   * Ödeme tutarını en eski borçtan başlayarak dağıtır.
+   * Detay nesnelerini DOĞRUDAN günceller (S.aidatBorclandir üzerinde).
+   * @returns {{ allocations: Array<{donem,kategori,applied}>, unallocated: number }}
+   */
+  allocate(personId, aptId, paymentAmount) {
+    const debts = this.getPendingDebts(personId, aptId);
+    let remaining = Math.round(paymentAmount * 100) / 100;
+    const allocations = [];
+
+    debts.forEach(d => {
+      if (remaining < 0.01) return;
+      const applied = Math.round(Math.min(remaining, d.remaining) * 100) / 100;
+      d._detayRef.remaining = Math.round((d.remaining - applied) * 100) / 100;
+      if (d._detayRef.remaining < 0.01) {
+        d._detayRef.remaining = 0;
+        d._detayRef.status = 'paid';
+      }
+      remaining = Math.round((remaining - applied) * 100) / 100;
+      allocations.push({ donem: d.donem, kategori: d.kategori, applied });
+    });
+
+    return { allocations, unallocated: Math.max(0, remaining) };
+  }
+};
+
+// ══════════════════════════════════════════════════════════
+// LATE FEES SERVICE — Gecikme Faizi Hesaplama & Uygulama
+// ══════════════════════════════════════════════════════════
+const LateFeesService = {
+
+  getRate() {
+    return parseFloat(S.ayarlar && S.ayarlar.gecikme_faiz_orani ? S.ayarlar.gecikme_faiz_orani : 0) / 100;
+  },
+
+  /**
+   * Kişi için bugün itibarıyla gecikme faizlerini hesaplar (uygulamaz, sadece hesaplar)
+   * @returns {Array<{donem, kategori, remaining, gecikmeGun, faizTutar}>}
+   */
+  calculate(personId, aptId, asOfDate) {
+    asOfDate = asOfDate || today();
+    const rate = this.getRate();
+    if (rate === 0) return [];
+
+    return AllocationService.getPendingDebts(personId, aptId)
+      .filter(d => d.sonOdeme && asOfDate > d.sonOdeme && d.remaining > 0.01)
+      .map(d => {
+        const gecikmeGun = Math.floor(
+          (new Date(asOfDate) - new Date(d.sonOdeme)) / 86400000
+        );
+        const gecikmeAy  = gecikmeGun / 30;
+        const faizTutar  = Math.round(d.remaining * rate * gecikmeAy * 100) / 100;
+        return { ...d, gecikmeGun, faizTutar };
+      })
+      .filter(d => d.faizTutar >= 0.01);
+  },
+
+  /**
+   * Hesaplanan faizleri S.aidatBorclandir'a gerçek borç kalemi olarak ekler.
+   * İdempotent: aynı dönem için çift faiz eklenmez.
+   * @returns {number} toplam uygulanan faiz
+   */
+  applyFees(personId, aptId) {
+    const fees = this.calculate(personId, aptId);
+    if (!fees.length) return 0;
+    let total = 0;
+
+    fees.forEach(fee => {
+      // İlgili kayıt veya yeni kayıt
+      let kayit = (S.aidatBorclandir || []).find(k =>
+        String(k.aptId) === String(aptId) && k.donem === fee.donem
+      );
+      if (!kayit) {
+        kayit = { aptId: +aptId, donem: fee.donem, tarih: today(), detaylar: [], toplamBorc: 0 };
+        S.aidatBorclandir = S.aidatBorclandir || [];
+        S.aidatBorclandir.push(kayit);
+      }
+
+      // Çift uygulama kontrolü
+      const alreadyAdded = (kayit.detaylar || []).some(d =>
+        String(d.sakId) === String(personId) &&
+        d.kategori === 'Gecikme Faizi' &&
+        d._feeForDonem === fee.donem
+      );
+      if (alreadyAdded) return;
+
+      // Borç kalemi ekle
+      kayit.detaylar = kayit.detaylar || [];
+      kayit.detaylar.push({
+        sakId:        +personId,
+        tutar:        fee.faizTutar,
+        kategori:     'Gecikme Faizi',
+        _feeForDonem: fee.donem,
+        _feeGun:      fee.gecikmeGun,
+        createdAt:    today()
+      });
+      kayit.toplamBorc = (kayit.toplamBorc || 0) + fee.faizTutar;
+
+      // Sakin borcunu güncelle
+      const sk = (S.sakinler || []).find(s => s.id == personId);
+      if (sk) sk.borc = Math.round(((sk.borc || 0) + fee.faizTutar) * 100) / 100;
+
+      // Ledger kaydı
+      if (typeof LedgerService !== 'undefined') {
+        LedgerService.recordAccrual({
+          siteId:      aptId,
+          personId:    personId,
+          amount:      fee.faizTutar,
+          category:    'gecikme_faizi',
+          period:      fee.donem,
+          description: 'Gecikme faizi — ' + fee.gecikmeGun + ' gün (' + fee.kategori + ')'
+        });
+      }
+      total += fee.faizTutar;
+    });
+
+    if (total > 0) save();
+    return Math.round(total * 100) / 100;
+  }
+};
+
 // ===================================================
 // TEKRARLAYaN İŞLEM OTOMASYONU
 // ===================================================
@@ -11286,7 +11597,7 @@ const _SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsIn
   if (authEl) authEl.classList.add('hidden');
 
   // Daha önce rol seçilmişse direkt giriş
-  const savedRole = localStorage.getItem('syp_role');
+  const savedRole = sessionStorage.getItem('syp_role');
   if (savedRole) {
     currentRole = savedRole;
     document.getElementById('role-screen')?.classList.add('hidden');
