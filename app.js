@@ -9779,6 +9779,8 @@ function renderTopluBorcPage() {
     const now = new Date();
     donemEl.value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
   }
+  // Tarih alanları: ilk açılışta dönemden türet
+  tbpDonemDateDefaults();
 
   // Kategori listesi — her açılışta gelir tanımlarından tazele
   const katEl = document.getElementById('tbp-kategori');
@@ -9793,6 +9795,40 @@ function tbpAptChange() {
   tbpCheckDuplicatePeriod();
   tbpClearPreview();
 }
+
+/**
+ * Dönem seçilince/değişince tahakkuk ve son ödeme tarihlerini otomatik doldurur.
+ * - Tahakkuk tarihi → dönemin 1'i (örn: 2026-01 → 2026-01-01)
+ * - Son ödeme tarihi → dönemin son günü (örn: 2026-01 → 2026-01-31)
+ * Kullanıcı alanı elle değiştirmişse üzerine yazma.
+ */
+function tbpDonemDateDefaults() {
+  const donem = document.getElementById('tbp-donem')?.value; // 'YYYY-MM'
+  if (!donem) return;
+
+  const [yil, ay] = donem.split('-').map(Number);
+  const tahakkukEl  = document.getElementById('tbp-tahakkuk-tarih');
+  const sonOdemeEl  = document.getElementById('tbp-son-odeme-tarih');
+
+  // Tahakkuk tarihi: dönemin 1'i
+  const tahakkukISO = donem + '-01';
+  if (tahakkukEl && !tahakkukEl.dataset.manualEdit)
+    tahakkukEl.value = tahakkukISO;
+
+  // Son ödeme tarihi: dönemin son günü
+  const sonGun = new Date(yil, ay, 0).getDate(); // ay=next month, 0=last day of this month
+  const sonOdemeISO = donem + '-' + String(sonGun).padStart(2, '0');
+  if (sonOdemeEl && !sonOdemeEl.dataset.manualEdit)
+    sonOdemeEl.value = sonOdemeISO;
+}
+
+// Kullanıcı elle değiştirdiğinde default'un üzerine yazmasını engelle
+document.addEventListener('DOMContentLoaded', () => {
+  ['tbp-tahakkuk-tarih', 'tbp-son-odeme-tarih'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', () => { el.dataset.manualEdit = '1'; });
+  });
+});
 
 function tbpTutarTurChange() {
   const tur = document.getElementById('tbp-tutar-tur')?.value;
@@ -9829,11 +9865,13 @@ function tbpCheckDuplicatePeriod() {
 }
 
 function renderTopluBorcOnizle() {
-  const aptId = document.getElementById('tbp-apt')?.value;
-  const donem = document.getElementById('tbp-donem')?.value;
-  const tutarTur = document.getElementById('tbp-tutar-tur')?.value || 'aidat';
+  const aptId     = document.getElementById('tbp-apt')?.value;
+  const donem     = document.getElementById('tbp-donem')?.value;
+  const tutarTur  = document.getElementById('tbp-tutar-tur')?.value || 'aidat';
   const sabitTutar = parseFloat(document.getElementById('tbp-sabit-tutar')?.value) || 0;
-  const kime = document.getElementById('tbp-kime')?.value || 'malik';
+  const kime      = document.getElementById('tbp-kime')?.value || 'malik';
+  const tahakkukT = document.getElementById('tbp-tahakkuk-tarih')?.value || '';
+  const sonOdemeT = document.getElementById('tbp-son-odeme-tarih')?.value || '';
   const pw = document.getElementById('tbp-preview-wrap');
   const ab = document.getElementById('tbp-apply-bar');
 
@@ -9895,13 +9933,18 @@ function renderTopluBorcOnizle() {
     </tr>`;
   }).join('');
 
+  const fmtDate = iso => iso ? new Date(iso+'T00:00').toLocaleDateString('tr-TR') : '—';
   if (pw) pw.innerHTML = `<div class="card" style="padding:0">
-    <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+    <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
       <div>
         <div style="font-size:14px;font-weight:700">${apt.ad} — ${donem} Dönemi Önizleme</div>
         <div style="font-size:12px;color:var(--tx-3);margin-top:3px">
           ${hedefler.length} daire · Toplam:
           <strong style="color:var(--err);font-size:15px" id="tbp-toplam-lbl">₺${fmt(toplamTutar)}</strong>
+        </div>
+        <div style="display:flex;gap:14px;margin-top:6px;flex-wrap:wrap">
+          <span style="font-size:11.5px;color:var(--tx-3)">📅 Tahakkuk: <strong style="color:var(--tx-1)">${fmtDate(tahakkukT)}</strong></span>
+          ${sonOdemeT ? `<span style="font-size:11.5px;color:var(--tx-3)">⏰ Son Ödeme: <strong style="color:var(--warn)">${fmtDate(sonOdemeT)}</strong></span>` : ''}
         </div>
       </div>
       <div style="font-size:11px;color:var(--tx-3);text-align:right">
@@ -9959,7 +10002,12 @@ function tbpUpdateToplam() {
 
 function tbpTemizle() {
   const aptEl = document.getElementById('tbp-apt'); if(aptEl) aptEl.value='';
-  const acEl = document.getElementById('tbp-aciklama'); if(acEl) acEl.value='';
+  const acEl  = document.getElementById('tbp-aciklama'); if(acEl) acEl.value='';
+  // Tarih alanlarını sıfırla ve manual-edit flag kaldır
+  ['tbp-tahakkuk-tarih','tbp-son-odeme-tarih'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.value = ''; delete el.dataset.manualEdit; }
+  });
   tbpClearPreview();
   const uyari = document.getElementById('tbp-donem-uyari'); if(uyari) uyari.style.display='none';
 }
@@ -9969,9 +10017,11 @@ function saveTopluBorcPage() {
   if (!aptId) { toast('Site seçin.','err'); return; }
   const donem = document.getElementById('tbp-donem')?.value;
   if (!donem) { toast('Dönem seçin.','err'); return; }
-  const kategori = document.getElementById('tbp-kategori')?.value || 'Aidat';
-  const aciklama = document.getElementById('tbp-aciklama')?.value?.trim() || '';
-  const hedefler = window._tbpHedefler || [];
+  const kategori  = document.getElementById('tbp-kategori')?.value || 'Aidat';
+  const aciklama  = document.getElementById('tbp-aciklama')?.value?.trim() || '';
+  const tahakkukT = document.getElementById('tbp-tahakkuk-tarih')?.value || (donem + '-01');
+  const sonOdemeT = document.getElementById('tbp-son-odeme-tarih')?.value || '';
+  const hedefler  = window._tbpHedefler || [];
   if (!hedefler.length) { toast('Önce "Önizle" butonuna basın.','warn'); return; }
 
   let ok=0, toplamBorc=0;
@@ -10004,10 +10054,11 @@ function saveTopluBorcPage() {
     aptId: +aptId,
     aptAd: apt?.ad||'',
     donem,
-    tarih: today(),
+    tarih:        tahakkukT,   // borç tahakkuk tarihi (artık dönemin 1'i veya kullanıcı seçimi)
+    sonOdeme:     sonOdemeT,   // son ödeme tarihi
     kategori,
     aciklama,
-    sakinSayisi: ok,
+    sakinSayisi:  ok,
     toplamBorc,
     detaylar
   });
@@ -10057,14 +10108,19 @@ function renderTopluBorcGecmis() {
   let html = '';
   Object.entries(gruplar).sort((a,b)=>b[0].localeCompare(a[0])).forEach(([ay, liste]) => {
     const ayToplam = liste.reduce((s,k)=>s+(k.toplamBorc||0),0);
+    const fmtD = iso => iso ? new Date(iso+'T00:00').toLocaleDateString('tr-TR') : '—';
     const rows = liste.map(k => {
       const aptAd = k.aptAd || S.apartmanlar.find(a=>a.id==k.aptId)?.ad || '—';
+      const sonOdemeHtml = k.sonOdeme
+        ? `<span style="color:var(--warn);font-weight:600">${fmtD(k.sonOdeme)}</span>`
+        : '<span style="color:var(--tx-4)">—</span>';
       return `<tr>
-        <td style="font-size:11.5px;color:var(--tx-3)">${k.tarih||'—'}</td>
+        <td style="font-size:11.5px;color:var(--tx-3);white-space:nowrap">${fmtD(k.tarih)}</td>
         <td style="font-weight:600">${aptAd}</td>
         <td><span class="b b-bl" style="font-size:10px">${k.kategori||'Aidat'}</span></td>
         <td>${k.donem||'—'}</td>
-        <td style="font-size:11.5px;color:var(--tx-3)">${k.aciklama||'—'}</td>
+        <td style="font-size:11.5px;color:var(--tx-3);white-space:nowrap">${sonOdemeHtml}</td>
+        <td style="font-size:11.5px;color:var(--tx-3);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${k.aciklama||'—'}</td>
         <td style="text-align:center">${k.sakinSayisi||0} daire</td>
         <td style="font-weight:700;color:var(--err);text-align:right">₺${fmt(k.toplamBorc||0)}</td>
         <td onclick="event.stopPropagation()">
@@ -10088,8 +10144,8 @@ function renderTopluBorcGecmis() {
       <div class="tw">
         <table>
           <thead><tr>
-            <th>Kayıt Tarihi</th><th>Site</th><th>Kategori</th><th>Dönem</th>
-            <th>Açıklama</th><th>Daire Sayısı</th><th style="text-align:right">Toplam</th><th>İşlem</th>
+            <th>Tahakkuk Tarihi</th><th>Site</th><th>Kategori</th><th>Dönem</th>
+            <th>Son Ödeme</th><th>Açıklama</th><th>Daire Sayısı</th><th style="text-align:right">Toplam</th><th>İşlem</th>
           </tr></thead>
           <tbody>${rows}</tbody>
         </table>

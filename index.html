@@ -1935,7 +1935,19 @@
           </select></div>
 
         <div><label class="fi-lbl">Dönem (Ay-Yıl) <span style="color:var(--err)">*</span></label>
-          <input type="month" id="tbp-donem" class="fi" oninput="tbpCheckDuplicatePeriod()"></div>
+          <input type="month" id="tbp-donem" class="fi" oninput="tbpCheckDuplicatePeriod();tbpDonemDateDefaults()"></div>
+
+        <div>
+          <label class="fi-lbl">Borç Tahakkuk Tarihi <span style="color:var(--err)">*</span></label>
+          <input type="date" id="tbp-tahakkuk-tarih" class="fi">
+          <div style="font-size:10.5px;color:var(--tx-3);margin-top:3px">Borcun resmi oluşma tarihi</div>
+        </div>
+
+        <div>
+          <label class="fi-lbl">Son Ödeme Tarihi</label>
+          <input type="date" id="tbp-son-odeme-tarih" class="fi">
+          <div style="font-size:10.5px;color:var(--tx-3);margin-top:3px">Gecikme faizi bu tarihten itibaren işler</div>
+        </div>
 
         <div><label class="fi-lbl">Gelir Türü <span style="color:var(--err)">*</span></label>
           <select id="tbp-kategori" class="fi"></select></div>
