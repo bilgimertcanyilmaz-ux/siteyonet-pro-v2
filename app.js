@@ -223,13 +223,22 @@ function initApp() {
   updateNotifDot();
   checkTekrarlayanIslemler();
   updateGlobalSiteBar();
+  // Sprint 1A: Mevcut veriyi ledger'a tek seferlik aktar
+  migrateLegacyDataToLedger();
   window._navRestoring = true; goPage('dashboard'); window._navRestoring = false;
 }
 
 // ═══════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════
-const DEF_STATE = { apartmanlar:[], denetimler:[], teklifler:[], gorevler:[], asansorler:[], isletmeProjeler:[], kararlar:[], icralar:[], sakinler:[], personel:[], duyurular:[], arizalar:[], tahsilatlar:[], sigortalar:[], toplantılar:[], faturalar:[], finansIslemler:[], ayarlar:{}, gelirTanimlari:[], giderTanimlari:[], projeler:[], iletisimLoglari:[], duyuruOkundu:{}, otomasyonKurallari:[], gorevBildirimleri:[], bankDosyalar:[], aidatBorclandir:[] };
+const DEF_STATE = { apartmanlar:[], denetimler:[], teklifler:[], gorevler:[], asansorler:[], isletmeProjeler:[], kararlar:[], icralar:[], sakinler:[], personel:[], duyurular:[], arizalar:[], tahsilatlar:[], sigortalar:[], toplantılar:[], faturalar:[], finansIslemler:[], ayarlar:{}, gelirTanimlari:[], giderTanimlari:[], projeler:[], iletisimLoglari:[], duyuruOkundu:{}, otomasyonKurallari:[], gorevBildirimleri:[], bankDosyalar:[], aidatBorclandir:[],
+  // ── FİNANSAL ÇEKİRDEK (Sprint 1A) ───────────────────
+  ledgerEntries:[],    // çift taraflı muhasebe defteri
+  auditLogs:[],        // kim/ne zaman/ne yaptı
+  accounts:[],         // banka + kasa hesapları
+  tekrarKontrol:{},    // tekrarlayan işlem idempotency haritası
+  _ledgerMigrated: false  // migration bayrağı
+};
 let S = { ...DEF_STATE };
 
 // ══════════════════════════════════════════════════
@@ -467,19 +476,27 @@ let ilerlemeId = null;
 let tNo = 1000;
 
 function loadState() {
- try { const d = localStorage.getItem('syp5'); if (d) S = { ...DEF_STATE, ...JSON.parse(d) }; } catch(e) {}
- if (!S.icralar) S.icralar = [];
-  if (!S.finansIslemler) S.finansIslemler = [];
-  if (!S.ayarlar) S.ayarlar = {};
-  if (!S.sakinler) S.sakinler = [];
+  try { const d = localStorage.getItem('syp5'); if (d) S = { ...DEF_STATE, ...JSON.parse(d) }; } catch(e) {}
+  if (!S.icralar)         S.icralar = [];
+  if (!S.finansIslemler)  S.finansIslemler = [];
+  if (!S.ayarlar)         S.ayarlar = {};
+  if (!S.sakinler)        S.sakinler = [];
+  if (!S.personel)        S.personel = [];
+  if (!S.duyurular)       S.duyurular = [];
+  if (!S.arizalar)        S.arizalar = [];
+  if (!S.tahsilatlar)     S.tahsilatlar = [];
+  if (!S.sigortalar)      S.sigortalar = [];
+  if (!S.toplantılar)     S.toplantılar = [];
+  if (!S.faturalar)       S.faturalar = [];
+  if (!S.aidatBorclandir) S.aidatBorclandir = [];
+  if (!S.bankDosyalar)    S.bankDosyalar = [];
+  // ── Yeni finansal çekirdek alanları (geriye dönük uyumlu) ──
+  if (!S.ledgerEntries)   S.ledgerEntries = [];
+  if (!S.auditLogs)       S.auditLogs = [];
+  if (!S.accounts)        S.accounts = [];
+  if (!S.tekrarKontrol)   S.tekrarKontrol = {};
+  if (S._ledgerMigrated === undefined) S._ledgerMigrated = false;
   initTanimlar();
-  if (!S.personel) S.personel = [];
-  if (!S.duyurular) S.duyurular = [];
-  if (!S.arizalar) S.arizalar = [];
-  if (!S.tahsilatlar) S.tahsilatlar = [];
-  if (!S.sigortalar) S.sigortalar = [];
-  if (!S.toplantılar) S.toplantılar = [];
-  if (!S.faturalar) S.faturalar = [];
 }
 function save() {
   try { localStorage.setItem('syp5', JSON.stringify(S)); } catch(e) {}
@@ -4816,7 +4833,7 @@ function saveOdeme() {
 function renderOdemeGecmis() {
   const s=(document.getElementById('tah-g-srch')?.value||'').toLowerCase();
   const fApt=document.getElementById('tah-g-apt')?.value||'';
-  let list=S.tahsilatlar;
+  let list=(S.tahsilatlar||[]).filter(x=>x.status!=='cancelled'); // soft-cancelled kayıtları gizle
   if(fApt) list=list.filter(x=>x.aptId==fApt);
   if(s) list=list.filter(x=>(x.sakAd+' '+x.no).toLowerCase().includes(s));
   const tb=document.getElementById('tah-g-tbody'); if(!tb) return;
@@ -4837,11 +4854,59 @@ function renderOdemeGecmis() {
   </tr>`).join('');
 }
 
-function delOdeme(id) {
-  if(!confirm('Bu ödeme kaydı silinsin mi?')) return;
-  S.tahsilatlar=S.tahsilatlar.filter(x=>x.id!==id);
-  save(); toast('Silindi.','warn');
-  renderTahsilatMakbuz();
+/** @deprecated Soft cancel kullanılıyor — hard delete yapılmıyor */
+function delOdeme(id) { softCancelCollection(id); }
+
+/**
+ * Tahsilat soft cancel — kaydı silmez, status='cancelled' yapar.
+ * Sakin borcunu geri ekler + ledger ters kayıt + audit log.
+ */
+function softCancelCollection(id) {
+  const t = (S.tahsilatlar || []).find(x => x.id == id);
+  if (!t) return;
+  if (t.status === 'cancelled') { toast('Bu kayıt zaten iptal edilmiş.', 'warn'); return; }
+  if (!confirm(`Tahsilat iptal edilsin mi?\nMakbuz: ${t.no || '—'} · ₺${fmt(t.tutar)}\nBu işlem geri alınamaz — ters kayıt oluşturulur.`)) return;
+
+  const eskiTutar = t.tutar || 0;
+
+  // 1. Kaydı iptal et (silme değil)
+  t.status        = 'cancelled';
+  t.cancelledAt   = new Date().toISOString();
+  t.cancelledBy   = _currentUser?.id || 'local';
+  t.cancelReason  = 'Kullanıcı tarafından iptal edildi';
+
+  // 2. Sakin borcunu geri ekle
+  const sk = (S.sakinler || []).find(x => x.id == (t.sakId || t.sakinId));
+  if (sk) sk.borc = (sk.borc || 0) + eskiTutar;
+
+  // 3. Ledger ters kayıt (DEBIT — ödeme geri alındı)
+  LedgerService.recordReversal({
+    siteId:      t.aptId,
+    personId:    t.sakId || t.sakinId,
+    unitNo:      t.daire,
+    debit:       eskiTutar,   // ters: DEBIT ile credit'i sıfırla
+    credit:      0,
+    refType:     'tahsilatlar',
+    refId:       String(t.id),
+    docNo:       'IADE-' + (t.no || t.id),
+    description: `İptal: ${t.no || ''} — ${t.sakAd || ''}`,
+    period:      t.donem
+  });
+
+  // 4. Audit log
+  AuditService.log({
+    action:     'REVERSE',
+    entityType: 'tahsilatlar',
+    entityId:   t.id,
+    oldValues:  { status: 'active', tutar: eskiTutar },
+    newValues:  { status: 'cancelled' },
+    siteId:     t.aptId
+  });
+
+  save();
+  toast(`İptal edildi: ${t.no || ''} · Borç geri eklendi: ₺${fmt(eskiTutar)}`, 'warn');
+  if (typeof renderTahsilatMakbuz === 'function') renderTahsilatMakbuz();
+  if (typeof renderOdemeGecmis   === 'function') renderOdemeGecmis();
 }
 
 // ── BORÇ MAKBUZLARI ──────────────────────────────────
@@ -4860,10 +4925,11 @@ function renderBorcMakbuz() {
     if (fKat) katEl.value = fKat;
   }
 
-  // Tüm borç kayıtlarını düzleştir
+  // Tüm borç kayıtlarını düzleştir (cancelled olanlar gösterilmez)
   let rows = [];
   (S.aidatBorclandir||[]).forEach(kayit => {
     (kayit.detaylar||[]).forEach(d => {
+      if (d.status === 'cancelled') return;  // soft-cancelled detayları atla
       const sk = S.sakinler.find(x=>x.id==d.sakId);
       if (aptId && (sk?.aptId)!=aptId) return;
       const apt = S.apartmanlar.find(a=>a.id==(sk?.aptId));
@@ -4919,19 +4985,48 @@ function renderBorcMakbuz() {
 function deleteBorcMakbuz(idx) {
   const r = (window._bmRows || [])[idx];
   if (!r) return;
-  if (!confirm(`"${r.sakAd}" – ${r.kategori} – ₺${fmt(r.tutar)} borç kaydı silinsin mi?`)) return;
-  // Detayı kayıttan çıkar
-  const kayit = r._kayitRef;
-  kayit.detaylar = (kayit.detaylar||[]).filter(d => d !== r._detayRef);
-  kayit.toplamBorc = kayit.detaylar.reduce((s,d)=>s+(d.tutar||0),0);
-  // Kayıt boşaldıysa aidatBorclandir'dan da çıkar
-  if (!kayit.detaylar.length) {
-    S.aidatBorclandir = (S.aidatBorclandir||[]).filter(k=>k!==kayit);
+  if (!confirm(`"${r.sakAd}" – ${r.kategori} – ₺${fmt(r.tutar)}\nBorç kaydı iptal edilsin mi?\n(Kaydı silmez, iptal durumuna alır ve borcunu düşürür.)`)) return;
+
+  // 1. Detayı hard silmek yerine cancelled olarak işaretle
+  const detay = r._detayRef;
+  if (detay) {
+    detay.status      = 'cancelled';
+    detay.cancelledAt = new Date().toISOString();
+    detay.cancelledBy = _currentUser?.id || 'local';
   }
-  // Sakin borcunu güncelle
-  const sk = S.sakinler.find(x=>x.id==r._sakId);
-  if (sk) sk.borc = Math.max(0,(sk.borc||0) - r.tutar);
-  save(); toast('Borç kaydı silindi.','warn');
+  // Toplamı güncelle (cancelled olanları hariç tut)
+  const kayit = r._kayitRef;
+  if (kayit) {
+    kayit.toplamBorc = (kayit.detaylar || [])
+      .filter(d => d.status !== 'cancelled')
+      .reduce((s, d) => s + (d.tutar || 0), 0);
+  }
+
+  // 2. Sakin borcunu geri düşür
+  const sk = S.sakinler.find(x => x.id == r._sakId);
+  if (sk) sk.borc = Math.max(0, (sk.borc || 0) - r.tutar);
+
+  // 3. Ledger ters kayıt (CREDIT — borç geri alındı)
+  LedgerService.recordReversal({
+    siteId:      r._kayitRef?.aptId,
+    personId:    r._sakId,
+    unitNo:      r.daire,
+    debit:       0,
+    credit:      r.tutar,   // borcu sıfırla
+    refType:     'aidatBorclandir',
+    description: `İptal Borç: ${r.kategori || ''} — ${r.donem || ''}`,
+    period:      r.donem
+  });
+
+  // 4. Audit log
+  AuditService.log({
+    action: 'REVERSE', entityType: 'aidatBorclandir',
+    oldValues: { status: 'active', tutar: r.tutar, sakAd: r.sakAd },
+    newValues:  { status: 'cancelled' },
+    siteId: r._kayitRef?.aptId
+  });
+
+  save(); toast('Borç kaydı iptal edildi.', 'warn');
   renderBorcMakbuz();
 }
 
@@ -5244,6 +5339,7 @@ function renderTahsilatMakbuz() {
   };
 
   let list = (S.tahsilatlar||[]).filter(o=>{
+    if (o.status === 'cancelled') return false;  // soft-cancelled gizle
     if (aptId && o.aptId!=aptId) return false;
     if (s && !(o.sakAd+' '+(o.no||'')).toLowerCase().includes(s)) return false;
     if (fBas && (o.tarih||'')<fBas) return false;
@@ -7001,10 +7097,46 @@ function renderAidatRapor() {
 
 function finFormTemizle() { gelirFormTemizle(); }
 
-function delFinans(id) {
-  if (!confirm('Bu kayıt silinsin mi?')) return;
-  S.finansIslemler = S.finansIslemler.filter(f=>f.id!==id);
-  save(); toast('Silindi.','warn'); renderFinans();
+/** @deprecated Soft cancel kullanılıyor */
+function delFinans(id) { softCancelFinans(id); }
+
+/**
+ * Gelir/Gider soft cancel — hard delete yok.
+ * Kaydı status='cancelled' yapar, ledger ters giriş + audit log.
+ */
+function softCancelFinans(id) {
+  const f = (S.finansIslemler || []).find(x => x.id == id);
+  if (!f) return;
+  if (f.status === 'cancelled') { toast('Bu kayıt zaten iptal edilmiş.', 'warn'); return; }
+  const turLbl = f.tur === 'gelir' ? 'Gelir' : 'Gider';
+  if (!confirm(`${turLbl} kaydı iptal edilsin mi?\n${f.kat || ''} · ₺${fmt(f.toplamTutar || f.tutar)}\nBu işlem geri alınamaz.`)) return;
+
+  const tutar = f.toplamTutar || f.tutar || 0;
+
+  f.status       = 'cancelled';
+  f.cancelledAt  = new Date().toISOString();
+  f.cancelledBy  = _currentUser?.id || 'local';
+
+  // Ledger ters kayıt
+  if (f.tur === 'gelir') {
+    LedgerService.recordReversal({ siteId: f.aptId, personId: f.personId, credit: tutar, debit: 0,
+      refType: 'finansIslemler', refId: String(f.id), docNo: 'IPT-GEL-' + f.id,
+      description: `İptal Gelir: ${f.kat || ''} — ${f.aptAd || ''}` });
+  } else {
+    LedgerService.recordReversal({ siteId: f.aptId, credit: 0, debit: tutar,
+      refType: 'finansIslemler', refId: String(f.id), docNo: 'IPT-GID-' + f.id,
+      description: `İptal Gider: ${f.kat || ''} — ${f.tedarikci || f.aptAd || ''}` });
+  }
+
+  AuditService.log({
+    action: 'REVERSE', entityType: 'finansIslemler', entityId: f.id,
+    oldValues: { status: 'active', tur: f.tur, tutar },
+    newValues: { status: 'cancelled' },
+    siteId: f.aptId
+  });
+
+  save(); toast(`İptal edildi: ${f.kat || turLbl} · ₺${fmt(tutar)}`, 'warn');
+  renderFinans();
 }
 
 function renderFinans() {
@@ -7015,7 +7147,7 @@ function renderFinans() {
   const fay = (document.getElementById('fin-f-ay')||{}).value||'';
   const fd  = (document.getElementById('fin-f-durum')||{}).value||'';
 
-  let list = [...(S.finansIslemler||[])].sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||''));
+  let list = [...(S.finansIslemler||[])].filter(f=>f.status!=='cancelled').sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||''));
   if (s)   list = list.filter(f=>((f.aciklama||'')+' '+(f.kat||'')+' '+(f.tedarikci||'')+' '+(f.sakAd||'')).toLowerCase().includes(s.toLowerCase()));
   if (fa)  list = list.filter(f=>f.aptId==fa);
   if (ft)  list = list.filter(f=>f.tur===ft);
@@ -10096,10 +10228,8 @@ function saveAidatBorcDaire() {
 }
 
 function deleteTahsilat(id, sakId) {
-  if (!id || !confirm('Bu ödeme kaydı silinsin mi?')) return;
-  S.tahsilatlar = (S.tahsilatlar || []).filter(t => t.id != id);
-  save();
-  toast('Ödeme kaydı silindi.', 'warn');
+  // Daire detay sayfasından soft cancel — aynı merkezi fonksiyonu kullan
+  softCancelCollection(id);
   const sk = S.sakinler.find(s => s.id === +sakId);
   if (sk) { const yr = document.querySelector('.dd-year-sel'); renderDaireDetay(sk, yr ? +yr.value : new Date().getFullYear()); }
 }
@@ -10575,39 +10705,373 @@ function exportAidatTahsilatRaporu() {
   toast('Excel indiriliyor…','ok');
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// FİNANSAL ÇEKİRDEK — Sprint 1A
+// LedgerService  : çift taraflı muhasebe defteri yazma/okuma
+// AuditService   : kim/ne zaman/ne yaptı izleme
+// ─────────────────────────────────────────────────────────────────
+// TASARIM PRENSİBİ:
+//   • Her finansal işlem (borç, tahsilat, ters kayıt) ledger_entries'e yazılır
+//   • Supabase bağlıysa gerçek tabloya, değilse S.ledgerEntries[]'e yazar
+//   • Okuma her zaman S.ledgerEntries'den yapılır (sync sonrası dolar)
+//   • Eski sk.borc scalar'ı yedek olarak korunur, ledger yoksa fallback
+// ═══════════════════════════════════════════════════════════════════
+
+const LedgerService = {
+
+  /** Benzersiz ID üretici — Date.now çakışmasını önler */
+  _uid() {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID)
+      return crypto.randomUUID();
+    return Date.now().toString(36) + Math.random().toString(36).slice(2);
+  },
+
+  /**
+   * Borçlandırma → DEBIT kaydı
+   * @param {object} p
+   * @param {number|string} p.siteId    - Apartman ID
+   * @param {number|string} [p.personId]
+   * @param {string}        [p.unitNo]
+   * @param {number}        p.amount
+   * @param {string}        p.category  - 'aidat', 'kira', vb.
+   * @param {string}        p.period    - 'YYYY-MM'
+   * @param {string}        [p.docNo]
+   * @param {string}        [p.description]
+   * @param {string}        [p.date]    - ISO YYYY-MM-DD
+   * @param {string}        [p.refId]   - kaynak kayıt id
+   * @param {string}        [p.source]  - 'manuel'|'toplu'|'otomasyon'
+   * @returns {object}  yazılan entry
+   */
+  recordAccrual(p) {
+    const entry = {
+      id:          this._uid(),
+      site_id:     p.siteId,
+      person_id:   p.personId   || null,
+      unit_no:     p.unitNo     || null,
+      entry_type:  'accrual',
+      ref_type:    'aidatBorclandir',
+      ref_id:      p.refId      || null,
+      debit:       Math.abs(p.amount),
+      credit:      0,
+      period:      p.period     || null,
+      doc_no:      p.docNo      || null,
+      description: p.description || `${p.category} — ${p.period || ''}`,
+      date:        p.date       || today(),
+      source:      p.source     || 'manuel',
+      created_by:  _currentUser?.id || 'local',
+      created_at:  new Date().toISOString(),
+      status:      'active'
+    };
+    S.ledgerEntries = S.ledgerEntries || [];
+    S.ledgerEntries.push(entry);
+    // Supabase gerçek tablo yazımı (tablo mevcutsa)
+    if (_supabase && _currentUser) {
+      _supabase.from('ledger_entries').insert(entry)
+        .then(({ error }) => { if (error) console.warn('[Ledger] accrual write:', error.message); });
+    }
+    return entry;
+  },
+
+  /**
+   * Tahsilat → CREDIT kaydı
+   */
+  recordCollection(p) {
+    const entry = {
+      id:          this._uid(),
+      site_id:     p.siteId,
+      person_id:   p.personId   || null,
+      unit_no:     p.unitNo     || null,
+      entry_type:  'collection',
+      ref_type:    'tahsilatlar',
+      ref_id:      p.refId      || null,
+      debit:       0,
+      credit:      Math.abs(p.amount),
+      period:      p.period     || null,
+      doc_no:      p.receiptNo  || p.docNo || null,
+      description: p.description || `Tahsilat — ${p.receiptNo || ''}`,
+      date:        p.date       || today(),
+      source:      p.source     || 'manuel',
+      created_by:  _currentUser?.id || 'local',
+      created_at:  new Date().toISOString(),
+      status:      'active'
+    };
+    S.ledgerEntries = S.ledgerEntries || [];
+    S.ledgerEntries.push(entry);
+    if (_supabase && _currentUser) {
+      _supabase.from('ledger_entries').insert(entry)
+        .then(({ error }) => { if (error) console.warn('[Ledger] collection write:', error.message); });
+    }
+    return entry;
+  },
+
+  /**
+   * Ters kayıt (iptal/iade) → karşı tarafı CREDIT/DEBIT ile sıfırlar
+   */
+  recordReversal(p) {
+    const entry = {
+      id:          this._uid(),
+      site_id:     p.siteId,
+      person_id:   p.personId   || null,
+      unit_no:     p.unitNo     || null,
+      entry_type:  'reversal',
+      ref_type:    p.refType    || null,
+      ref_id:      p.refId      || null,
+      debit:       p.debit      || 0,
+      credit:      p.credit     || 0,
+      period:      p.period     || null,
+      doc_no:      p.docNo      || null,
+      description: p.description || `İptal — ${p.docNo || ''}`,
+      date:        today(),
+      source:      'reversal',
+      created_by:  _currentUser?.id || 'local',
+      created_at:  new Date().toISOString(),
+      status:      'active'
+    };
+    S.ledgerEntries = S.ledgerEntries || [];
+    S.ledgerEntries.push(entry);
+    if (_supabase && _currentUser) {
+      _supabase.from('ledger_entries').insert(entry)
+        .then(({ error }) => { if (error) console.warn('[Ledger] reversal write:', error.message); });
+    }
+    return entry;
+  },
+
+  /**
+   * Kişinin net bakiyesini hesapla
+   * Ledger varsa ledger'dan, yoksa sk.borc scalar fallback
+   */
+  getPersonBalance(personId, siteId) {
+    const entries = (S.ledgerEntries || []).filter(e =>
+      String(e.person_id) === String(personId) &&
+      String(e.site_id)   === String(siteId) &&
+      e.status !== 'cancelled'
+    );
+    if (!entries.length) {
+      const sk = (S.sakinler || []).find(x => x.id == personId);
+      return sk ? Math.max(0, sk.borc || 0) : 0;
+    }
+    const debit  = entries.reduce((s, e) => s + (e.debit  || 0), 0);
+    const credit = entries.reduce((s, e) => s + (e.credit || 0), 0);
+    return Math.max(0, debit - credit);
+  },
+
+  /**
+   * Kişi hesap ekstresi (kronolojik, birikimli bakiye ile)
+   */
+  getPersonStatement(personId, siteId, { startDate, endDate } = {}) {
+    let entries = (S.ledgerEntries || []).filter(e =>
+      String(e.person_id) === String(personId) &&
+      String(e.site_id)   === String(siteId) &&
+      e.status !== 'cancelled'
+    );
+    if (startDate) entries = entries.filter(e => e.date >= startDate);
+    if (endDate)   entries = entries.filter(e => e.date <= endDate);
+    entries.sort((a, b) => a.date.localeCompare(b.date) || a.created_at.localeCompare(b.created_at));
+    let balance = 0;
+    return entries.map(e => {
+      balance += (e.debit || 0) - (e.credit || 0);
+      return { ...e, running_balance: balance };
+    });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────
+const AuditService = {
+  /**
+   * Her kritik finansal işlemde çağrılır — asenkron, hata durumunda sessiz
+   * @param {object} p
+   * @param {'CREATE'|'UPDATE'|'DELETE'|'REVERSE'|'EXPORT'|'LOGIN'} p.action
+   * @param {string}  p.entityType  - 'tahsilatlar'|'finansIslemler'|'aidatBorclandir'...
+   * @param {*}       [p.entityId]
+   * @param {object}  [p.oldValues]
+   * @param {object}  [p.newValues]
+   * @param {number|string} [p.siteId]
+   */
+  log(p) {
+    const entry = {
+      id:          Date.now().toString(36) + Math.random().toString(36).slice(2),
+      user_id:     _currentUser?.id  || 'local',
+      user_email:  _currentUser?.email || 'local',
+      site_id:     p.siteId          || null,
+      action:      p.action,
+      entity_type: p.entityType      || null,
+      entity_id:   String(p.entityId || ''),
+      old_values:  p.oldValues       || null,
+      new_values:  p.newValues       || null,
+      created_at:  new Date().toISOString()
+    };
+    S.auditLogs = S.auditLogs || [];
+    // Audit log max 500 kayıt (localStorage şişmesini önle)
+    if (S.auditLogs.length >= 500) S.auditLogs.splice(0, 100);
+    S.auditLogs.push(entry);
+    if (_supabase && _currentUser) {
+      _supabase.from('audit_logs').insert(entry)
+        .then(({ error }) => { if (error) console.warn('[Audit] log write:', error.message); });
+    }
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────
+/**
+ * migrateLegacyDataToLedger
+ * Mevcut S.tahsilatlar + S.aidatBorclandir kayıtlarını
+ * S.ledgerEntries'e CREDIT/DEBIT olarak tek seferlik aktar.
+ * S._ledgerMigrated=true bayrağı ile tekrar çalışmaz.
+ */
+function migrateLegacyDataToLedger() {
+  if (S._ledgerMigrated) return;
+  S.ledgerEntries = S.ledgerEntries || [];
+  let count = 0;
+
+  // 1. Mevcut borçlandırmalar → DEBIT
+  (S.aidatBorclandir || []).forEach(kayit => {
+    (kayit.detaylar || []).forEach(d => {
+      if (d._migrated) return;
+      // Eğer zaten bu kaynak için ledger entry varsa atla
+      const already = S.ledgerEntries.some(e =>
+        e.ref_type === 'aidatBorclandir' && e.ref_id === String(kayit.aptId) + '_' + kayit.donem + '_' + d.sakId
+      );
+      if (already) return;
+      S.ledgerEntries.push({
+        id:          'mig_acc_' + (kayit.aptId || '') + '_' + (kayit.donem || '') + '_' + (d.sakId || '') + '_' + Date.now(),
+        site_id:     kayit.aptId,
+        person_id:   d.sakId,
+        unit_no:     d.daire || null,
+        entry_type:  'accrual',
+        ref_type:    'aidatBorclandir',
+        ref_id:      String(kayit.aptId) + '_' + kayit.donem + '_' + d.sakId,
+        debit:       d.tutar || 0,
+        credit:      0,
+        period:      kayit.donem,
+        doc_no:      null,
+        description: `[Geçiş] ${d.kategori || 'Aidat'} — ${kayit.donem || ''}`,
+        date:        kayit.tarih || today(),
+        source:      'migration',
+        created_by:  'migration',
+        created_at:  new Date().toISOString(),
+        status:      'active'
+      });
+      count++;
+    });
+  });
+
+  // 2. Mevcut tahsilatlar → CREDIT
+  (S.tahsilatlar || []).filter(t => t.status !== 'cancelled').forEach(t => {
+    const already = S.ledgerEntries.some(e =>
+      e.ref_type === 'tahsilatlar' && e.ref_id === String(t.id)
+    );
+    if (already) return;
+    S.ledgerEntries.push({
+      id:          'mig_col_' + t.id,
+      site_id:     t.aptId,
+      person_id:   t.sakId || t.sakinId,
+      unit_no:     t.daire || null,
+      entry_type:  'collection',
+      ref_type:    'tahsilatlar',
+      ref_id:      String(t.id),
+      debit:       0,
+      credit:      t.tutar || 0,
+      period:      t.donem || null,
+      doc_no:      t.no    || null,
+      description: `[Geçiş] ${t.tip || 'Tahsilat'} — ${t.no || ''}`,
+      date:        t.tarih || today(),
+      source:      'migration',
+      created_by:  'migration',
+      created_at:  new Date().toISOString(),
+      status:      'active'
+    });
+    count++;
+  });
+
+  S._ledgerMigrated = true;
+  if (count > 0) {
+    save();
+    console.log(`[Migration] ${count} legacy kayıt ledger'a aktarıldı.`);
+  }
+}
+
 // ===================================================
 // TEKRARLAYaN İŞLEM OTOMASYONU
 // ===================================================
+/**
+ * Tekrarlayan işlemleri kontrol eder ve dönem başına bir kez çalıştırır.
+ * İdempotent: S.tekrarKontrol haritası ile çift oluşturma engellenir.
+ * ID çakışması: crypto.randomUUID() veya fallback kullanılır.
+ */
 function checkTekrarlayanIslemler() {
   if (!S.finansIslemler || !S.finansIslemler.length) return;
-  const now = new Date();
-  const buAy = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  if (!S.tekrarKontrol) S.tekrarKontrol = {};
+
+  const now   = new Date();
+  const buAy  = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  const buYil = String(now.getFullYear());
+
+  // Güvenli ID üreticisi (Date.now + random → çakışma riski yoktur)
+  const genId = () => (typeof crypto !== 'undefined' && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+
   let eklendi = 0;
-  S.finansIslemler.filter(f => f.tekrar === 'aylik').forEach(f => {
-    const tekrarKey = 'tekrar_' + f.id + '_' + buAy;
-    if (!(S.tekrarKontrol||{})[tekrarKey]) {
-      const yeni = { ...f, id: Date.now() + Math.random(), tarih: buAy + '-01', tekrar: '', kaynak: 'otomasyon', kaynakId: f.id };
-      S.finansIslemler.push(yeni);
-      if (!S.tekrarKontrol) S.tekrarKontrol = {};
-      S.tekrarKontrol[tekrarKey] = true;
-      eklendi++;
-    }
-  });
-  const buYil = now.getFullYear() + '-01';
-  S.finansIslemler.filter(f => f.tekrar === 'yillik').forEach(f => {
-    const tekrarKey = 'tekrar_y_' + f.id + '_' + now.getFullYear();
-    if (!(S.tekrarKontrol||{})[tekrarKey]) {
-      const origMonth = (f.tarih||'').slice(5,7);
-      if (String(now.getMonth()+1).padStart(2,'0') === origMonth) {
-        const yeni = { ...f, id: Date.now() + Math.random(), tarih: now.getFullYear()+'-'+origMonth+'-01', tekrar: '', kaynak: 'otomasyon', kaynakId: f.id };
+
+  // Temel tekrar kaynakları: cancelled olmayanlar ve kopyalar değil
+  const kaynaklar = S.finansIslemler.filter(f =>
+    f.tekrar && f.tekrar !== '' && f.status !== 'cancelled' && !f.kaynakId
+  );
+
+  kaynaklar.forEach(f => {
+    // ── Aylık ──
+    if (f.tekrar === 'aylik') {
+      const key = `tekrar_aylik_${f.id}_${buAy}`;
+      // Bitiş tarihi geçmişse atla
+      if (f.tekrarBitis && buAy > f.tekrarBitis.slice(0,7)) return;
+      if (!S.tekrarKontrol[key]) {
+        const yeni = {
+          ...f,
+          id:       genId(),
+          tarih:    buAy + '-01',
+          tekrar:   '',
+          tekrarBitis: '',
+          kaynak:   'otomasyon',
+          kaynakId: f.id,
+          status:   'active'
+        };
         S.finansIslemler.push(yeni);
-        if (!S.tekrarKontrol) S.tekrarKontrol = {};
-        S.tekrarKontrol[tekrarKey] = true;
+        S.tekrarKontrol[key] = today();
+        eklendi++;
+      }
+    }
+
+    // ── Üç Aylık ──
+    if (f.tekrar === 'uc_aylik') {
+      const ceyrek = Math.ceil((now.getMonth() + 1) / 3);
+      const key = `tekrar_uc_${f.id}_${buYil}_q${ceyrek}`;
+      if (f.tekrarBitis && buAy > f.tekrarBitis.slice(0,7)) return;
+      if (!S.tekrarKontrol[key]) {
+        const yeni = { ...f, id: genId(), tarih: buAy + '-01', tekrar: '', tekrarBitis: '', kaynak: 'otomasyon', kaynakId: f.id, status: 'active' };
+        S.finansIslemler.push(yeni);
+        S.tekrarKontrol[key] = today();
+        eklendi++;
+      }
+    }
+
+    // ── Yıllık ──
+    if (f.tekrar === 'yillik') {
+      const key = `tekrar_yillik_${f.id}_${buYil}`;
+      if (f.tekrarBitis && buYil > f.tekrarBitis.slice(0,4)) return;
+      const origMonth = (f.tarih || '').slice(5, 7);
+      if (String(now.getMonth()+1).padStart(2,'0') === origMonth && !S.tekrarKontrol[key]) {
+        const yeni = { ...f, id: genId(), tarih: buYil + '-' + origMonth + '-01', tekrar: '', tekrarBitis: '', kaynak: 'otomasyon', kaynakId: f.id, status: 'active' };
+        S.finansIslemler.push(yeni);
+        S.tekrarKontrol[key] = today();
         eklendi++;
       }
     }
   });
-  if (eklendi > 0) { save(); toast(eklendi + ' tekrarlayan işlem otomatik oluşturuldu.','ok'); }
+
+  if (eklendi > 0) {
+    save();
+    toast(`${eklendi} tekrarlayan işlem otomatik oluşturuldu.`, 'ok');
+  }
 }
 
 // ── SÜPER ADMİN FONKSİYONLARI ─────────────────
