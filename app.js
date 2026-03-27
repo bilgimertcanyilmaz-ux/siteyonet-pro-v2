@@ -9794,6 +9794,75 @@ function renderTopluBorcPage() {
 function tbpAptChange() {
   tbpCheckDuplicatePeriod();
   tbpClearPreview();
+  tbpManuelTutarChange(); // apt değişince canlı hesabı güncelle
+}
+
+/**
+ * Manuel tutar girilince daire sayısı × tutar = toplam hesaplar ve gösterir.
+ * Aynı zamanda tbp-sabit-tutar + tbp-tutar-tur alanlarını senkronize eder.
+ */
+function tbpManuelTutarChange() {
+  const ozet   = document.getElementById('tbp-manuel-ozet');
+  const tutar  = parseFloat(document.getElementById('tbp-manuel-tutar')?.value) || 0;
+  const aptId  = document.getElementById('tbp-apt')?.value;
+  const kime   = document.getElementById('tbp-kime')?.value || 'malik';
+
+  // Sabit tutar alanını senkronize et (önizle butonu bunu okur)
+  const sabitEl = document.getElementById('tbp-sabit-tutar');
+  const turEl   = document.getElementById('tbp-tutar-tur');
+  if (tutar > 0) {
+    if (sabitEl) sabitEl.value = tutar;
+    if (turEl)   turEl.value   = 'sabit';
+    if (typeof tbpTutarTurChange === 'function') tbpTutarTurChange();
+  }
+
+  if (!ozet) return;
+
+  if (!tutar || !aptId) {
+    ozet.style.display = 'none';
+    return;
+  }
+
+  // Aktif sakinlerden hedef kişi sayısını hesapla
+  const aktifSakinler = (S.sakinler || []).filter(s => s.aptId == aptId && isSakinAktif(s));
+  const daireMap = {};
+  aktifSakinler.forEach(s => {
+    const d = s.daire || '?';
+    if (!daireMap[d]) daireMap[d] = { malik: null, kiraci: null };
+    if (s.tip === 'malik'    && !daireMap[d].malik)  daireMap[d].malik  = s;
+    if (s.tip === 'kiralik'  && !daireMap[d].kiraci) daireMap[d].kiraci = s;
+  });
+
+  let hedefSayisi = 0;
+  Object.values(daireMap).forEach(kisiler => {
+    const hedef = kime === 'malik'
+      ? kisiler.malik
+      : (kisiler.kiraci || kisiler.malik);
+    if (hedef) hedefSayisi++;
+  });
+
+  const toplam = tutar * hedefSayisi;
+  const apt    = (S.apartmanlar || []).find(a => a.id == aptId);
+
+  ozet.style.display = '';
+  ozet.innerHTML = `
+    <div style="font-size:10.5px;font-weight:700;color:var(--tx-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Canlı Hesap</div>
+    <div style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+      <span style="font-size:22px;font-weight:800;color:var(--brand)">₺${fmt(toplam)}</span>
+      <span style="font-size:11.5px;color:var(--tx-3)">toplam borçlandırılacak</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <div style="font-size:12px;color:var(--tx-2)">
+        <span style="font-weight:600;color:var(--tx-1)">${hedefSayisi} daire</span>
+        <span style="color:var(--tx-3)"> × </span>
+        <span style="font-weight:600;color:var(--tx-1)">₺${fmt(tutar)}</span>
+        <span style="color:var(--tx-3)"> = </span>
+        <span style="font-weight:700;color:var(--brand)">₺${fmt(toplam)}</span>
+      </div>
+      <div style="font-size:11px;color:var(--tx-3)">${apt?.ad || ''} · ${kime === 'malik' ? 'Ev sahipleri' : 'Kiracı öncelikli'}</div>
+    </div>
+    ${hedefSayisi === 0 ? '<div style="font-size:11px;color:var(--warn);margin-top:6px">⚠️ Bu site için aktif sakin bulunamadı</div>' : ''}
+  `;
 }
 
 /**
@@ -9838,7 +9907,7 @@ function tbpTutarTurChange() {
 }
 
 function tbpSabitChange() { tbpClearPreview(); }
-function tbpKimeChange() { tbpClearPreview(); }
+function tbpKimeChange() { tbpClearPreview(); tbpManuelTutarChange(); }
 
 function tbpClearPreview() {
   const pw = document.getElementById('tbp-preview-wrap');
@@ -10008,6 +10077,9 @@ function tbpTemizle() {
     const el = document.getElementById(id);
     if (el) { el.value = ''; delete el.dataset.manualEdit; }
   });
+  // Manuel tutarı sıfırla
+  const mEl = document.getElementById('tbp-manuel-tutar'); if (mEl) mEl.value = '';
+  const oEl = document.getElementById('tbp-manuel-ozet');  if (oEl) oEl.style.display = 'none';
   tbpClearPreview();
   const uyari = document.getElementById('tbp-donem-uyari'); if(uyari) uyari.style.display='none';
 }
