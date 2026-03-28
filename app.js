@@ -9131,8 +9131,8 @@ function goDaireAidatGecmis(sakId, yil) {
 let _currentCariId = null;
 function refreshCariIfOpen() {
   if (!_currentCariId) return;
-  const on = document.querySelector('.ni.on');
-  if (!on || on.dataset.p !== 'sakin-cari') return;
+  const pg = document.getElementById('page-sakin-cari');
+  if (!pg || !pg.classList.contains('on')) return;
   const sk = S.sakinler.find(s => s.id === _currentCariId);
   if (sk && typeof renderSakinCari === 'function') renderSakinCari(sk);
 }
