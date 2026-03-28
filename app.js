@@ -9207,8 +9207,10 @@ function renderSakinCari(sk, opts) {
   const topAidatBorc = aidatIslemler.reduce((s, x) => s + x.borcTutar, 0);
   const topOdeme = odemeler.reduce((s, o) => s + (o.tutar || 0), 0);
   const skBorc = sk.borc || 0;
-  // Eğer toplam aidat + ödemelerle açıklanamayan bir borç varsa "Devir" olarak ekle
-  const devirBorc = Math.max(0, skBorc - topAidatBorc + topOdeme);
+  // Devir: yalnızca sk.borc > 0 iken ve kayıtların açıklayamadığı fark kadar göster.
+  // Tahsilat devirBorc'u arttırmasın; sk.borc = 0 ise devir = 0.
+  const netFromRecords = topAidatBorc - topOdeme;
+  const devirBorc = skBorc > 0.01 ? Math.max(0, skBorc - Math.max(0, netFromRecords)) : 0;
   if (devirBorc > 0.01) {
     genelIslemler.unshift({
       evrakTarih: sk.giris || '',
