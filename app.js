@@ -4468,6 +4468,7 @@ function topluAidatOlustur(){
   save();
   toast(`${sakinSayisi} sakin için ${donemLabel} aidatı borçlandırıldı. Toplam: ₺${fmt(toplamBorc)}`,'ok');
   if(typeof renderTahsilat==='function') try{renderTahsilat();}catch(e){}
+  refreshCariIfOpen();
 }
 
 function renderTopluTahsilat(aptId){
@@ -4532,7 +4533,7 @@ function saveTopluOdeme(){
     if((sk.borc||0)>0)sk.borc=Math.max(0,(sk.borc||0)-tutar);
     inp.value='';ok++;
   });
-  if(ok){save();calcTopluToplam();}
+  if(ok){save();calcTopluToplam();refreshCariIfOpen();}
   const sonuc=document.getElementById('tah-toplu-sonuc');
   if(sonuc){sonuc.innerHTML=`<div style="padding:10px;border-radius:8px;font-size:13px;color:var(--ok);font-weight:700">✅ ${ok} sakin için toplam ₺${fmt(document.querySelectorAll('.toplu-tutar').length)} ödeme kaydedildi.</div>`;sonuc.style.display='';}
   toast(ok+' ödeme kaydedildi.','ok');
@@ -4980,6 +4981,7 @@ function saveOdeme() {
   });
   ['tah-o-tutar','tah-o-donem','tah-o-not'].forEach(i=>{ const el=document.getElementById(i); if(el) el.value=''; });
   save(); goTab('tah-liste'); toast('Ödeme kaydedildi. Makbuz: '+_makbuzNo,'ok');
+  refreshCariIfOpen();
 }
 
 function renderOdemeGecmis() {
@@ -5314,6 +5316,7 @@ function saveTahsilatEdit() {
   save(); closeModal('makbuz-edit-modal');
   toast('Tahsilat kaydı güncellendi.','ok');
   renderTahsilatMakbuz();
+  refreshCariIfOpen();
 }
 
 // ── MAKBUZ ÖNİZLEME ──────────────────────────────────
@@ -9126,6 +9129,13 @@ function goDaireAidatGecmis(sakId, yil) {
 // KİŞİ CARİ SAYFA
 // ===================================================
 let _currentCariId = null;
+function refreshCariIfOpen() {
+  if (!_currentCariId) return;
+  const on = document.querySelector('.ni.on');
+  if (!on || on.dataset.p !== 'sakin-cari') return;
+  const sk = S.sakinler.find(s => s.id === _currentCariId);
+  if (sk && typeof renderSakinCari === 'function') renderSakinCari(sk);
+}
 window._cariFromDaire = false;
 
 function goSakinCari(sakId, fromDaire) {
@@ -9890,6 +9900,7 @@ function saveHizliOdeme() {
   const yr = document.querySelector('.dd-year-sel');
   const yil = yr ? +yr.value : new Date().getFullYear();
   renderDaireDetay(sk, yil);
+  refreshCariIfOpen();
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -10306,6 +10317,7 @@ function saveTopluBorcPage() {
   });
 
   save();
+  refreshCariIfOpen();
   window._cariAutoOpenKat = kategori;
 
   // Başarı mesajı
