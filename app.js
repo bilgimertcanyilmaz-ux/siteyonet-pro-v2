@@ -9388,11 +9388,12 @@ function renderSakinCari(sk, opts) {
         <div class="cfc-val ${topAlacak>0?'ok':'muted'}">₺${fmt(topAlacak)}</div>
       </div>
       <div class="cari-fin-card">
-        <div class="cfc-lbl">
-          <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:var(--brand);fill:none;stroke-width:2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-          Fazla Ödeme
+        <div class="cfc-lbl" style="${fazlaOdeme>0?'color:var(--ok)':''}">
+          <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:${fazlaOdeme>0?'var(--ok)':'var(--brand)'};fill:none;stroke-width:2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          ${fazlaOdeme>0?'Alacaklı':'Fazla Ödeme'}
         </div>
-        <div class="cfc-val ${fazlaOdeme>0?'ok':'muted'}">₺${fmt(fazlaOdeme)}</div>
+        <div class="cfc-val ${fazlaOdeme>0?'ok':'muted'}" style="${fazlaOdeme>0?'font-weight:700;font-size:15px':''}">₺${fmt(fazlaOdeme)}</div>
+        ${fazlaOdeme>0?`<div style="font-size:10px;color:var(--ok);margin-top:2px;font-weight:600">Fazla ödeme alacağı</div>`:''}
       </div>
     </div>
 
