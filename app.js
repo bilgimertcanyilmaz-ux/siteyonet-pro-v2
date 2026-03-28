@@ -9203,15 +9203,16 @@ function renderSakinCari(sk, opts) {
     kayit.detaylar.forEach(d => {
       if (d.sakId == sk.id) {
         aidatIslemler.push({
-          evrakTarih: kayit.tarih || '',
-          sonOdeme: kayit.sonOdeme || kayit.tarih || '',
-          aciklama: kayit.aciklama || `${kayit.donem || ''} Dönemi Aidat Borçlandırması / Borç mak.`,
+          evrakTarih: d.tarih || kayit.tarih || '',
+          sonOdeme: d.sonOdeme || kayit.sonOdeme || kayit.tarih || '',
+          aciklama: d.aciklama || kayit.aciklama || `${kayit.donem || ''} Dönemi Aidat Borçlandırması / Borç mak.`,
           borcTutar: d.tutar || 0,
           alacakTutar: 0,
           tazminat: 0,
           kategori: d.kategori || 'Aidat',
           _srcType: 'borclandir',
-          _srcId: kayit.id,
+          _srcId: d.id || kayit.id,
+          _detayId: d.id,
           _sakId: sk.id
         });
       }
@@ -9814,11 +9815,19 @@ function openCariKayitEdit(srcType, srcId, sakId) {
   let rec = null;
 
   if (srcType === 'borclandir') {
-    const kayit = (S.aidatBorclandir || []).find(k => k.id == srcId);
-    if (!kayit) { toast('Kayıt bulunamadı.', 'err'); return; }
-    const detay = (kayit.detaylar || []).find(d => d.sakId == sakId);
-    if (!detay) { toast('Detay bulunamadı.', 'err'); return; }
-    rec = { srcType, kayit, detay, sakId };
+    // Detay id ile ara (yeni kayıtlar), bulamazsa kayit.id + sakId ile fallback (eski kayıtlar)
+    let foundKayit = null, foundDetay = null;
+    for (const k of (S.aidatBorclandir || [])) {
+      const d = (k.detaylar || []).find(x => x.id == srcId);
+      if (d) { foundKayit = k; foundDetay = d; break; }
+    }
+    if (!foundDetay) {
+      // Eski kayıt: srcId = kayit.id, sakId ile ara
+      foundKayit = (S.aidatBorclandir || []).find(k => k.id == srcId);
+      foundDetay = foundKayit && (foundKayit.detaylar || []).find(d => d.sakId == sakId);
+    }
+    if (!foundKayit || !foundDetay) { toast('Kayıt bulunamadı.', 'err'); return; }
+    rec = { srcType, kayit: foundKayit, detay: foundDetay, sakId };
   } else if (srcType === 'tahsilat') {
     const t = (S.tahsilatlar || []).find(x => x.id == srcId);
     if (!t) { toast('Kayıt bulunamadı.', 'err'); return; }
@@ -9831,10 +9840,10 @@ function openCariKayitEdit(srcType, srcId, sakId) {
   document.getElementById('cke-tip').textContent = srcType === 'borclandir' ? '✏️ Borç Kaydı Düzenle' : '✏️ Tahsilat Kaydı Düzenle';
 
   // Alanları doldur
-  const tarih = srcType === 'borclandir' ? (rec.kayit.tarih || '') : (rec.tahsilat.tarih || '');
+  const tarih = srcType === 'borclandir' ? (rec.detay.tarih || rec.kayit.tarih || '') : (rec.tahsilat.tarih || '');
   const tutar = srcType === 'borclandir' ? (rec.detay.tutar || 0) : (rec.tahsilat.tutar || 0);
   const aciklama = srcType === 'borclandir'
-    ? (rec.kayit.aciklama || '')
+    ? (rec.detay.aciklama || rec.kayit.aciklama || '')
     : (rec.tahsilat.not || rec.tahsilat.aciklama || '');
 
   document.getElementById('cke-tarih').value = tarih;
@@ -9873,8 +9882,8 @@ function saveCariKayitEdit() {
 
   if (rec.srcType === 'borclandir') {
     const eskiTutar = rec.detay.tutar || 0;
-    rec.kayit.tarih = tarih;
-    rec.kayit.aciklama = aciklama;
+    rec.detay.tarih = tarih;
+    rec.detay.aciklama = aciklama;
     rec.detay.tutar = tutar;
     if (kategori) rec.detay.kategori = kategori;
     // Sakin borç farkını güncelle
@@ -10581,23 +10590,24 @@ function saveAidatBorcDaire() {
   const prevTopOdeme = (S.tahsilatlar || []).filter(t => t.sakId == sakId || t.sakinId == sakId).reduce((s, o) => s + (o.tutar || 0), 0);
   const netKredi = prevTopOdeme - prevTopAidatBorc;
   sk.borc = netKredi > 0 ? Math.max(0, (sk.borc || 0) + tutar - netKredi) : (sk.borc || 0) + tutar;
+  const abdKat = document.getElementById('abd-kategori')?.value || 'Aidat';
+  const detayId = Date.now();
+  const yeniDetay = { id: detayId, sakId, ad: sk.ad, daire: sk.daire, tutar, tarih, kategori: abdKat, aciklama };
   if (!S.aidatBorclandir) S.aidatBorclandir = [];
+  // Her borçlandırma kaydı ayrı bir detay satırı olarak eklenir (merge yapılmaz)
   const kayit = S.aidatBorclandir.find(k => k.donem === donem && k.aptId == sk.aptId);
   if (kayit) {
     if (!kayit.detaylar) kayit.detaylar = [];
-    const mevcut = kayit.detaylar.find(d => d.sakId === sakId);
-    if (mevcut) mevcut.tutar = (mevcut.tutar || 0) + tutar;
-    else kayit.detaylar.push({ sakId, ad: sk.ad, daire: sk.daire, tutar, kategori: document.getElementById('abd-kategori')?.value || 'Aidat' });
+    kayit.detaylar.push(yeniDetay);
     kayit.toplamBorc = (kayit.toplamBorc || 0) + tutar;
-    kayit.tarih = tarih;
   } else {
-    S.aidatBorclandir.push({ aptId: sk.aptId, donem, tarih, sakinSayisi: 1, toplamBorc: tutar, detaylar: [{ sakId, ad: sk.ad, daire: sk.daire, tutar, kategori: document.getElementById('abd-kategori')?.value || 'Aidat' }] });
+    S.aidatBorclandir.push({ id: Date.now() + 1, aptId: sk.aptId, donem, tarih, sakinSayisi: 1, toplamBorc: tutar, detaylar: [yeniDetay] });
   }
-  const abdKat = document.getElementById('abd-kategori')?.value || 'Aidat';
   save();
   window._cariAutoOpenKat = abdKat;
   closeModal('mod-aidat-borc-daire');
   toast(`${sk.ad} için ${donem} dönemi ₺${fmt(tutar)} borçlandırıldı.`, 'ok');
+  refreshCariIfOpen();
   const yr = document.querySelector('.dd-year-sel');
   const yil = yr ? +yr.value : new Date().getFullYear();
   renderDaireDetay(sk, yil);
