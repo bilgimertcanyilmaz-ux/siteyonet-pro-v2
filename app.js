@@ -886,7 +886,7 @@ function goTab(id) { const el = document.querySelector(`[data-tab="${id}"]`); if
 // 
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-document.querySelectorAll('.ov').forEach(o => o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); }));
+document.querySelectorAll('.ov').forEach(o => o.addEventListener('click', e => { if (e.target === o && !o.hasAttribute('data-no-close')) o.classList.remove('open'); }));
 
 // 
 // DROPDOWNS — central sync
