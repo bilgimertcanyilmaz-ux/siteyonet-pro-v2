@@ -169,8 +169,19 @@ img{display:block;max-width:100%;}
   padding:0 4px 6px;
   display:flex;align-items:center;gap:8px;
   white-space:nowrap;overflow:hidden;
+  cursor:pointer;user-select:none;
 }
 .sb-sec-lbl::after{content:'';flex:1;height:1px;background:var(--border);}
+.sb-sec-lbl .sb-chev{
+  flex-shrink:0;width:10px;height:10px;
+  stroke:var(--tx-4);stroke-width:2;fill:none;
+  transition:transform .2s ease;margin-left:auto;
+}
+.sb-sec.sec-collapsed .sb-sec-lbl .sb-chev{transform:rotate(-90deg);}
+.sb-sec.sec-collapsed .ni{display:none;}
+#sb.collapsed .sb-sec.sec-collapsed .ni{display:flex;}
+#sb.collapsed .sb-sec-lbl{cursor:default;pointer-events:none;}
+#sb.collapsed .sb-chev{display:none;}
 
 /* Nav items */
 .ni{
