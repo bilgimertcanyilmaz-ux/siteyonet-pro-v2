@@ -5189,6 +5189,7 @@ function editBorcMakbuz(idx) {
   const r = (window._bmRows || [])[idx];
   if (!r) return;
   window._editBorcIdx = idx;
+  window._editTahsilatId = null;
   const kategoriler = [...new Set((S.aidatBorclandir||[]).flatMap(k=>(k.detaylar||[]).map(d=>d.kategori||'Aidat'))),'Aidat','Kira','Aidat + Kira','Diğer'].filter(Boolean);
   const katOpts = [...new Set(kategoriler)].map(k=>`<option value="${k}"${k===r.kategori?'selected':''}>${k}</option>`).join('');
   document.getElementById('makbuz-edit-content').innerHTML = `
@@ -5253,6 +5254,7 @@ function editTahsilatMakbuz(id) {
   const o = (S.tahsilatlar||[]).find(x=>x.id==id);
   if (!o) return;
   window._editTahsilatId = id;
+  window._editBorcIdx = null;
   const tipOpts = [{v:'aidat',l:'Aidat'},{v:'kira',l:'Kira'},{v:'borc',l:'Borç Ödemesi'},{v:'avans',l:'Avans'},{v:'gecmis_borc',l:'Geçmiş Borç'},{v:'diger',l:'Diğer'}]
     .map(t=>`<option value="${t.v}"${t.v===o.tip?'selected':''}>${t.l}</option>`).join('');
   const yonOpts = [{v:'nakit',l:'Nakit'},{v:'banka',l:'Banka Transferi'},{v:'eft',l:'EFT'},{v:'kredi',l:'Kredi Kartı'},{v:'havale',l:'Havale'}]
@@ -5317,6 +5319,36 @@ function saveTahsilatEdit() {
   toast('Tahsilat kaydı güncellendi.','ok');
   renderTahsilatMakbuz();
   refreshCariIfOpen();
+}
+
+function deleteMakbuzKayit() {
+  if (window._editBorcIdx != null) {
+    // Borç kaydı sil
+    const r = (window._bmRows || [])[window._editBorcIdx];
+    if (!r) return;
+    if (!confirm(`Borç kaydı silinsin mi?\n${r.sakAd} · ₺${fmt(r.tutar)}\nBu işlem geri alınamaz.`)) return;
+    const sk = S.sakinler.find(x => x.id == r._sakId);
+    if (sk) sk.borc = Math.max(0, (sk.borc || 0) - r.tutar);
+    if (r._detayRef) r._kayitRef.detaylar = (r._kayitRef.detaylar || []).filter(d => d !== r._detayRef);
+    r._kayitRef.toplamBorc = (r._kayitRef.detaylar || []).reduce((s, d) => s + (d.tutar || 0), 0);
+    if (!(r._kayitRef.detaylar || []).length) S.aidatBorclandir = (S.aidatBorclandir || []).filter(k => k !== r._kayitRef);
+    save(); closeModal('makbuz-edit-modal');
+    toast('Borç kaydı silindi.', 'warn');
+    renderBorcMakbuz();
+    refreshCariIfOpen();
+  } else if (window._editTahsilatId) {
+    // Tahsilat kaydı sil
+    const o = (S.tahsilatlar || []).find(x => x.id == window._editTahsilatId);
+    if (!o) return;
+    if (!confirm(`Tahsilat silinsin mi?\n${o.sakAd || '—'} · ₺${fmt(o.tutar)}\nBu işlem geri alınamaz.`)) return;
+    o.status = 'cancelled'; o.cancelledAt = new Date().toISOString();
+    const sk = S.sakinler.find(x => x.id == (o.sakId || o.sakinId));
+    if (sk) sk.borc = (sk.borc || 0) + (o.tutar || 0);
+    save(); closeModal('makbuz-edit-modal');
+    toast('Tahsilat kaydı silindi.', 'warn');
+    renderTahsilatMakbuz();
+    refreshCariIfOpen();
+  }
 }
 
 // ── MAKBUZ ÖNİZLEME ──────────────────────────────────
@@ -9207,10 +9239,10 @@ function renderSakinCari(sk, opts) {
   const topAidatBorc = aidatIslemler.reduce((s, x) => s + x.borcTutar, 0);
   const topOdeme = odemeler.reduce((s, o) => s + (o.tutar || 0), 0);
   const skBorc = sk.borc || 0;
-  // Devir: yalnızca sk.borc > 0 iken ve kayıtların açıklayamadığı fark kadar göster.
-  // Tahsilat devirBorc'u arttırmasın; sk.borc = 0 ise devir = 0.
-  const netFromRecords = topAidatBorc - topOdeme;
-  const devirBorc = skBorc > 0.01 ? Math.max(0, skBorc - Math.max(0, netFromRecords)) : 0;
+  // Devir: yalnızca sk.borc > 0 ve kayıtlar net borç gösteriyorsa hesapla.
+  // topOdeme > topAidatBorc ise (net kredi) devir = 0; tahsilat veya borç ekleme deviri etkilemesin.
+  const recordsNetDebt = topAidatBorc - topOdeme;
+  const devirBorc = (skBorc > 0.01 && recordsNetDebt >= 0) ? Math.max(0, skBorc - recordsNetDebt) : 0;
   if (devirBorc > 0.01) {
     genelIslemler.unshift({
       evrakTarih: sk.giris || '',
@@ -9867,6 +9899,30 @@ function saveCariKayitEdit() {
   if (sk) renderSakinCari(sk, window._cariOpts || {});
 }
 
+function deleteCariKayit() {
+  const rec = window._editingCariRec;
+  if (!rec) return;
+  const tipAd = rec.srcType === 'borclandir' ? 'borç' : 'tahsilat';
+  if (!confirm(`Bu ${tipAd} kaydı silinsin mi? Bu işlem geri alınamaz.`)) return;
+  const sk = S.sakinler.find(s => s.id === rec.sakId);
+  if (rec.srcType === 'borclandir') {
+    const tutar = rec.detay.tutar || 0;
+    rec.kayit.detaylar = (rec.kayit.detaylar || []).filter(d => d !== rec.detay);
+    rec.kayit.toplamBorc = (rec.kayit.detaylar || []).reduce((s, d) => s + (d.tutar || 0), 0);
+    if (!(rec.kayit.detaylar || []).length) S.aidatBorclandir = (S.aidatBorclandir || []).filter(k => k !== rec.kayit);
+    if (sk) sk.borc = Math.max(0, (sk.borc || 0) - tutar);
+  } else if (rec.srcType === 'tahsilat') {
+    const tutar = rec.tahsilat.tutar || 0;
+    rec.tahsilat.status = 'cancelled';
+    rec.tahsilat.cancelledAt = new Date().toISOString();
+    if (sk) sk.borc = (sk.borc || 0) + tutar;
+  }
+  save();
+  closeModal('mod-cari-kayit-edit');
+  toast(`Kayıt silindi.`, 'warn');
+  if (sk) renderSakinCari(sk, window._cariOpts || {});
+}
+
 function openHizliOdeme(sakId, donem) {
   const sk = S.sakinler.find(s => s.id === +sakId);
   if (!sk) return;
@@ -10497,6 +10553,7 @@ function openAidatBorcDaire(sakId) {
   const donem = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
   document.getElementById('abd-sak-id').value = sakId;
   document.getElementById('abd-sak-ad').value = sk.ad + ' — Daire ' + (sk.daire || '');
+  document.getElementById('abd-tarih').value = today();
   document.getElementById('abd-donem').value = donem;
   document.getElementById('abd-tutar').value = sk.aidat || sk.aidatK || '';
   document.getElementById('abd-aciklama').value = '';
@@ -10513,12 +10570,17 @@ function saveAidatBorcDaire() {
   const sakId = +document.getElementById('abd-sak-id').value;
   const donem = document.getElementById('abd-donem').value.trim();
   const tutar = parseFloat(document.getElementById('abd-tutar').value) || 0;
+  const tarih = document.getElementById('abd-tarih')?.value || today();
   const aciklama = document.getElementById('abd-aciklama').value.trim();
   if (!donem) { toast('Dönem giriniz!', 'err'); return; }
   if (tutar <= 0) { toast('Tutar giriniz!', 'err'); return; }
   const sk = S.sakinler.find(s => s.id === sakId);
   if (!sk) return;
-  sk.borc = (sk.borc || 0) + tutar;
+  // Mevcut kayıtlardan kredi hesapla (fazla ödeme varsa yeni borçla mahsup et)
+  const prevTopAidatBorc = (S.aidatBorclandir || []).flatMap(k => k.detaylar || []).filter(d => d.sakId === sakId).reduce((s, d) => s + (d.tutar || 0), 0);
+  const prevTopOdeme = (S.tahsilatlar || []).filter(t => t.sakId == sakId || t.sakinId == sakId).reduce((s, o) => s + (o.tutar || 0), 0);
+  const netKredi = prevTopOdeme - prevTopAidatBorc;
+  sk.borc = netKredi > 0 ? Math.max(0, (sk.borc || 0) + tutar - netKredi) : (sk.borc || 0) + tutar;
   if (!S.aidatBorclandir) S.aidatBorclandir = [];
   const kayit = S.aidatBorclandir.find(k => k.donem === donem && k.aptId == sk.aptId);
   if (kayit) {
@@ -10527,8 +10589,9 @@ function saveAidatBorcDaire() {
     if (mevcut) mevcut.tutar = (mevcut.tutar || 0) + tutar;
     else kayit.detaylar.push({ sakId, ad: sk.ad, daire: sk.daire, tutar, kategori: document.getElementById('abd-kategori')?.value || 'Aidat' });
     kayit.toplamBorc = (kayit.toplamBorc || 0) + tutar;
+    kayit.tarih = tarih;
   } else {
-    S.aidatBorclandir.push({ aptId: sk.aptId, donem, tarih: today(), sakinSayisi: 1, toplamBorc: tutar, detaylar: [{ sakId, ad: sk.ad, daire: sk.daire, tutar, kategori: document.getElementById('abd-kategori')?.value || 'Aidat' }] });
+    S.aidatBorclandir.push({ aptId: sk.aptId, donem, tarih, sakinSayisi: 1, toplamBorc: tutar, detaylar: [{ sakId, ad: sk.ad, daire: sk.daire, tutar, kategori: document.getElementById('abd-kategori')?.value || 'Aidat' }] });
   }
   const abdKat = document.getElementById('abd-kategori')?.value || 'Aidat';
   save();
