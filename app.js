@@ -350,7 +350,17 @@ function initApp() {
   updateGlobalSiteBar();
   // Sprint 1A: Mevcut veriyi ledger'a tek seferlik aktar
   migrateLegacyDataToLedger();
+  // Davet linki kontrolü: #davet-kayit/TOKEN
+  const _hash = window.location.hash || '';
+  const _davetMatch = _hash.match(/^#davet-kayit\/(.+)$/);
+  if (_davetMatch) {
+    const _token = _davetMatch[1];
+    window._navRestoring = true; goPage('davet-kayit'); window._navRestoring = false;
+    setTimeout(() => renderDavetKayitSayfasi(_token), 50);
+    return;
+  }
   window._navRestoring = true; goPage('dashboard'); window._navRestoring = false;
+  if (typeof updateDavetBekleyenBadge === 'function') updateDavetBekleyenBadge();
 }
 
 // ═══════════════════════════════════════════
@@ -361,6 +371,7 @@ const DEF_STATE = { apartmanlar:[], denetimler:[], teklifler:[], gorevler:[], as
   ledgerEntries:[],    // çift taraflı muhasebe defteri
   auditLogs:[],        // kim/ne zaman/ne yaptı
   accounts:[],         // banka + kasa hesapları
+  bekleyenKayitlar:[], // davet ile kayıt başvuruları (onay bekleyen)
   tekrarKontrol:{},    // tekrarlayan işlem idempotency haritası
   _ledgerMigrated: false  // migration bayrağı
 };
@@ -714,8 +725,9 @@ function _navRestorePage(page, id) {
   if (id != null) {
     if (page === 'apt-detay')   { goAptDetay(id);         return; }
     if (page === 'daire-detay') { goDaireDetay(id);       return; }
-    if (page === 'sakin-cari')  { goSakinCari(id, false); return; }
-    if (page === 'isl-detay')   { goIslDetay(id);         return; }
+    if (page === 'sakin-cari')   { goSakinCari(id, false); return; }
+    if (page === 'sakin-profil') { goSakinProfil(id);     return; }
+    if (page === 'isl-detay')    { goIslDetay(id);        return; }
     if (page === 'den-detay')   { goDenDetay(id);         return; }
     if (page === 'asan-detay')  { goAsanDetay(id);        return; }
   }
@@ -761,7 +773,8 @@ window.addEventListener('popstate', function(e) {
 //
 // NAVIGATION
 //
-const PAGE_TITLES = { dashboard:'Anasayfa', apartmanlar:'Apartmanlar', karar:'Karar Metni Oluşturucu', isletme:'İşletme Projesi', 'isl-detay':'İşletme Projesi Detay', denetim:'Denetim Raporları', 'den-detay':'Denetim Raporu Detay', asansor:'Asansör Etiket Kontrolü', 'asan-detay':'Asansör Detay', teklifler:'Teklifler', gorevler:'Görev Yönetimi', icra:'İcra Listesi', finans:'Gelir / Gider Takibi', ayarlar:'Ayarlar', sakinler:'Sakin Yönetimi', personel:'Personel Yönetimi', duyurular:'Duyuru & İletişim', ariza:'Arıza & Bakım Yönetimi', tahsilat:'Tahsilat & Borç Takibi', raporlar:'Raporlar & Analitik', 'ai-asistan':'AI Yönetim Asistanı', sigorta:'Sigorta Takibi', toplanti:'Toplantı Yönetimi', fatura:'Fatura & Hizmet Yönetimi', superadmin:'Süper Admin Paneli', 'apt-detay':'Apartman Detay', 'daire-detay':'Daire Detay', 'finansal-durum':'Finansal Durum', 'sakin-cari':'Kişilere Göre Finansal Durum', 'tanimlama':'Evrak Kategorisi', 'proje':'Proje & Tadilat Takibi', 'iletisim':'İletişim Merkezi', 'toplu-borc':'Toplu Borçlandırma', 'sms-sablonlar':'SMS / WhatsApp Şablonları' };
+const PAGE_TITLES = { dashboard:'Anasayfa', apartmanlar:'Apartmanlar', karar:'Karar Metni Oluşturucu', isletme:'İşletme Projesi', 'isl-detay':'İşletme Projesi Detay', denetim:'Denetim Raporları', 'den-detay':'Denetim Raporu Detay', asansor:'Asansör Etiket Kontrolü', 'asan-detay':'Asansör Detay', teklifler:'Teklifler', gorevler:'Görev Yönetimi', icra:'İcra Listesi', finans:'Gelir / Gider Takibi', ayarlar:'Ayarlar', sakinler:'Sakin Yönetimi', personel:'Personel Yönetimi', duyurular:'Duyuru & İletişim', ariza:'Arıza & Bakım Yönetimi', tahsilat:'Tahsilat & Borç Takibi', raporlar:'Raporlar & Analitik', 'ai-asistan':'AI Yönetim Asistanı', sigorta:'Sigorta Takibi', toplanti:'Toplantı Yönetimi', fatura:'Fatura & Hizmet Yönetimi', superadmin:'Süper Admin Paneli', 'apt-detay':'Apartman Detay', 'daire-detay':'Daire Detay', 'finansal-durum':'Finansal Durum', 'sakin-cari':'Kişilere Göre Finansal Durum', 'tanimlama':'Evrak Kategorisi', 'proje':'Proje & Tadilat Takibi', 'iletisim':'İletişim Merkezi', 'toplu-borc':'Toplu Borçlandırma', 'sms-sablonlar':'SMS / WhatsApp Şablonları',
+'sakin-profil':'Sakin Profili', 'davet-yonetim':'Sakin Davetleri', 'davet-bekleyen':'Onay Bekleyenler', 'davet-kayit':'Sisteme Kayıt' };
 
 function goPage(p) {
  if (!window._navRestoring) {
@@ -798,6 +811,10 @@ function goPage(p) {
  'den-detay': '<button class="btn bg" onclick="navBack()"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none"><polyline points="15 18 9 12 15 6"/></svg> Geri</button>',
  'asan-detay': '<button class="btn bg" onclick="navBack()"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none"><polyline points="15 18 9 12 15 6"/></svg> Geri</button>',
  'toplu-borc': '',
+'sakin-profil': '<button class="btn bg" onclick="navBack()"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none"><polyline points="15 18 9 12 15 6"/></svg> Geri</button><button class="btn bp" onclick="openSakinProfilEdit()"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Düzenle</button>',
+'davet-yonetim': '',
+'davet-bekleyen': '',
+'davet-kayit': '',
  };
  if (acts[p]) ta.innerHTML = acts[p];
   // PDF button for all pages except ayarlar + ai-asistan
@@ -825,6 +842,9 @@ function goPage(p) {
   if (p==='ayarlar') { loadSettings(); renderSetStats(); }
   if (p==='sakinler') { renderSakinler(); initTopluDaireForm(); }
   if (p==='toplu-borc') { renderTopluBorcPage(); }
+  if (p==='sakin-profil') { if(typeof renderSakinProfil==='function') renderSakinProfil(); }
+  if (p==='davet-yonetim') { if(typeof renderDavetYonetim==='function') renderDavetYonetim(); }
+  if (p==='davet-bekleyen') { if(typeof renderDavetBekleyen==='function') renderDavetBekleyen(); }
   if (p==='tanimlama') renderTanimlama();
   if (p==='proje') renderProjeler();
   if (p==='iletisim') renderIletisim();
@@ -9385,7 +9405,7 @@ function renderSakinCari(sk, opts) {
       <div class="cpc-head">
         <div class="cari-avatar">${initials}</div>
         <div class="cpc-meta">
-          <div class="cpc-name" onclick="goDaireDetay(${sk.id});window._cariFromDaire=false">
+          <div class="cpc-name" onclick="goSakinProfil(${sk.id})" title="Sakin Profiline Git">
             ${sk.ad.toUpperCase()}
             <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:rgba(255,255,255,.7);fill:none;stroke-width:2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
           </div>
@@ -11686,6 +11706,599 @@ function saAddSite() {
 // ── DASHBOARD KART BAĞLANTILARI ───────────────
 function dashCardClick(page) {
   goPage(page);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// SAKİN PROFİL SAYFASI
+// ══════════════════════════════════════════════════════════════════════
+
+let _currentProfilId = null;
+
+function goSakinProfil(sakId) {
+  const sk = S.sakinler.find(s => s.id === +sakId);
+  if (!sk) { toast('Sakin bulunamadı.', 'err'); return; }
+  _currentProfilId = +sakId;
+  if (!window._navRestoring) _navPush('sakin-profil', +sakId);
+  window._navRestoring = true;
+  goPage('sakin-profil');
+  window._navRestoring = false;
+  renderSakinProfil();
+}
+
+function renderSakinProfil() {
+  const root = document.getElementById('sp-root');
+  if (!root) return;
+  const sk = S.sakinler.find(s => s.id === _currentProfilId);
+  if (!sk) { root.innerHTML = '<div class="card" style="padding:32px;text-align:center;color:var(--tx-3)">Sakin bulunamadı.</div>'; return; }
+  const apt = S.apartmanlar.find(a => a.id == sk.aptId);
+  const aptAd = apt ? apt.ad : '—';
+  const initials = (sk.ad || ' ').split(' ').map(w => w[0] || '').join('').slice(0, 2).toUpperCase();
+  const tipRenk = sk.tip === 'kiralik' ? '#7c3aed' : '#2563eb';
+  const tipLabel = sk.tip === 'kiralik' ? 'Kiracı' : 'Malik';
+  const blokPre = (sk.blok || '').replace(/\s*blok\s*/i, '').trim();
+  const daireLabel = (blokPre ? blokPre + ' – ' : '') + (sk.daire || '?');
+
+  // Davet durumu
+  const davetToken = sk.davetToken || null;
+  const davetLink = davetToken ? (window.location.href.replace(/#.*$/, '') + '#davet-kayit/' + davetToken) : null;
+  const bekleyen = (S.bekleyenKayitlar || []).find(r => r.sakId === sk.id && r.durum === 'bekliyor');
+  const onaylandi = (S.bekleyenKayitlar || []).find(r => r.sakId === sk.id && r.durum === 'onaylandi');
+  let davetDurumHtml = '';
+  if (onaylandi) {
+    davetDurumHtml = `<span style="background:#dcfce7;color:#16a34a;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">✓ Kayıtlı Kullanıcı</span>`;
+  } else if (bekleyen) {
+    davetDurumHtml = `<span style="background:#fef9c3;color:#b45309;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">⏳ Onay Bekliyor</span>`;
+  } else if (davetToken) {
+    davetDurumHtml = `<span style="background:#eff6ff;color:#2563eb;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">🔗 Davet Gönderildi</span>`;
+  } else {
+    davetDurumHtml = `<span style="background:var(--s2);color:var(--tx-3);padding:3px 10px;border-radius:20px;font-size:11px">Davet Gönderilmedi</span>`;
+  }
+
+  const fld = (label, val) => val ? `<div style="padding:10px 14px;border-bottom:1px solid var(--bd)"><div style="font-size:10px;font-weight:600;color:var(--tx-3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">${label}</div><div style="font-size:13.5px;color:var(--tx-1);font-weight:500">${he(String(val))}</div></div>` : '';
+
+  root.innerHTML = `
+  <!-- Profil Kartı -->
+  <div style="background:linear-gradient(135deg,#3b5bdb,#4c6ef5,#7048e8);border-radius:18px;padding:28px 28px 22px;color:#fff;margin-bottom:16px;position:relative;overflow:hidden">
+    <svg style="position:absolute;right:0;top:0;opacity:.07;width:260px" viewBox="0 0 220 180" fill="white">
+      <rect x="0" y="60" width="32" height="120"/><rect x="36" y="34" width="38" height="146"/>
+      <rect x="80" y="22" width="34" height="158"/><rect x="120" y="44" width="28" height="136"/>
+      <rect x="154" y="10" width="44" height="170"/><rect x="202" y="30" width="30" height="150"/>
+    </svg>
+    <div style="display:flex;align-items:center;gap:18px;position:relative">
+      <div style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,.22);border:3px solid rgba(255,255,255,.5);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;flex-shrink:0;letter-spacing:-1px">${initials}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:21px;font-weight:800;letter-spacing:-.3px;margin-bottom:4px">${he(sk.ad.toUpperCase())}</div>
+        <div style="font-size:13px;opacity:.85;margin-bottom:6px">${he(aptAd)}</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);padding:3px 12px;border-radius:20px;font-size:11.5px;font-weight:700">${tipLabel} · ${he(daireLabel)}</span>
+          ${davetDurumHtml}
+        </div>
+      </div>
+      <button onclick="openSakinProfilEdit()" style="background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.4);color:#fff;padding:8px 16px;border-radius:10px;cursor:pointer;font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:6px;white-space:nowrap">
+        <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Düzenle
+      </button>
+    </div>
+    ${(sk.email || sk.tel) ? `<div style="display:flex;gap:16px;margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.2);flex-wrap:wrap;position:relative">
+      ${sk.tel ? `<a href="tel:${sk.tel}" style="color:rgba(255,255,255,.9);text-decoration:none;font-size:13px;display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.35 2 2 0 0 1 3.6 1.15h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6 6l.92-1.87a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.54 16z"/></svg>${he(sk.tel)}</a>` : ''}
+      ${sk.email ? `<a href="mailto:${sk.email}" style="color:rgba(255,255,255,.9);text-decoration:none;font-size:13px;display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>${he(sk.email)}</a>` : ''}
+    </div>` : ''}
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <!-- Sol: Kişi Bilgileri -->
+    <div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="padding:12px 14px;background:var(--s2);border-bottom:1px solid var(--bd)"><strong style="font-size:12px;color:var(--tx-2)">👤 Kişi Bilgileri</strong></div>
+        ${fld('Ad Soyad', sk.ad)}
+        ${fld('TC Kimlik No', sk.tc)}
+        ${fld('Doğum Tarihi', sk.dogum)}
+        ${fld('Cinsiyet', sk.cinsiyet === 'e' ? 'Erkek' : sk.cinsiyet === 'k' ? 'Kadın' : sk.cinsiyet)}
+        ${fld('Cep Telefonu', sk.tel)}
+        ${fld('Ev Telefonu', sk.tel2)}
+        ${fld('E-posta', sk.email)}
+        ${fld('Acil Durum İletişim', sk.acil)}
+      </div>
+      <div class="card" style="padding:0;overflow:hidden;margin-top:12px">
+        <div style="padding:12px 14px;background:var(--s2);border-bottom:1px solid var(--bd)"><strong style="font-size:12px;color:var(--tx-2)">🏠 Daire & Konum</strong></div>
+        ${fld('Apartman', aptAd)}
+        ${fld('Daire No', sk.daire)}
+        ${fld('Kat', sk.kat)}
+        ${fld('Blok', sk.blok)}
+        ${fld('Giriş Tarihi', sk.giris)}
+        ${fld('Çıkış Tarihi', sk.cikis)}
+        ${sk.tip === 'kiralik' ? fld('Kira (₺/ay)', sk.kira ? fmt(sk.kira) : '') : ''}
+        ${sk.tip === 'kiralik' ? fld('Sözleşme Başlangıç', sk.sozlasmeBas) : ''}
+        ${sk.tip === 'kiralik' ? fld('Sözleşme Bitiş', sk.sozlasmeBit) : ''}
+        ${sk.tip === 'malik' ? fld('Tapu Bilgisi', sk.tapu) : ''}
+        ${sk.tip === 'malik' ? fld('Aidat (₺/ay)', sk.aidat ? fmt(sk.aidat) : '') : ''}
+        ${fld('Not', sk.not)}
+      </div>
+    </div>
+
+    <!-- Sağ: Davet & Finansal -->
+    <div>
+      <!-- Hızlı Aksiyonlar -->
+      <div class="card" style="padding:14px;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:700;color:var(--tx-2);margin-bottom:10px">⚡ Hızlı İşlemler</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn bp" style="justify-content:flex-start;gap:8px" onclick="goSakinCari(${sk.id})">
+            <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            Finansal Hesap Ekstresi
+          </button>
+          <button class="btn bg" style="justify-content:flex-start;gap:8px" onclick="openAidatBorcDaire(${sk.id})">
+            <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+            Borçlandır
+          </button>
+          <button class="btn bg" style="justify-content:flex-start;gap:8px" onclick="openHizliOdeme(${sk.id},'')">
+            <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M2 11h20"/></svg>
+            Tahsil Et
+          </button>
+        </div>
+      </div>
+
+      <!-- Davet Linki -->
+      <div class="card" style="padding:14px">
+        <div style="font-size:12px;font-weight:700;color:var(--tx-2);margin-bottom:12px">🔗 Sisteme Davet</div>
+        ${davetLink ? `
+        <div style="background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:8px 10px;font-size:11px;color:var(--tx-3);word-break:break-all;margin-bottom:10px;font-family:monospace">${davetLink}</div>
+        ` : `<div style="font-size:12px;color:var(--tx-3);margin-bottom:10px">Henüz davet linki oluşturulmadı. Aşağıdan oluşturun ve gönderin.</div>`}
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <button class="btn bp" style="justify-content:flex-start;gap:8px;font-size:12px" onclick="generateAndCopyDavet(${sk.id})">
+            <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            ${davetLink ? 'Linki Kopyala' : 'Link Oluştur & Kopyala'}
+          </button>
+          ${sk.tel ? `<button class="btn bg" style="justify-content:flex-start;gap:8px;font-size:12px;color:#25d366;border-color:#25d366" onclick="whatsappDavet(${sk.id})">
+            <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            WhatsApp ile Gönder
+          </button>` : ''}
+          ${sk.email ? `<button class="btn bg" style="justify-content:flex-start;gap:8px;font-size:12px" onclick="emailDavet(${sk.id})">
+            <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>
+            E-posta ile Gönder
+          </button>` : ''}
+          ${sk.tel ? `<button class="btn bg" style="justify-content:flex-start;gap:8px;font-size:12px" onclick="smsDavet(${sk.id})">
+            <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            SMS ile Gönder
+          </button>` : ''}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function openSakinProfilEdit() {
+  const sk = S.sakinler.find(s => s.id === _currentProfilId);
+  if (!sk) return;
+  const aptOpts = S.apartmanlar.map(a => `<option value="${a.id}"${a.id == sk.aptId ? ' selected' : ''}>${he(a.ad)}</option>`).join('');
+  document.getElementById('sp-edit-title').textContent = `✏️ ${he(sk.ad)} — Bilgileri Düzenle`;
+  document.getElementById('sp-edit-fields').innerHTML = `
+    <input type="hidden" id="spe-id" value="${sk.id}">
+    <div class="f2 fg">
+      <div class="fgp"><label class="lbl">Ad Soyad *</label><input class="fi" id="spe-ad" value="${he(sk.ad||'')}"></div>
+      <div class="fgp"><label class="lbl">TC Kimlik No</label><input class="fi" id="spe-tc" value="${he(sk.tc||'')}" maxlength="11"></div>
+    </div>
+    <div class="f2 fg">
+      <div class="fgp"><label class="lbl">Cep Telefonu</label><input class="fi" id="spe-tel" value="${he(sk.tel||'')}" placeholder="05xx xxx xx xx"></div>
+      <div class="fgp"><label class="lbl">E-posta</label><input class="fi" id="spe-email" type="email" value="${he(sk.email||'')}"></div>
+    </div>
+    <div class="f2 fg">
+      <div class="fgp"><label class="lbl">Doğum Tarihi</label><input class="fi" id="spe-dogum" type="date" value="${sk.dogum||''}"></div>
+      <div class="fgp"><label class="lbl">Cinsiyet</label>
+        <select class="fs" id="spe-cinsiyet">
+          <option value="">—</option>
+          <option value="e"${sk.cinsiyet==='e'?' selected':''}>Erkek</option>
+          <option value="k"${sk.cinsiyet==='k'?' selected':''}>Kadın</option>
+        </select>
+      </div>
+    </div>
+    <div class="f2 fg">
+      <div class="fgp"><label class="lbl">Daire No *</label><input class="fi" id="spe-daire" value="${he(sk.daire||'')}"></div>
+      <div class="fgp"><label class="lbl">Kat</label><input class="fi" id="spe-kat" value="${he(sk.kat||'')}"></div>
+    </div>
+    <div class="f2 fg">
+      <div class="fgp"><label class="lbl">Blok</label><input class="fi" id="spe-blok" value="${he(sk.blok||'')}"></div>
+      <div class="fgp"><label class="lbl">Apartman</label><select class="fs" id="spe-aptid">${aptOpts}</select></div>
+    </div>
+    <div class="f2 fg">
+      <div class="fgp"><label class="lbl">Tip</label>
+        <select class="fs" id="spe-tip">
+          <option value="malik"${sk.tip==='malik'?' selected':''}>Malik</option>
+          <option value="kiralik"${sk.tip==='kiralik'?' selected':''}>Kiracı</option>
+        </select>
+      </div>
+      <div class="fgp"><label class="lbl">Aidat (₺/ay)</label><input class="fi" id="spe-aidat" type="number" value="${sk.aidat||0}" min="0"></div>
+    </div>
+    <div class="fgp"><label class="lbl">Not</label><input class="fi" id="spe-not" value="${he(sk.not||'')}"></div>
+  `;
+  openModal('mod-sp-edit');
+}
+
+function saveSakinProfilEdit() {
+  const id = +document.getElementById('spe-id').value;
+  const sk = S.sakinler.find(s => s.id === id);
+  if (!sk) return;
+  const ad = document.getElementById('spe-ad').value.trim();
+  if (!ad) { toast('Ad Soyad zorunlu!', 'err'); return; }
+  sk.ad      = ad;
+  sk.tc      = document.getElementById('spe-tc').value.trim();
+  sk.tel     = document.getElementById('spe-tel').value.trim();
+  sk.email   = document.getElementById('spe-email').value.trim();
+  sk.dogum   = document.getElementById('spe-dogum').value;
+  sk.cinsiyet= document.getElementById('spe-cinsiyet').value;
+  sk.daire   = document.getElementById('spe-daire').value.trim();
+  sk.kat     = document.getElementById('spe-kat').value.trim();
+  sk.blok    = document.getElementById('spe-blok').value.trim();
+  sk.aptId   = +document.getElementById('spe-aptid').value || sk.aptId;
+  sk.tip     = document.getElementById('spe-tip').value;
+  sk.aidat   = parseFloat(document.getElementById('spe-aidat').value) || 0;
+  sk.not     = document.getElementById('spe-not').value.trim();
+  save();
+  closeModal('mod-sp-edit');
+  toast('Sakin bilgileri güncellendi.', 'ok');
+  renderSakinProfil();
+}
+
+// ── DAVET LİNKİ SİSTEMİ ──────────────────────────────────────
+
+function _getDavetBaseUrl() {
+  return window.location.href.replace(/#.*$/, '');
+}
+
+function generateDavetToken(sakId) {
+  const sk = S.sakinler.find(s => s.id === +sakId);
+  if (!sk) return null;
+  if (!sk.davetToken) {
+    sk.davetToken = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    sk.davetOlusturmaTarihi = new Date().toISOString();
+    save();
+  }
+  return sk.davetToken;
+}
+
+function getDavetLink(sakId) {
+  const token = generateDavetToken(sakId);
+  return token ? (_getDavetBaseUrl() + '#davet-kayit/' + token) : null;
+}
+
+function generateAndCopyDavet(sakId) {
+  const link = getDavetLink(sakId);
+  if (!link) return;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(link).then(() => toast('Davet linki kopyalandı!', 'ok'));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = link; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    toast('Davet linki kopyalandı!', 'ok');
+  }
+  renderSakinProfil();
+}
+
+function whatsappDavet(sakId) {
+  const sk = S.sakinler.find(s => s.id === +sakId);
+  if (!sk || !sk.tel) { toast('Telefon numarası bulunamadı.', 'err'); return; }
+  const link = getDavetLink(sakId);
+  const tel = sk.tel.replace(/\D/g, '').replace(/^0/, '90');
+  const mesaj = encodeURIComponent(
+    `Sayın ${sk.ad},\n\nSite yönetim sistemine davet edildiniz. Aşağıdaki link ile kayıt olabilir, dairenize ait aidat bilgilerini takip edebilirsiniz.\n\n${link}\n\nİyi günler,\nYönetim`
+  );
+  window.open(`https://wa.me/${tel}?text=${mesaj}`, '_blank');
+  sk.davetGonderildi = new Date().toISOString(); save();
+  renderSakinProfil();
+}
+
+function emailDavet(sakId) {
+  const sk = S.sakinler.find(s => s.id === +sakId);
+  if (!sk || !sk.email) { toast('E-posta adresi bulunamadı.', 'err'); return; }
+  const link = getDavetLink(sakId);
+  const konu = encodeURIComponent('Site Yönetim Sistemi — Kayıt Daveti');
+  const govde = encodeURIComponent(
+    `Sayın ${sk.ad},\n\nSite yönetim sistemine kayıt olmanız için aşağıdaki linke tıklayın:\n\n${link}\n\nBu link size özel oluşturulmuştur. Kaydınız tamamlandıktan sonra yönetici onayı ile sisteme erişebilirsiniz.\n\nİyi günler,\nYönetim`
+  );
+  window.open(`mailto:${sk.email}?subject=${konu}&body=${govde}`, '_blank');
+  sk.davetGonderildi = new Date().toISOString(); save();
+  renderSakinProfil();
+}
+
+function smsDavet(sakId) {
+  const sk = S.sakinler.find(s => s.id === +sakId);
+  if (!sk || !sk.tel) { toast('Telefon numarası bulunamadı.', 'err'); return; }
+  const link = getDavetLink(sakId);
+  const mesaj = encodeURIComponent(`Sayın ${sk.ad}, site yönetim sistemine kayıt linkiniz: ${link}`);
+  window.open(`sms:${sk.tel}?body=${mesaj}`, '_blank');
+  sk.davetGonderildi = new Date().toISOString(); save();
+  renderSakinProfil();
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// DAVET YÖNETİM SAYFASI
+// ══════════════════════════════════════════════════════════════════════
+
+function renderDavetYonetim() {
+  const root = document.getElementById('dav-root');
+  if (!root) return;
+  if (!S.bekleyenKayitlar) S.bekleyenKayitlar = [];
+  const sakinler = S.sakinler || [];
+  const srch = (document.getElementById('dav-srch')?.value || '').toLowerCase();
+  const filtre = document.getElementById('dav-filtre')?.value || '';
+  const filtered = sakinler.filter(sk => {
+    if (srch && !(sk.ad||'').toLowerCase().includes(srch) && !(sk.daire||'').includes(srch)) return false;
+    if (filtre === 'davetli' && !sk.davetToken) return false;
+    if (filtre === 'davet-yok' && sk.davetToken) return false;
+    const onaylandi = (S.bekleyenKayitlar||[]).find(r=>r.sakId===sk.id&&r.durum==='onaylandi');
+    if (filtre === 'kayitli' && !onaylandi) return false;
+    return true;
+  });
+  const toplamDavetli = sakinler.filter(s=>s.davetToken).length;
+  const toplamKayitli = (S.bekleyenKayitlar||[]).filter(r=>r.durum==='onaylandi').length;
+  const toplamBekleyen = (S.bekleyenKayitlar||[]).filter(r=>r.durum==='bekliyor').length;
+
+  root.innerHTML = `
+  <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+    <div class="card" style="flex:1;min-width:130px;padding:14px;text-align:center">
+      <div style="font-size:22px;font-weight:800;color:var(--brand)">${sakinler.length}</div>
+      <div style="font-size:11px;color:var(--tx-3)">Toplam Sakin</div>
+    </div>
+    <div class="card" style="flex:1;min-width:130px;padding:14px;text-align:center">
+      <div style="font-size:22px;font-weight:800;color:var(--brand)">${toplamDavetli}</div>
+      <div style="font-size:11px;color:var(--tx-3)">Davet Gönderildi</div>
+    </div>
+    <div class="card" style="flex:1;min-width:130px;padding:14px;text-align:center">
+      <div style="font-size:22px;font-weight:800;color:#b45309">${toplamBekleyen}</div>
+      <div style="font-size:11px;color:var(--tx-3)">Onay Bekliyor</div>
+    </div>
+    <div class="card" style="flex:1;min-width:130px;padding:14px;text-align:center">
+      <div style="font-size:22px;font-weight:800;color:var(--ok)">${toplamKayitli}</div>
+      <div style="font-size:11px;color:var(--tx-3)">Kayıtlı Kullanıcı</div>
+    </div>
+  </div>
+  <div class="card" style="padding:14px;margin-bottom:12px">
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <div class="srch" style="flex:1;min-width:200px"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="dav-srch" placeholder="Ad veya daire ara…" oninput="renderDavetYonetim()" style="width:100%"></div>
+      <select class="fs" id="dav-filtre" onchange="renderDavetYonetim()" style="width:auto;padding:6px 12px">
+        <option value="">Tümü</option>
+        <option value="davetli">Davet Gönderilmiş</option>
+        <option value="davet-yok">Davet Gönderilmemiş</option>
+        <option value="kayitli">Kayıtlı</option>
+      </select>
+      <button class="btn bp" onclick="topluDavetGonder()">
+        <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Toplu Link Oluştur
+      </button>
+    </div>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <div class="tw"><table>
+      <thead><tr><th>Sakin</th><th>Apartman</th><th>Daire</th><th>Tip</th><th>Durum</th><th>İşlemler</th></tr></thead>
+      <tbody>
+        ${filtered.length ? filtered.map(sk => {
+          const apt = S.apartmanlar.find(a=>a.id==sk.aptId);
+          const onaylandi = (S.bekleyenKayitlar||[]).find(r=>r.sakId===sk.id&&r.durum==='onaylandi');
+          const bekliyor = (S.bekleyenKayitlar||[]).find(r=>r.sakId===sk.id&&r.durum==='bekliyor');
+          let durumBadge = '';
+          if (onaylandi) durumBadge = '<span class="b b-ok" style="font-size:10px">✓ Kayıtlı</span>';
+          else if (bekliyor) durumBadge = '<span class="b b-warn" style="font-size:10px">⏳ Onay Bekliyor</span>';
+          else if (sk.davetToken) durumBadge = '<span class="b b-bl" style="font-size:10px">🔗 Davet Var</span>';
+          else durumBadge = '<span class="b b-gy" style="font-size:10px">— Davet Yok</span>';
+          return `<tr>
+            <td><a href="javascript:void(0)" onclick="goSakinProfil(${sk.id})" style="color:var(--brand);font-weight:600">${he(sk.ad)}</a></td>
+            <td>${he(apt?.ad||'—')}</td>
+            <td>${he(sk.daire||'—')}</td>
+            <td><span class="b ${sk.tip==='kiralik'?'b-warn':'b-bl'}" style="font-size:10px">${sk.tip==='kiralik'?'Kiracı':'Malik'}</span></td>
+            <td>${durumBadge}</td>
+            <td>
+              <div class="act">
+                <button class="btn bg xs" onclick="goSakinProfil(${sk.id})" title="Profil">👤 Profil</button>
+                <button class="btn bp xs" onclick="generateAndCopyDavetFromTable(${sk.id})" title="Davet Linki Oluştur/Kopyala">🔗 Link</button>
+                ${sk.tel ? `<button class="btn xs" style="background:#e7fbe9;color:#16a34a;border:1px solid #86efac" onclick="whatsappDavet(${sk.id})" title="WhatsApp">📱 WA</button>` : ''}
+              </div>
+            </td>
+          </tr>`;
+        }).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--tx-3);padding:24px">Sakin bulunamadı.</td></tr>'}
+      </tbody>
+    </table></div>
+  </div>`;
+}
+
+function generateAndCopyDavetFromTable(sakId) {
+  const link = getDavetLink(sakId);
+  if (!link) return;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(link).then(() => toast('Davet linki kopyalandı!', 'ok'));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = link; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    toast('Davet linki kopyalandı!', 'ok');
+  }
+  renderDavetYonetim();
+}
+
+function topluDavetGonder() {
+  const sakinler = S.sakinler || [];
+  let count = 0;
+  sakinler.forEach(sk => {
+    if (!sk.davetToken) { generateDavetToken(sk.id); count++; }
+  });
+  save();
+  toast(`${count} sakin için davet linki oluşturuldu.`, 'ok');
+  renderDavetYonetim();
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// DAVET ONAY SAYFASI
+// ══════════════════════════════════════════════════════════════════════
+
+function renderDavetBekleyen() {
+  const root = document.getElementById('dab-root');
+  if (!root) return;
+  if (!S.bekleyenKayitlar) S.bekleyenKayitlar = [];
+  const bekleyen = S.bekleyenKayitlar.filter(r => r.durum === 'bekliyor');
+  const oncekiler = S.bekleyenKayitlar.filter(r => r.durum !== 'bekliyor');
+  updateDavetBekleyenBadge();
+
+  root.innerHTML = `
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+    <div class="card" style="padding:14px;text-align:center">
+      <div style="font-size:24px;font-weight:800;color:#b45309">${bekleyen.length}</div>
+      <div style="font-size:11px;color:var(--tx-3)">Onay Bekliyor</div>
+    </div>
+    <div class="card" style="padding:14px;text-align:center">
+      <div style="font-size:24px;font-weight:800;color:var(--ok)">${oncekiler.filter(r=>r.durum==='onaylandi').length}</div>
+      <div style="font-size:11px;color:var(--tx-3)">Onaylandı</div>
+    </div>
+  </div>
+  ${bekleyen.length ? `
+  <div class="card" style="padding:0;overflow:hidden;margin-bottom:16px">
+    <div style="padding:12px 16px;background:var(--s2);border-bottom:1px solid var(--bd)">
+      <strong style="font-size:12.5px;color:var(--tx-1)">⏳ Onay Bekleyen Başvurular</strong>
+    </div>
+    <div class="tw"><table>
+      <thead><tr><th>Başvuru Sahibi</th><th>Daire</th><th>E-posta</th><th>Telefon</th><th>Başvuru Tarihi</th><th>İşlem</th></tr></thead>
+      <tbody>
+        ${bekleyen.map(r => {
+          const sk = S.sakinler.find(s=>s.id===r.sakId);
+          const d = new Date(r.tarih||''); const dStr = isNaN(d)?r.tarih||'—':`${d.getDate()}.${d.getMonth()+1}.${d.getFullYear()}`;
+          return `<tr>
+            <td><strong>${he(r.ad||'—')}</strong>${sk?`<div style="font-size:11px;color:var(--tx-3)">${he(sk.ad)} (mevcut kaydı)</div>`:''}</td>
+            <td>${he(r.daire||'—')}</td>
+            <td>${he(r.email||'—')}</td>
+            <td>${he(r.tel||'—')}</td>
+            <td style="font-size:12px;color:var(--tx-3)">${dStr}</td>
+            <td>
+              <div class="act">
+                <button class="btn bp xs" onclick="onaylaKayit('${r.id}')">✓ Onayla</button>
+                <button class="btn xs" style="background:#fee2e2;color:#dc2626;border:1px solid #fca5a5" onclick="reddedKayit('${r.id}')">✗ Reddet</button>
+              </div>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table></div>
+  </div>
+  ` : '<div class="card" style="padding:32px;text-align:center;color:var(--tx-3)">Onay bekleyen başvuru yok.</div>'}
+  ${oncekiler.length ? `
+  <div class="card" style="padding:0;overflow:hidden">
+    <div style="padding:12px 16px;background:var(--s2);border-bottom:1px solid var(--bd)">
+      <strong style="font-size:12.5px;color:var(--tx-1)">📋 Geçmiş Başvurular</strong>
+    </div>
+    <div class="tw"><table>
+      <thead><tr><th>Başvuru Sahibi</th><th>Daire</th><th>Durum</th><th>Tarih</th></tr></thead>
+      <tbody>
+        ${oncekiler.slice().reverse().map(r => {
+          const d = new Date(r.tarih||''); const dStr = isNaN(d)?r.tarih||'—':`${d.getDate()}.${d.getMonth()+1}.${d.getFullYear()}`;
+          const badge = r.durum==='onaylandi'?'<span class="b b-ok" style="font-size:10px">✓ Onaylandı</span>':'<span class="b b-err" style="font-size:10px">✗ Reddedildi</span>';
+          return `<tr><td>${he(r.ad||'—')}</td><td>${he(r.daire||'—')}</td><td>${badge}</td><td style="font-size:12px;color:var(--tx-3)">${dStr}</td></tr>`;
+        }).join('')}
+      </tbody>
+    </table></div>
+  </div>` : ''}`;
+}
+
+function onaylaKayit(id) {
+  if (!S.bekleyenKayitlar) return;
+  const r = S.bekleyenKayitlar.find(x => x.id === id);
+  if (!r) return;
+  r.durum = 'onaylandi';
+  r.onayTarih = new Date().toISOString();
+  const sk = S.sakinler.find(s => s.id === r.sakId);
+  if (sk) {
+    sk.kayitDurumu = 'onaylandi';
+    if (r.email && !sk.email) sk.email = r.email;
+    if (r.tel && !sk.tel) sk.tel = r.tel;
+  }
+  save();
+  toast(`${r.ad} kayıt başvurusu onaylandı!`, 'ok');
+  renderDavetBekleyen();
+}
+
+function reddedKayit(id) {
+  if (!S.bekleyenKayitlar) return;
+  const r = S.bekleyenKayitlar.find(x => x.id === id);
+  if (!r) return;
+  if (!confirm(`${r.ad} adlı kişinin başvurusu reddedilsin mi?`)) return;
+  r.durum = 'reddedildi';
+  r.reddTarih = new Date().toISOString();
+  save();
+  toast('Başvuru reddedildi.', 'warn');
+  renderDavetBekleyen();
+}
+
+function updateDavetBekleyenBadge() {
+  const el = document.getElementById('nb-davet-bekleyen');
+  if (!el) return;
+  const n = (S.bekleyenKayitlar||[]).filter(r=>r.durum==='bekliyor').length;
+  if (n > 0) { el.textContent = n; el.style.display = ''; }
+  else el.style.display = 'none';
+}
+
+// ── DAVET KAYIT SAYFASI (Davet linki ile gelenlerin kayıt formu) ──────
+
+function renderDavetKayitSayfasi(token) {
+  const sk = S.sakinler.find(s => s.davetToken === token);
+  const root = document.getElementById('dkayit-root');
+  if (!root) return;
+  if (!sk) {
+    root.innerHTML = `<div style="text-align:center;padding:20px"><div style="font-size:40px;margin-bottom:12px">🔒</div><div style="font-size:16px;font-weight:700;color:var(--err)">Geçersiz veya Süresi Dolmuş Link</div><div style="font-size:13px;color:var(--tx-3);margin-top:8px">Bu davet linki geçerli değil. Yöneticinizle iletişime geçin.</div></div>`;
+    return;
+  }
+  const apt = S.apartmanlar.find(a=>a.id==sk.aptId);
+  const mevcutBaşvuru = (S.bekleyenKayitlar||[]).find(r=>r.sakId===sk.id);
+  if (mevcutBaşvuru) {
+    const durumMesaj = mevcutBaşvuru.durum === 'bekliyor'
+      ? '⏳ Başvurunuz alındı, yönetici onayı bekleniyor.'
+      : mevcutBaşvuru.durum === 'onaylandi'
+      ? '✅ Başvurunuz onaylandı! Sisteme giriş yapabilirsiniz.'
+      : '❌ Başvurunuz reddedildi. Yöneticinizle iletişime geçin.';
+    root.innerHTML = `<div style="text-align:center;padding:20px">
+      <div style="font-size:32px;margin-bottom:12px">${mevcutBaşvuru.durum==='onaylandi'?'🎉':mevcutBaşvuru.durum==='bekliyor'?'⏳':'😔'}</div>
+      <div style="font-size:15px;font-weight:700;color:var(--tx-1)">${durumMesaj}</div>
+    </div>`;
+    return;
+  }
+  root.innerHTML = `
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:32px;margin-bottom:8px">🏠</div>
+      <div style="font-size:18px;font-weight:800;color:var(--tx-1)">Sisteme Kayıt Ol</div>
+      <div style="font-size:13px;color:var(--tx-3);margin-top:4px">${he(apt?.ad||'Apartman')} — Daire ${he(sk.daire||'?')}</div>
+    </div>
+    <div class="fg">
+      <input type="hidden" id="dkayit-token" value="${token}">
+      <div class="fgp"><label class="lbl">Adınız Soyadınız *</label><input class="fi" id="dkayit-ad" value="${he(sk.ad||'')}" placeholder="Ad Soyad"></div>
+      <div class="fgp"><label class="lbl">E-posta *</label><input class="fi" id="dkayit-email" type="email" value="${he(sk.email||'')}" placeholder="ornek@email.com"></div>
+      <div class="fgp"><label class="lbl">Telefon *</label><input class="fi" id="dkayit-tel" value="${he(sk.tel||'')}" placeholder="05xx xxx xx xx"></div>
+      <div style="background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:12px;font-size:12px;color:var(--tx-3)">
+        <strong>Daire Bilgileri:</strong> ${he(apt?.ad||'—')} · Daire ${he(sk.daire||'?')} · ${sk.tip==='kiralik'?'Kiracı':'Malik'}
+      </div>
+      <button class="btn bp" onclick="submitDavetKayit()" style="width:100%;padding:12px;font-size:14px">
+        <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        Kayıt Başvurusu Yap
+      </button>
+    </div>`;
+}
+
+function submitDavetKayit() {
+  const token = document.getElementById('dkayit-token')?.value;
+  const ad = document.getElementById('dkayit-ad')?.value.trim();
+  const email = document.getElementById('dkayit-email')?.value.trim();
+  const tel = document.getElementById('dkayit-tel')?.value.trim();
+  if (!ad || !email || !tel) { toast('Tüm alanları doldurun!', 'err'); return; }
+  const sk = S.sakinler.find(s => s.davetToken === token);
+  if (!sk) { toast('Geçersiz davet.', 'err'); return; }
+  if (!S.bekleyenKayitlar) S.bekleyenKayitlar = [];
+  S.bekleyenKayitlar.push({
+    id: 'bk-' + Date.now(),
+    sakId: sk.id,
+    daire: sk.daire,
+    aptId: sk.aptId,
+    ad, email, tel,
+    tarih: new Date().toISOString(),
+    durum: 'bekliyor'
+  });
+  save();
+  toast('Kayıt başvurunuz alındı! Yönetici onayı bekleniyor.', 'ok');
+  renderDavetKayitSayfasi(token);
+  updateDavetBekleyenBadge();
 }
 
 // ── SUPABASE KREDENSİYELLER ──────────────────────
