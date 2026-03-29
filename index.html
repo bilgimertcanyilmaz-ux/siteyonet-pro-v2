@@ -846,7 +846,17 @@
         <div class="card mb14">
           <div class="card-t mb12">🏢 Daire Bilgileri</div>
           <div class="f2 fg">
-            <div class="fgp"><label class="lbl">Daire No *</label><input class="fi" id="sak-daire" placeholder="Ör: 5, 12A, Z-3"></div>
+            <div class="fgp" id="sak-blok-wrap" style="display:none">
+              <label class="lbl">Blok</label>
+              <select class="fi" id="sak-blok" onchange="onSakBlokChange()">
+                <option value="">— Blok Seçin —</option>
+              </select>
+            </div>
+            <div class="fgp">
+              <label class="lbl">Daire No *</label>
+              <input class="fi" id="sak-daire" placeholder="Ör: 5, 12A, Z-3">
+              <select class="fi" id="sak-daire-sel" style="display:none;margin-top:4px" onchange="document.getElementById('sak-daire').value=this.value"></select>
+            </div>
             <div class="fgp"><label class="lbl">Kat</label><input class="fi" id="sak-kat" placeholder="3"></div>
             <div class="fgp"><label class="lbl">Giriş Tarihi</label><input type="date" class="fi" id="sak-giris"></div>
             <div class="fgp" id="sak-cikis-wrap" style="display:none"><label class="lbl">Çıkış Tarihi</label><input type="date" class="fi" id="sak-cikis"></div>
@@ -2103,6 +2113,23 @@
   <div id="sakin-cari-content"></div>
 </div>
 
+
+<!-- PAGE: Sakin Profil -->
+<div class="pg" id="page-sakin-profil"><div id="sp-root"></div></div>
+
+<!-- PAGE: Davet Yönetim -->
+<div class="pg" id="page-davet-yonetim"><div id="dav-root"></div></div>
+
+<!-- PAGE: Davet Bekleyen -->
+<div class="pg" id="page-davet-bekleyen"><div id="dab-root"></div></div>
+
+<!-- PAGE: Davet Kayıt (davet linki ile gelen kullanıcılar) -->
+<div class="pg" id="page-davet-kayit">
+  <div style="max-width:500px;margin:40px auto;padding:16px">
+    <div class="card" id="dkayit-root" style="padding:28px"></div>
+  </div>
+</div>
+
 </div><!-- /content -->
 </main> <!-- TOAST -->
 <div class="toast" id="toast"></div>
@@ -2262,6 +2289,13 @@
         <label class="lbl">Açıklama</label>
         <input class="fi" id="cke-aciklama" placeholder="Açıklama...">
       </div>
+      <div style="border-top:1px solid var(--border);padding-top:12px">
+        <div class="fgp">
+          <label class="lbl" style="color:var(--warn);font-weight:700">↕ Sakin / Daire Transferi</label>
+          <select class="fs" id="cke-transfer-sak"></select>
+          <div style="font-size:11px;color:var(--tx-3);margin-top:5px">Kaydı başka bir sakin veya daireye taşımak için seçin. Borç/ödeme bakiyeleri otomatik güncellenir.</div>
+        </div>
+      </div>
     </div>
     <div class="modal-f" style="justify-content:space-between">
       <button class="btn" style="background:#fee2e2;color:#dc2626;border:1px solid #fca5a5" onclick="deleteCariKayit()">
@@ -2368,22 +2402,6 @@
   <div id="fd-drawer-content" style="flex:1"></div>
 </div>
 <div id="fd-drawer-overlay" onclick="fdDrawerClose()" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:1199;backdrop-filter:blur(2px)"></div>
-
-<!-- PAGE: Sakin Profil -->
-<div class="pg" id="page-sakin-profil"><div id="sp-root" style="max-width:860px;margin:0 auto;padding:16px 16px 40px"></div></div>
-
-<!-- PAGE: Davet Yönetim -->
-<div class="pg" id="page-davet-yonetim"><div id="dav-root" style="padding:16px"></div></div>
-
-<!-- PAGE: Davet Bekleyen -->
-<div class="pg" id="page-davet-bekleyen"><div id="dab-root" style="padding:16px"></div></div>
-
-<!-- PAGE: Davet Kayıt (davet linki ile gelen kullanıcılar) -->
-<div class="pg" id="page-davet-kayit">
-  <div style="max-width:500px;margin:40px auto;padding:16px">
-    <div class="card" id="dkayit-root" style="padding:28px"></div>
-  </div>
-</div>
 
 <!-- MODAL: Sakin Profil Düzenle -->
 <div class="ov" id="mod-sp-edit" data-no-close>

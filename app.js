@@ -749,13 +749,8 @@ function _navGoTo(idx) {
 function _navUpdateBreadcrumb() {
   const bc = document.getElementById('breadcrumb');
   if (!bc) return;
-  if (window._navStack.length <= 1) { bc.innerHTML = ''; bc.style.display = 'none'; return; }
-  bc.style.display = 'flex';
-  bc.innerHTML = window._navStack.map((item, i) => {
-    const isLast = i === window._navStack.length - 1;
-    if (isLast) return `<span class="bc-current">${item.label}</span>`;
-    return `<span class="bc-item" onclick="_navGoTo(${i})">${item.label}</span><span class="bc-sep">›</span>`;
-  }).join('');
+  bc.innerHTML = '';
+  bc.style.display = 'none';
 }
 
 window.addEventListener('popstate', function(e) {
@@ -1242,9 +1237,11 @@ function saveApt() {
   const bloklar = blokRows.map(function(b, i) {
     const adEl = document.getElementById('blok-ad-' + i);
     const asEl = document.getElementById('blok-asan-' + i);
+    const dsEl = document.getElementById('blok-daire-' + i);
     return {
       ad: adEl ? adEl.value.trim() || b.ad : b.ad,
-      asansorSayisi: asEl ? parseInt(asEl.value)||0 : (b.asansorSayisi||0)
+      asansorSayisi: asEl ? parseInt(asEl.value)||0 : (b.asansorSayisi||0),
+      daireSayisi: dsEl ? parseInt(dsEl.value)||0 : (b.daireSayisi||0)
     };
   });
   const apt = {
@@ -1345,13 +1342,15 @@ function renderBlokEdit() {
   }
   if (blokRows.length > sayi) blokRows = blokRows.slice(0, sayi);
 
-  var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
+  var html = '<div style="display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:8px;">';
   // Header row
   html += '<div style="font-size:10px;font-weight:700;color:var(--tx-3);text-transform:uppercase;letter-spacing:.8px;padding:0 2px;">Blok Adı</div>';
+  html += '<div style="font-size:10px;font-weight:700;color:var(--tx-3);text-transform:uppercase;letter-spacing:.8px;padding:0 2px;">Daire Sayısı</div>';
   html += '<div style="font-size:10px;font-weight:700;color:var(--tx-3);text-transform:uppercase;letter-spacing:.8px;padding:0 2px;">Asansör Sayısı</div>';
   for (var j = 0; j < blokRows.length; j++) {
     var b = blokRows[j];
     html += '<input class="fi" id="blok-ad-' + j + '" value="' + (b.ad||'') + '" placeholder="A Blok" style="padding:8px 10px;font-size:13px;">';
+    html += '<input type="number" class="fi" id="blok-daire-' + j + '" value="' + (b.daireSayisi||0) + '" min="0" max="999" placeholder="0" style="padding:8px;text-align:center;font-size:13px;font-weight:700;">';
     html += '<div style="display:flex;align-items:center;gap:6px;">'
           + '<button type="button" class="btn bg xs" onclick="adjBlokAsan(' + j + ',-1)" style="width:28px;height:28px;padding:0;justify-content:center;font-size:16px;flex-shrink:0">−</button>'
           + '<input type="number" class="fi" id="blok-asan-' + j + '" value="' + (b.asansorSayisi||0) + '" min="0" max="10" style="padding:8px;text-align:center;font-size:13px;font-weight:700;">'
@@ -1361,8 +1360,9 @@ function renderBlokEdit() {
   html += '</div>';
   // Özet
   var toplamAsan = blokRows.reduce(function(s, b) { return s + (parseInt(b.asansorSayisi)||0); }, 0);
+  var toplamDaire = blokRows.reduce(function(s, b) { return s + (parseInt(b.daireSayisi)||0); }, 0);
   html += '<div class="info-box mt8" style="font-size:11.5px;">'
-        + '<strong>' + blokRows.length + ' blok</strong>, toplam <strong>' + toplamAsan + ' asansör</strong>'
+        + '<strong>' + blokRows.length + ' blok</strong>, toplam <strong>' + toplamDaire + ' daire</strong>, <strong>' + toplamAsan + ' asansör</strong>'
         + '</div>';
   document.getElementById('blok-edit-list').innerHTML = html;
 }
@@ -3240,6 +3240,8 @@ function renderSakinler() {
         S.apartmanlar.filter(a=>a.durum==='aktif').map(a=>`<option value="${a.id}">${a.ad}</option>`).join('');
     }
   }
+  // Blok/daire seçimini güncelle
+  updateSakDaireBilgileri();
 
   const s = (document.getElementById('sak-srch')?.value||'').toLowerCase();
   const fTip = document.getElementById('sak-f-tip')?.value||'';
@@ -3276,7 +3278,7 @@ function renderSakinler() {
         const borc=sk.borc||0;
         return `<tr style="cursor:pointer" onclick="goDaireDetay(${sk.id})">
           ${!aptId?`<td style="font-size:11.5px;color:var(--tx-3)">${sk.aptAd||'—'}</td>`:''}
-          <td style="font-weight:700;color:var(--brand)">${sk.daire||'—'}</td>
+          <td style="font-weight:700;color:var(--brand)">${(sk.blok?sk.blok+' - ':'')+(sk.daire||'—')}</td>
           <td><strong>${sk.ad}</strong>${sk.kat?'<div class="t3" style="font-size:10.5px">Kat: '+sk.kat+'</div>':''}</td>
           <td><span class="b ${sk.tip==='malik'?'b-bl':'b-am'}">${sk.tip==='malik'?'Malik':'Kiracı'}</span></td>
           <td>${sk.tel||'—'}</td>
@@ -3308,7 +3310,7 @@ function renderSakinler() {
             <div style="font-weight:700;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${sk.ad}</div>
             <div style="font-size:11.5px;color:var(--tx-3)">
               <span class="b ${isMalik?'b-bl':'b-am'}" style="font-size:10px;padding:2px 6px">${isMalik?'Malik':'Kiracı'}</span>
-              &nbsp;Daire: <strong style="color:var(--brand)">${sk.daire||'—'}</strong>${sk.kat?' · Kat '+sk.kat:''}
+              &nbsp;Daire: <strong style="color:var(--brand)">${(sk.blok?sk.blok+' - ':'')+(sk.daire||'—')}</strong>${sk.kat?' · Kat '+sk.kat:''}
               ${!aptId?`<div style="font-size:10.5px;color:var(--tx-4);margin-top:2px">🏢 ${sk.aptAd||'—'}</div>`:''}
             </div>
           </div>
@@ -3615,6 +3617,63 @@ function saveTopluDaireler() {
 }
 
 
+// ── BLOK / DAİRE SEÇİM YARDIMCILARI ─────────────────────────────────
+function updateSakDaireBilgileri() {
+  const aptId = selectedAptId;
+  const apt = aptId ? S.apartmanlar.find(a => a.id == aptId) : null;
+  const bloklar = apt && apt.bloklar && apt.bloklar.length ? apt.bloklar : [];
+  const blokWrap = document.getElementById('sak-blok-wrap');
+  const blokSel  = document.getElementById('sak-blok');
+  if (!blokWrap || !blokSel) return;
+  if (bloklar.length > 0) {
+    blokWrap.style.display = '';
+    blokSel.innerHTML = '<option value="">— Blok Seçin —</option>' +
+      bloklar.map(b => `<option value="${he(b.ad)}">${he(b.ad)}${b.daireSayisi ? ' (' + b.daireSayisi + ' daire)' : ''}</option>`).join('');
+    onSakBlokChange();
+  } else {
+    blokWrap.style.display = 'none';
+    blokSel.innerHTML = '<option value="">—</option>';
+    // Serbest text input aktif
+    const inp = document.getElementById('sak-daire');
+    const sel = document.getElementById('sak-daire-sel');
+    if (inp) inp.style.display = '';
+    if (sel) sel.style.display = 'none';
+  }
+}
+
+function onSakBlokChange() {
+  const blokSel  = document.getElementById('sak-blok');
+  const daireSel = document.getElementById('sak-daire-sel');
+  const daireInp = document.getElementById('sak-daire');
+  if (!blokSel || !daireSel || !daireInp) return;
+  const secilenBlokAd = blokSel.value;
+  if (!secilenBlokAd) {
+    // Blok seçilmedi — serbest text
+    daireInp.style.display = '';
+    daireSel.style.display = 'none';
+    daireInp.value = '';
+    return;
+  }
+  const aptId = selectedAptId;
+  const apt = aptId ? S.apartmanlar.find(a => a.id == aptId) : null;
+  const blok = apt && apt.bloklar ? apt.bloklar.find(b => b.ad === secilenBlokAd) : null;
+  const daireSayisi = blok ? (blok.daireSayisi || 0) : 0;
+  if (daireSayisi > 0) {
+    // Select ile daire numarası seç
+    daireInp.style.display = 'none';
+    daireSel.style.display = '';
+    daireSel.innerHTML = '<option value="">— Daire No Seçin —</option>' +
+      Array.from({length: daireSayisi}, (_, i) => i + 1)
+           .map(n => `<option value="${n}">${n}</option>`).join('');
+    daireInp.value = '';
+  } else {
+    // Daire sayısı tanımlanmamış — serbest text
+    daireInp.style.display = '';
+    daireSel.style.display = 'none';
+    daireInp.value = '';
+  }
+}
+
 function saveSakin() {
   if (!_guardCheck()) return;
   const ad = document.getElementById('sak-ad')?.value.trim();
@@ -3651,6 +3710,7 @@ function saveSakin() {
     acil: document.getElementById('sak-acil')?.value.trim()||'',
     plaka: document.getElementById('sak-plaka')?.value.trim()||'',
     arac: document.getElementById('sak-arac')?.value.trim()||'',
+    blok: document.getElementById('sak-blok')?.value||'',
     daire, kat: document.getElementById('sak-kat')?.value.trim()||'',
     giris: document.getElementById('sak-giris')?.value||'',
     cikis: document.getElementById('sak-cikis')?.value||'',
@@ -3693,6 +3753,13 @@ function saveSakin() {
     const el=document.getElementById(id); if(el) el.value='';
   });
   setSakinTip('malik');
+  // Blok/daire seçimlerini sıfırla
+  const blokEl = document.getElementById('sak-blok');
+  const daireSel = document.getElementById('sak-daire-sel');
+  const daireInp = document.getElementById('sak-daire');
+  if (blokEl) blokEl.value = '';
+  if (daireSel) { daireSel.innerHTML = ''; daireSel.style.display = 'none'; }
+  if (daireInp) daireInp.style.display = '';
   save(); goTab('sak-liste'); toast('Sakin kaydedildi.','ok');
 }
 
@@ -3707,7 +3774,26 @@ function editSakin(id) {
     const cEl=document.getElementById('sak-cinsiyet'); if(cEl) cEl.value=sk.cinsiyet||'';
     setV('sak-tel',sk.tel); setV('sak-tel2',sk.tel2); setV('sak-email',sk.email); setV('sak-acil',sk.acil);
     setV('sak-plaka',sk.plaka); setV('sak-arac',sk.arac);
-    setV('sak-daire',sk.daire); setV('sak-kat',sk.kat);
+    // Blok/daire bilgisini geri yükle
+    updateSakDaireBilgileri();
+    if (sk.blok) {
+      const blokEl = document.getElementById('sak-blok');
+      if (blokEl) { blokEl.value = sk.blok; onSakBlokChange(); }
+      // Daire no'yu select veya input'a yaz
+      setTimeout(() => {
+        const daireSel = document.getElementById('sak-daire-sel');
+        const daireInp = document.getElementById('sak-daire');
+        if (daireSel && daireSel.style.display !== 'none') {
+          daireSel.value = sk.daire || '';
+          if (daireInp) daireInp.value = sk.daire || '';
+        } else {
+          if (daireInp) daireInp.value = sk.daire || '';
+        }
+      }, 50);
+    } else {
+      setV('sak-daire', sk.daire);
+    }
+    setV('sak-kat',sk.kat);
     setV('sak-giris',sk.giris); setV('sak-cikis',sk.cikis);
     setV('sak-not',sk.not);
     if(sk.tip==='malik') {
@@ -4423,21 +4509,24 @@ function saveSeciliOdeme(){
   const tarih=document.getElementById('tah-secili-tarih')?.value||today();
   const yontem=document.getElementById('tah-secili-yontem')?.value||'nakit';
   const aptId=selectedAptId;
+  const now=new Date();
+  const donemStr=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
   let ok=0;
   if(!makbuzNo)makbuzNo=5000;
   checked.forEach(id=>{
     const sk=S.sakinler.find(x=>x.id===id);if(!sk)return;
     if((sk.aidat||0)<=0)return;
+    const apt=S.apartmanlar.find(a=>a.id==sk.aptId);
     makbuzNo++;
     S.tahsilatlar.push({
       id:Date.now()+ok,no:'M-'+makbuzNo,sakId:sk.id,sakAd:sk.ad,
-      aptId:+aptId,aptAd:sk.aptAd,daire:sk.daire,
-      tip:'aidat',donem:'',tutar:sk.aidat||0,tarih,yontem,not:'Toplu tahsilat'
+      aptId:+aptId,aptAd:apt?apt.ad:(sk.aptAd||''),daire:sk.daire,
+      tip:'aidat',donem:donemStr,tutar:sk.aidat||0,tarih,yontem,not:'Toplu tahsilat'
     });
     if((sk.borc||0)>0)sk.borc=Math.max(0,(sk.borc||0)-(sk.aidat||0));
     ok++;
   });
-  if(ok)save();
+  if(ok){save();refreshCariIfOpen();if(typeof renderTahsilat==='function')try{renderTahsilat();}catch(e){}}
   document.querySelectorAll('.tah-chk').forEach(c=>c.checked=false);
   updateTahSecili();
   toast(ok+' sakin için ödeme kaydedildi.','ok');
@@ -4472,22 +4561,24 @@ function topluAidatOlustur(){
 
   if(!confirm(`${aidatliSakinler.length} sakin için ${donemLabel} aidatı borçlandırılsın mı?`))return;
 
-  aidatliSakinler.forEach(sk=>{
+  const kayitId = Date.now();
+  aidatliSakinler.forEach((sk,i)=>{
     const aidat=sk.aidat||aptAidat;
     if(aidat>0){
       sk.borc=(sk.borc||0)+aidat;
       toplamBorc+=aidat;
       sakinSayisi++;
-      detaylar.push({sakId:sk.id,ad:sk.ad,daire:sk.daire,tutar:aidat});
+      detaylar.push({id:kayitId+i,sakId:sk.id,ad:sk.ad,daire:sk.daire,tutar:aidat,kategori:'Aidat',aciklama:'',tarih:today()});
     }
   });
 
   // Borçlandırma kaydını tut
-  S.aidatBorclandir.push({aptId:aptId,donem:donemStr,tarih:today(),sakinSayisi:sakinSayisi,toplamBorc:toplamBorc,detaylar:detaylar});
+  S.aidatBorclandir.push({id:kayitId,aptId:aptId,aptAd:apt?apt.ad:'',donem:donemStr,tarih:today(),sonOdeme:'',kategori:'Aidat',aciklama:'',sakinSayisi:sakinSayisi,toplamBorc:toplamBorc,detaylar:detaylar});
 
   save();
   toast(`${sakinSayisi} sakin için ${donemLabel} aidatı borçlandırıldı. Toplam: ₺${fmt(toplamBorc)}`,'ok');
   if(typeof renderTahsilat==='function') try{renderTahsilat();}catch(e){}
+  if(typeof renderFinansalDurum==='function') try{renderFinansalDurum();}catch(e){}
   refreshCariIfOpen();
 }
 
@@ -9886,6 +9977,21 @@ function openCariKayitEdit(srcType, srcId, sakId) {
     katEl.value = rec.tahsilat.kategori || '';
   }
 
+  // Sakin transfer listesini doldur
+  const transferEl = document.getElementById('cke-transfer-sak');
+  if (transferEl) {
+    const tumSakinler = (S.sakinler || []).slice().sort((a, b) => {
+      const aptA = (S.apartmanlar.find(x => x.id == a.aptId)?.ad || '');
+      const aptB = (S.apartmanlar.find(x => x.id == b.aptId)?.ad || '');
+      return aptA.localeCompare(aptB) || (a.daire || '').localeCompare(b.daire || '');
+    });
+    transferEl.innerHTML = tumSakinler.map(s => {
+      const aptAd = S.apartmanlar.find(x => x.id == s.aptId)?.ad || '?';
+      const selected = s.id === sakId ? ' selected' : '';
+      return `<option value="${s.id}"${selected}>${s.ad} — D.${s.daire || '?'} (${aptAd})</option>`;
+    }).join('');
+  }
+
   openModal('mod-cari-kayit-edit');
 }
 
@@ -9893,38 +9999,77 @@ function saveCariKayitEdit() {
   const rec = window._editingCariRec;
   if (!rec) return;
 
-  const tarih = document.getElementById('cke-tarih').value;
-  const tutar = parseFloat(document.getElementById('cke-tutar').value) || 0;
+  const tarih    = document.getElementById('cke-tarih').value;
+  const tutar    = parseFloat(document.getElementById('cke-tutar').value) || 0;
   const aciklama = document.getElementById('cke-aciklama').value.trim();
   const kategori = document.getElementById('cke-kategori')?.value;
+  const yeniSakId = +document.getElementById('cke-transfer-sak')?.value;
+  const eskiSakId = rec.sakId;
+  const isTransfer = yeniSakId && yeniSakId !== eskiSakId;
 
   if (tutar <= 0) { toast('Tutar sıfırdan büyük olmalı!', 'err'); return; }
 
+  const eskiSk = S.sakinler.find(s => s.id === eskiSakId);
+  const yeniSk = isTransfer ? S.sakinler.find(s => s.id === yeniSakId) : eskiSk;
+  const yeniApt = S.apartmanlar.find(a => a.id == yeniSk?.aptId);
+
   if (rec.srcType === 'borclandir') {
     const eskiTutar = rec.detay.tutar || 0;
-    rec.detay.tarih = tarih;
+    rec.detay.tarih    = tarih;
     rec.detay.aciklama = aciklama;
-    rec.detay.tutar = tutar;
+    rec.detay.tutar    = tutar;
     if (kategori) rec.detay.kategori = kategori;
-    // Sakin borç farkını güncelle
-    const sk = S.sakinler.find(s => s.id === rec.sakId);
-    if (sk) sk.borc = Math.max(0, (sk.borc || 0) - eskiTutar + tutar);
-    // Toplam borcu yeniden hesapla
+
+    if (isTransfer) {
+      // Eski sakinden borcu düş
+      if (eskiSk) eskiSk.borc = Math.max(0, (eskiSk.borc || 0) - eskiTutar);
+      // Detayı yeni sakine aktar
+      rec.detay.sakId = yeniSakId;
+      rec.detay.ad    = yeniSk?.ad || '';
+      rec.detay.daire = yeniSk?.daire || '';
+      // Yeni sakine borcu yükle
+      if (yeniSk) yeniSk.borc = (yeniSk.borc || 0) + tutar;
+    } else {
+      // Aynı sakin — tutar farkını güncelle
+      if (eskiSk) eskiSk.borc = Math.max(0, (eskiSk.borc || 0) - eskiTutar + tutar);
+    }
     rec.kayit.toplamBorc = (rec.kayit.detaylar || []).reduce((s, d) => s + (d.tutar || 0), 0);
+
   } else if (rec.srcType === 'tahsilat') {
-    rec.tahsilat.tarih = tarih;
-    rec.tahsilat.tutar = tutar;
-    rec.tahsilat.not = aciklama;
+    const eskiTutar = rec.tahsilat.tutar || 0;
+    rec.tahsilat.tarih    = tarih;
+    rec.tahsilat.tutar    = tutar;
+    rec.tahsilat.not      = aciklama;
     rec.tahsilat.aciklama = aciklama;
     if (kategori) rec.tahsilat.kategori = kategori;
+
+    if (isTransfer) {
+      // Eski sakinin borcunu geri artır (tahsilat artık ona ait değil)
+      if (eskiSk) eskiSk.borc = (eskiSk.borc || 0) + eskiTutar;
+      // Tahsilatı yeni sakine transfer et
+      rec.tahsilat.sakId  = yeniSakId;
+      rec.tahsilat.sakAd  = yeniSk?.ad || '';
+      rec.tahsilat.ad     = yeniSk?.ad || '';
+      rec.tahsilat.daire  = yeniSk?.daire || '';
+      rec.tahsilat.aptId  = yeniSk?.aptId;
+      rec.tahsilat.aptAd  = yeniApt?.ad || '';
+      // Yeni sakinin borcunu düş
+      if (yeniSk) yeniSk.borc = Math.max(0, (yeniSk.borc || 0) - tutar);
+    } else {
+      // Aynı sakin — tutar değişti, borç farkını güncelle
+      if (eskiSk) eskiSk.borc = Math.max(0, (eskiSk.borc || 0) + eskiTutar - tutar);
+    }
   }
+
+  const finalSakId = isTransfer ? yeniSakId : eskiSakId;
+  rec.sakId = finalSakId;
 
   save();
   closeModal('mod-cari-kayit-edit');
-  toast('Kayıt güncellendi!', 'ok');
+  toast(isTransfer ? '↕ Transfer tamamlandı! Bakiyeler güncellendi.' : 'Kayıt güncellendi!', 'ok');
 
-  // Cari sayfayı yeniden çiz
-  const sk = S.sakinler.find(s => s.id === rec.sakId);
+  // Cari sayfayı transfer yapılan sakin üzerinden yenile
+  const sk = S.sakinler.find(s => s.id === finalSakId);
   if (sk) renderSakinCari(sk, window._cariOpts || {});
 }
 
@@ -9979,11 +10124,14 @@ function saveHizliOdeme() {
   const sk = S.sakinler.find(s => s.id === sakId);
   if (!sk) return;
   if (!S.tahsilatlar) S.tahsilatlar = [];
-  S.tahsilatlar.push({ id: Date.now(), sakId, aptId: sk.aptId, aptAd: sk.aptAd, ad: sk.ad, daire: sk.daire, tip: 'aidat', donem, tutar, tarih, yontem, not });
+  if (!makbuzNo) makbuzNo = 5000; makbuzNo++;
+  const apt = S.apartmanlar.find(a => a.id == sk.aptId);
+  S.tahsilatlar.push({ id: Date.now(), no: 'M-'+makbuzNo, sakId, sakAd: sk.ad, aptId: sk.aptId, aptAd: apt ? apt.ad : (sk.aptAd||''), daire: sk.daire, tip: 'aidat', donem, tutar, tarih, yontem, not });
   if (borcDus && (sk.borc || 0) > 0) sk.borc = Math.max(0, (sk.borc || 0) - tutar);
   save();
   closeModal('mod-hizli-odeme');
   toast('Ödeme kaydedildi! ₺' + fmt(tutar), 'ok');
+  if (typeof renderTahsilat === 'function') try { renderTahsilat(); } catch(e) {}
   // Re-render daire detay
   const yr = document.querySelector('.dd-year-sel');
   const yil = yr ? +yr.value : new Date().getFullYear();
@@ -10376,11 +10524,14 @@ function saveTopluBorcPage() {
     h.sk.borc = (h.sk.borc||0) + tutar;
     toplamBorc += tutar; ok++;
     detaylar.push({
+      id: Date.now() + ok,
       sakId: h.sk.id,
       ad: h.sk.ad,
       daire: h.sk.daire,
       tutar,
       kategori,
+      aciklama,
+      tarih: tahakkukT,
       aptAd: apt?.ad||''
     });
   });
@@ -11718,7 +11869,8 @@ function goSakinProfil(sakId) {
   const sk = S.sakinler.find(s => s.id === +sakId);
   if (!sk) { toast('Sakin bulunamadı.', 'err'); return; }
   _currentProfilId = +sakId;
-  if (!window._navRestoring) _navPush('sakin-profil', +sakId);
+  window._navStack = [{ page: 'sakin-profil', id: +sakId, label: 'Sakin Profili' }];
+  _navUpdateBreadcrumb();
   window._navRestoring = true;
   goPage('sakin-profil');
   window._navRestoring = false;
@@ -11754,42 +11906,38 @@ function renderSakinProfil() {
     davetDurumHtml = `<span style="background:var(--s2);color:var(--tx-3);padding:3px 10px;border-radius:20px;font-size:11px">Davet Gönderilmedi</span>`;
   }
 
-  const fld = (label, val) => val ? `<div style="padding:10px 14px;border-bottom:1px solid var(--bd)"><div style="font-size:10px;font-weight:600;color:var(--tx-3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">${label}</div><div style="font-size:13.5px;color:var(--tx-1);font-weight:500">${he(String(val))}</div></div>` : '';
+  const fld = (label, val) => val ? `<div style="padding:9px 14px;border-bottom:1px solid var(--border)"><div style="font-size:10px;font-weight:600;color:var(--tx-3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px">${label}</div><div style="font-size:13px;color:var(--tx-1);font-weight:500">${he(String(val))}</div></div>` : '';
 
   root.innerHTML = `
   <!-- Profil Kartı -->
-  <div style="background:linear-gradient(135deg,#3b5bdb,#4c6ef5,#7048e8);border-radius:18px;padding:28px 28px 22px;color:#fff;margin-bottom:16px;position:relative;overflow:hidden">
-    <svg style="position:absolute;right:0;top:0;opacity:.07;width:260px" viewBox="0 0 220 180" fill="white">
-      <rect x="0" y="60" width="32" height="120"/><rect x="36" y="34" width="38" height="146"/>
-      <rect x="80" y="22" width="34" height="158"/><rect x="120" y="44" width="28" height="136"/>
-      <rect x="154" y="10" width="44" height="170"/><rect x="202" y="30" width="30" height="150"/>
-    </svg>
-    <div style="display:flex;align-items:center;gap:18px;position:relative">
-      <div style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,.22);border:3px solid rgba(255,255,255,.5);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;flex-shrink:0;letter-spacing:-1px">${initials}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:21px;font-weight:800;letter-spacing:-.3px;margin-bottom:4px">${he(sk.ad.toUpperCase())}</div>
-        <div style="font-size:13px;opacity:.85;margin-bottom:6px">${he(aptAd)}</div>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);padding:3px 12px;border-radius:20px;font-size:11.5px;font-weight:700">${tipLabel} · ${he(daireLabel)}</span>
+  <div style="background:linear-gradient(135deg,#3b5bdb 0%,#4c6ef5 60%,#7048e8 100%);border-radius:14px;padding:20px 22px 16px;color:#fff;margin-bottom:14px;position:relative;overflow:hidden">
+    <svg style="position:absolute;right:-10px;top:-10px;opacity:.06;width:200px" viewBox="0 0 220 180" fill="white"><rect x="0" y="60" width="32" height="120"/><rect x="36" y="34" width="38" height="146"/><rect x="80" y="22" width="34" height="158"/><rect x="120" y="44" width="28" height="136"/><rect x="154" y="10" width="44" height="170"/></svg>
+    <div style="display:flex;align-items:center;gap:14px;position:relative;flex-wrap:wrap">
+      <div style="width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.22);border:2.5px solid rgba(255,255,255,.5);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;flex-shrink:0;letter-spacing:-1px">${initials}</div>
+      <div style="flex:1;min-width:160px">
+        <div style="font-size:18px;font-weight:800;letter-spacing:-.3px;margin-bottom:3px">${he(sk.ad)}</div>
+        <div style="font-size:12.5px;opacity:.82;margin-bottom:6px">${he(aptAd)}</div>
+        <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+          <span style="background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700">${tipLabel} · ${he(daireLabel)}</span>
           ${davetDurumHtml}
         </div>
       </div>
-      <button onclick="openSakinProfilEdit()" style="background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.4);color:#fff;padding:8px 16px;border-radius:10px;cursor:pointer;font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:6px;white-space:nowrap">
-        <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      <button onclick="openSakinProfilEdit()" style="background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.4);color:#fff;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0">
+        <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         Düzenle
       </button>
     </div>
-    ${(sk.email || sk.tel) ? `<div style="display:flex;gap:16px;margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.2);flex-wrap:wrap;position:relative">
-      ${sk.tel ? `<a href="tel:${sk.tel}" style="color:rgba(255,255,255,.9);text-decoration:none;font-size:13px;display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.35 2 2 0 0 1 3.6 1.15h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6 6l.92-1.87a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.54 16z"/></svg>${he(sk.tel)}</a>` : ''}
-      ${sk.email ? `<a href="mailto:${sk.email}" style="color:rgba(255,255,255,.9);text-decoration:none;font-size:13px;display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>${he(sk.email)}</a>` : ''}
+    ${(sk.email || sk.tel) ? `<div style="display:flex;gap:14px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.2);flex-wrap:wrap;position:relative">
+      ${sk.tel ? `<a href="tel:${sk.tel}" style="color:rgba(255,255,255,.9);text-decoration:none;font-size:12.5px;display:flex;align-items:center;gap:5px"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.35 2 2 0 0 1 3.6 1.15h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6 6l.92-1.87a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.54 16z"/></svg>${he(sk.tel)}</a>` : ''}
+      ${sk.email ? `<a href="mailto:${sk.email}" style="color:rgba(255,255,255,.9);text-decoration:none;font-size:12.5px;display:flex;align-items:center;gap:5px"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>${he(sk.email)}</a>` : ''}
     </div>` : ''}
   </div>
 
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+  <div class="sp-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
     <!-- Sol: Kişi Bilgileri -->
     <div>
       <div class="card" style="padding:0;overflow:hidden">
-        <div style="padding:12px 14px;background:var(--s2);border-bottom:1px solid var(--bd)"><strong style="font-size:12px;color:var(--tx-2)">👤 Kişi Bilgileri</strong></div>
+        <div style="padding:10px 14px;background:var(--s2);border-bottom:1px solid var(--border)"><strong style="font-size:12px;color:var(--tx-2)">👤 Kişi Bilgileri</strong></div>
         ${fld('Ad Soyad', sk.ad)}
         ${fld('TC Kimlik No', sk.tc)}
         ${fld('Doğum Tarihi', sk.dogum)}
@@ -11800,7 +11948,7 @@ function renderSakinProfil() {
         ${fld('Acil Durum İletişim', sk.acil)}
       </div>
       <div class="card" style="padding:0;overflow:hidden;margin-top:12px">
-        <div style="padding:12px 14px;background:var(--s2);border-bottom:1px solid var(--bd)"><strong style="font-size:12px;color:var(--tx-2)">🏠 Daire & Konum</strong></div>
+        <div style="padding:10px 14px;background:var(--s2);border-bottom:1px solid var(--border)"><strong style="font-size:12px;color:var(--tx-2)">🏠 Daire & Konum</strong></div>
         ${fld('Apartman', aptAd)}
         ${fld('Daire No', sk.daire)}
         ${fld('Kat', sk.kat)}
@@ -11841,7 +11989,7 @@ function renderSakinProfil() {
       <div class="card" style="padding:14px">
         <div style="font-size:12px;font-weight:700;color:var(--tx-2);margin-bottom:12px">🔗 Sisteme Davet</div>
         ${davetLink ? `
-        <div style="background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:8px 10px;font-size:11px;color:var(--tx-3);word-break:break-all;margin-bottom:10px;font-family:monospace">${davetLink}</div>
+        <div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:11px;color:var(--tx-3);word-break:break-all;margin-bottom:10px;font-family:monospace">${davetLink}</div>
         ` : `<div style="font-size:12px;color:var(--tx-3);margin-bottom:10px">Henüz davet linki oluşturulmadı. Aşağıdan oluşturun ve gönderin.</div>`}
         <div style="display:flex;flex-direction:column;gap:7px">
           <button class="btn bp" style="justify-content:flex-start;gap:8px;font-size:12px" onclick="generateAndCopyDavet(${sk.id})">
@@ -12034,23 +12182,11 @@ function renderDavetYonetim() {
   const toplamBekleyen = (S.bekleyenKayitlar||[]).filter(r=>r.durum==='bekliyor').length;
 
   root.innerHTML = `
-  <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
-    <div class="card" style="flex:1;min-width:130px;padding:14px;text-align:center">
-      <div style="font-size:22px;font-weight:800;color:var(--brand)">${sakinler.length}</div>
-      <div style="font-size:11px;color:var(--tx-3)">Toplam Sakin</div>
-    </div>
-    <div class="card" style="flex:1;min-width:130px;padding:14px;text-align:center">
-      <div style="font-size:22px;font-weight:800;color:var(--brand)">${toplamDavetli}</div>
-      <div style="font-size:11px;color:var(--tx-3)">Davet Gönderildi</div>
-    </div>
-    <div class="card" style="flex:1;min-width:130px;padding:14px;text-align:center">
-      <div style="font-size:22px;font-weight:800;color:#b45309">${toplamBekleyen}</div>
-      <div style="font-size:11px;color:var(--tx-3)">Onay Bekliyor</div>
-    </div>
-    <div class="card" style="flex:1;min-width:130px;padding:14px;text-align:center">
-      <div style="font-size:22px;font-weight:800;color:var(--ok)">${toplamKayitli}</div>
-      <div style="font-size:11px;color:var(--tx-3)">Kayıtlı Kullanıcı</div>
-    </div>
+  <div class="sg" style="grid-template-columns:repeat(4,1fr)">
+    <div class="sc bar-bl"><div class="sc-ico ic-bl"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div class="sc-lbl">Toplam Sakin</div><div class="sc-val v-bl">${sakinler.length}</div><div class="sc-sub">Sistemde kayıtlı</div></div>
+    <div class="sc bar-tl"><div class="sc-ico ic-tl"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></div><div class="sc-lbl">Davet Gönderildi</div><div class="sc-val v-tl">${toplamDavetli}</div><div class="sc-sub">Link oluşturuldu</div></div>
+    <div class="sc bar-am"><div class="sc-ico ic-am"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><div class="sc-lbl">Onay Bekliyor</div><div class="sc-val v-am">${toplamBekleyen}</div><div class="sc-sub">İnceleme bekliyor</div></div>
+    <div class="sc bar-gr"><div class="sc-ico ic-gr"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><div class="sc-lbl">Kayıtlı Kullanıcı</div><div class="sc-val v-gr">${toplamKayitli}</div><div class="sc-sub">Onaylandı</div></div>
   </div>
   <div class="card" style="padding:14px;margin-bottom:12px">
     <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -12138,20 +12274,14 @@ function renderDavetBekleyen() {
   updateDavetBekleyenBadge();
 
   root.innerHTML = `
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
-    <div class="card" style="padding:14px;text-align:center">
-      <div style="font-size:24px;font-weight:800;color:#b45309">${bekleyen.length}</div>
-      <div style="font-size:11px;color:var(--tx-3)">Onay Bekliyor</div>
-    </div>
-    <div class="card" style="padding:14px;text-align:center">
-      <div style="font-size:24px;font-weight:800;color:var(--ok)">${oncekiler.filter(r=>r.durum==='onaylandi').length}</div>
-      <div style="font-size:11px;color:var(--tx-3)">Onaylandı</div>
-    </div>
+  <div class="sg" style="grid-template-columns:1fr 1fr">
+    <div class="sc bar-am"><div class="sc-ico ic-am"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><div class="sc-lbl">Onay Bekliyor</div><div class="sc-val v-am">${bekleyen.length}</div><div class="sc-sub">İnceleme gerekiyor</div></div>
+    <div class="sc bar-gr"><div class="sc-ico ic-gr"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><div class="sc-lbl">Onaylandı</div><div class="sc-val v-gr">${oncekiler.filter(r=>r.durum==='onaylandi').length}</div><div class="sc-sub">Kayıt tamamlandı</div></div>
   </div>
   ${bekleyen.length ? `
   <div class="card" style="padding:0;overflow:hidden;margin-bottom:16px">
-    <div style="padding:12px 16px;background:var(--s2);border-bottom:1px solid var(--bd)">
-      <strong style="font-size:12.5px;color:var(--tx-1)">⏳ Onay Bekleyen Başvurular</strong>
+    <div style="padding:10px 16px;background:var(--s2);border-bottom:1px solid var(--border)">
+      <strong style="font-size:12px;color:var(--tx-1)">⏳ Onay Bekleyen Başvurular</strong>
     </div>
     <div class="tw"><table>
       <thead><tr><th>Başvuru Sahibi</th><th>Daire</th><th>E-posta</th><th>Telefon</th><th>Başvuru Tarihi</th><th>İşlem</th></tr></thead>
@@ -12179,8 +12309,8 @@ function renderDavetBekleyen() {
   ` : '<div class="card" style="padding:32px;text-align:center;color:var(--tx-3)">Onay bekleyen başvuru yok.</div>'}
   ${oncekiler.length ? `
   <div class="card" style="padding:0;overflow:hidden">
-    <div style="padding:12px 16px;background:var(--s2);border-bottom:1px solid var(--bd)">
-      <strong style="font-size:12.5px;color:var(--tx-1)">📋 Geçmiş Başvurular</strong>
+    <div style="padding:10px 16px;background:var(--s2);border-bottom:1px solid var(--border)">
+      <strong style="font-size:12px;color:var(--tx-1)">📋 Geçmiş Başvurular</strong>
     </div>
     <div class="tw"><table>
       <thead><tr><th>Başvuru Sahibi</th><th>Daire</th><th>Durum</th><th>Tarih</th></tr></thead>
@@ -12267,7 +12397,7 @@ function renderDavetKayitSayfasi(token) {
       <div class="fgp"><label class="lbl">Adınız Soyadınız *</label><input class="fi" id="dkayit-ad" value="${he(sk.ad||'')}" placeholder="Ad Soyad"></div>
       <div class="fgp"><label class="lbl">E-posta *</label><input class="fi" id="dkayit-email" type="email" value="${he(sk.email||'')}" placeholder="ornek@email.com"></div>
       <div class="fgp"><label class="lbl">Telefon *</label><input class="fi" id="dkayit-tel" value="${he(sk.tel||'')}" placeholder="05xx xxx xx xx"></div>
-      <div style="background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:12px;font-size:12px;color:var(--tx-3)">
+      <div style="background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:12px;color:var(--tx-3)">
         <strong>Daire Bilgileri:</strong> ${he(apt?.ad||'—')} · Daire ${he(sk.daire||'?')} · ${sk.tip==='kiralik'?'Kiracı':'Malik'}
       </div>
       <button class="btn bp" onclick="submitDavetKayit()" style="width:100%;padding:12px;font-size:14px">
@@ -12302,8 +12432,8 @@ function submitDavetKayit() {
 }
 
 // ── SUPABASE KREDENSİYELLER ──────────────────────
-const _SB_URL = 'https://xmjaihxpuhygrjpghiww.supabase.co';
-const _SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhtamFpaHhwdWh5Z3JqcGdoaXd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMzYyMzIsImV4cCI6MjA4ODkxMjIzMn0.DO1n4zrn8y60MBtNhRukGVL68k2oqq9Yqi4QobG_WTo';
+const _SB_URL = 'https://ohantorzzbxjkkgtspgn.supabase.co';
+const _SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9oYW50b3J6emJ4amtrZ3RzcGduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3OTcwMDQsImV4cCI6MjA5MDM3MzAwNH0.cDby1HJcvWu5XBCUSSJiOGncHk51rIzCpoMRO3toebI';
 
 // STARTUP — Rol seçim ekranı ile başla
 (function startup() {

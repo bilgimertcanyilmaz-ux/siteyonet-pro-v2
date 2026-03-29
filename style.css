@@ -2872,3 +2872,18 @@ button:focus-visible, a:focus-visible {
   .ds-kpi-val  { font-size: 22px; }
 }
 
+/* ── SAKİN PROFİL SAYFASI ────────────────────────────────── */
+#sp-root { max-width: 860px; margin: 0 auto; }
+@media (max-width: 720px) {
+  .sp-2col { grid-template-columns: 1fr !important; }
+  #sp-root { padding: 0 0 32px !important; }
+}
+
+/* ── DAVET SAYFASI STAT KARTLARI ─────────────────────────── */
+#dav-root .sg,
+#dab-root .sg { margin-bottom: 14px; }
+@media (max-width: 700px) {
+  #dav-root .sg { grid-template-columns: 1fr 1fr !important; }
+  #dab-root .sg { grid-template-columns: 1fr 1fr !important; }
+}
+
