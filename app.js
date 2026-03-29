@@ -3847,7 +3847,28 @@ function delSakin(id) {
 let perEditId = null;
 const perGorevLbl = {kapici:'Kapıcı',temizlik:'Temizlik Görevlisi',guvenlik:'Güvenlik Görevlisi',teknisyen:'Teknisyen',muhasebe:'Muhasebe',yonetici:'Site Yöneticisi',diger:'Diğer'};
 
+function openYoneticiProfil() {
+  const ad    = S.ayarlar?.yonetici  || _currentUser?.email?.split('@')[0] || 'Yönetici';
+  const unvan = S.ayarlar?.unvan     || 'Apartman Yöneticisi';
+  const email = _currentUser?.email  || '';
+  const init  = ad.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase() || 'YÖ';
+  const setT = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+  setT('mod-yon-avatar', init);
+  setT('mod-yon-ad',     ad);
+  setT('mod-yon-unvan',  unvan);
+  setT('mod-yon-email',  email);
+  openModal('mod-yon-profil');
+}
+
 function renderPersonel() {
+  // Yönetici profil kartını güncelle
+  const ynAd    = S.ayarlar?.yonetici  || _currentUser?.email?.split('@')[0] || 'Yönetici';
+  const ynUnvan = S.ayarlar?.unvan     || 'Apartman Yöneticisi';
+  const ynInit  = ynAd.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase() || 'YÖ';
+  const avEl  = document.getElementById('per-yon-avatar');  if(avEl)  avEl.textContent  = ynInit;
+  const adEl  = document.getElementById('per-yon-ad');      if(adEl)  adEl.textContent  = ynAd;
+  const uvEl  = document.getElementById('per-yon-unvan');   if(uvEl)  uvEl.textContent  = ynUnvan;
+
   const s = (document.getElementById('per-srch')?.value||'').toLowerCase();
   const fGorev = document.getElementById('per-f-gorev')?.value||'';
   const gorunum = document.getElementById('per-f-gorunum')?.value||'tablo';
