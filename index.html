@@ -685,6 +685,103 @@
         </div>
         <button class="btn bp mt12" onclick="saveSettings()">Kaydet</button>
       </div>
+      <!-- OTOMATİK BORÇLANDIRMA -->
+      <div class="card mb16">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div>
+            <div class="card-t">Otomatik Borçlandırma</div>
+            <div style="font-size:11.5px;color:var(--tx-3);margin-top:2px">Her ay belirlenen günde aidat borcu otomatik oluşturulur</div>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="ob-aktif" onchange="obAktifToggle()" style="width:16px;height:16px;cursor:pointer">
+            <span id="ob-aktif-lbl" style="font-size:12px;font-weight:700;color:var(--tx-3)">Pasif</span>
+          </label>
+        </div>
+
+        <div id="ob-ayarlar" style="display:none">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+            <div>
+              <label class="fi-lbl">Her Ayın Kaçıncı Günü?</label>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input type="number" id="ob-gun" class="fi" min="1" max="28" value="1" style="width:80px">
+                <span style="font-size:12px;color:var(--tx-3)">. günü</span>
+              </div>
+              <div style="font-size:10.5px;color:var(--tx-3);margin-top:3px">Maksimum 28 — şubat uyumluluğu için</div>
+            </div>
+            <div>
+              <label class="fi-lbl">Borç Kategorisi</label>
+              <select id="ob-kategori" class="fi">
+                <option value="Aidat">Aidat</option>
+                <option value="Kira">Kira</option>
+                <option value="Yakıt">Yakıt</option>
+                <option value="Elektrik">Elektrik</option>
+                <option value="Su">Su</option>
+                <option value="Doğalgaz">Doğalgaz</option>
+                <option value="Asansör">Asansör</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+            <div>
+              <label class="fi-lbl">Borçlandırılacak Kişi</label>
+              <select id="ob-kime" class="fi">
+                <option value="hepsi">Tüm Sakinler</option>
+                <option value="malik">Yalnızca Ev Sahipleri</option>
+                <option value="kiraci-once">Kiracı Varsa Kiracı, Yoksa Ev Sahibi</option>
+              </select>
+            </div>
+            <div>
+              <label class="fi-lbl">Tutar Yöntemi</label>
+              <select id="ob-tutar-tur" class="fi" onchange="obTutarTurChange()">
+                <option value="aidat">Her Dairenin Kendi Aidatı</option>
+                <option value="sabit">Sabit Tutar</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="ob-sabit-wrap" style="display:none;margin-bottom:12px">
+            <label class="fi-lbl">Sabit Tutar (₺)</label>
+            <input type="number" id="ob-sabit-tutar" class="fi" placeholder="0.00" min="0" step="0.01" style="width:160px">
+          </div>
+
+          <div style="margin-bottom:12px">
+            <label class="fi-lbl">Apartmanlar</label>
+            <select id="ob-apt-mod" class="fi" onchange="obAptModChange()" style="margin-bottom:6px">
+              <option value="hepsi">Tüm Apartmanlar</option>
+              <option value="secili">Belirli Apartmanlar</option>
+            </select>
+            <div id="ob-apt-list" style="display:none;max-height:140px;overflow-y:auto;border:1px solid var(--bd);border-radius:8px;padding:8px 10px;background:var(--bg)"></div>
+          </div>
+
+          <div style="padding:10px 14px;background:var(--bg);border:1px solid var(--bd);border-radius:8px;margin-bottom:12px;font-size:12px">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <span style="color:var(--tx-3)">Son Otomatik Çalıştırma:</span>
+              <span id="ob-son-calistirma" style="font-weight:700;color:var(--tx-1)">—</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
+              <span style="color:var(--tx-3)">Sonraki Çalıştırma:</span>
+              <span id="ob-sonraki" style="font-weight:700;color:var(--brand)">—</span>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:8px">
+            <button class="btn bp" onclick="saveOtomatikBorc()">
+              <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+              Kaydet
+            </button>
+            <button class="btn bg" onclick="runOtomatikBorc(true)" title="Bu ayın borçlandırmasını hemen çalıştır">
+              <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Şimdi Çalıştır
+            </button>
+          </div>
+        </div>
+
+        <div id="ob-pasif-bilgi" style="font-size:12px;color:var(--tx-3);padding:8px 12px;background:var(--bg);border-radius:8px">
+          Otomatik borçlandırma pasif. Yukarıdaki kutucuğu işaretleyerek etkinleştirin.
+        </div>
+      </div>
+
       <div class="card mb16">
         <div class="card-t mb14">Yapay Zeka (AI) Ayarları</div>
 

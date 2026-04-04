@@ -347,6 +347,7 @@ function initApp() {
   }
   updateNotifDot();
   checkTekrarlayanIslemler();
+  checkOtomatikBorc();
   updateGlobalSiteBar();
   // Sprint 1A: Mevcut veriyi ledger'a tek seferlik aktar
   migrateLegacyDataToLedger();
@@ -8243,6 +8244,8 @@ function loadSettings() {
     document.getElementById('set-sb-url').value = cfg.url||'';
     document.getElementById('set-sb-key').value = cfg.key||'';
   }
+  // Otomatik borçlandırma ayarları
+  loadOtomatikBorcSettings();
   // Supabase durum göstergesi
   const statusEl = document.getElementById('sb-ayar-status');
   if (statusEl) {
@@ -11612,6 +11615,259 @@ function saveDevirBakiye() {
 
   // Tabloyu yenile (kayıtlı değerleri göster)
   renderDevirBakiye();
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// OTOMATİK BORÇLANDIRMA
+// ══════════════════════════════════════════════════════════════════════
+
+function obAktifToggle() {
+  const cb  = document.getElementById('ob-aktif');
+  const lbl = document.getElementById('ob-aktif-lbl');
+  const ayarDiv   = document.getElementById('ob-ayarlar');
+  const pasifDiv  = document.getElementById('ob-pasif-bilgi');
+  if (!cb) return;
+  const aktif = cb.checked;
+  if (lbl) { lbl.textContent = aktif ? 'Aktif' : 'Pasif'; lbl.style.color = aktif ? 'var(--ok)' : 'var(--tx-3)'; }
+  if (ayarDiv)  ayarDiv.style.display  = aktif ? '' : 'none';
+  if (pasifDiv) pasifDiv.style.display = aktif ? 'none' : '';
+}
+
+function obTutarTurChange() {
+  const v   = document.getElementById('ob-tutar-tur')?.value;
+  const wrap = document.getElementById('ob-sabit-wrap');
+  if (wrap) wrap.style.display = v === 'sabit' ? '' : 'none';
+}
+
+function obAptModChange() {
+  const v    = document.getElementById('ob-apt-mod')?.value;
+  const list = document.getElementById('ob-apt-list');
+  if (!list) return;
+  if (v === 'secili') {
+    list.style.display = '';
+    const saved = (S.ayarlar?.otomatikBorc?.aptIds) || [];
+    const aptlar = (S.apartmanlar||[]).filter(a => a.durum !== 'pasif');
+    list.innerHTML = aptlar.length
+      ? aptlar.map(a => `<label style="display:flex;align-items:center;gap:7px;padding:3px 0;font-size:12.5px;cursor:pointer">
+          <input type="checkbox" data-ob-apt="${a.id}" ${saved.includes(a.id)?'checked':''} style="width:14px;height:14px">
+          <span>${he(a.ad)}</span>
+        </label>`).join('')
+      : '<span style="font-size:12px;color:var(--tx-3)">Kayıtlı apartman yok.</span>';
+  } else {
+    list.style.display = 'none';
+  }
+}
+
+function _obSonrakiHesapla(gun) {
+  const now  = new Date();
+  const gun2 = Math.min(gun, 28);
+  let sonraki = new Date(now.getFullYear(), now.getMonth(), gun2);
+  if (now.getDate() >= gun2) {
+    sonraki = new Date(now.getFullYear(), now.getMonth() + 1, gun2);
+  }
+  return sonraki.toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric' });
+}
+
+function loadOtomatikBorcSettings() {
+  const ob = S.ayarlar?.otomatikBorc || {};
+  const cbEl = document.getElementById('ob-aktif');
+  if (!cbEl) return; // Sayfa henüz render edilmedi
+  cbEl.checked = !!ob.aktif;
+  obAktifToggle();
+
+  const gunEl = document.getElementById('ob-gun');
+  if (gunEl) gunEl.value = ob.gun || 1;
+
+  const katEl = document.getElementById('ob-kategori');
+  if (katEl) katEl.value = ob.kategori || 'Aidat';
+
+  const kimeEl = document.getElementById('ob-kime');
+  if (kimeEl) kimeEl.value = ob.kime || 'hepsi';
+
+  const ttEl = document.getElementById('ob-tutar-tur');
+  if (ttEl) ttEl.value = ob.tutarTur || 'aidat';
+  obTutarTurChange();
+
+  const stEl = document.getElementById('ob-sabit-tutar');
+  if (stEl) stEl.value = ob.sabitTutar || '';
+
+  const amEl = document.getElementById('ob-apt-mod');
+  if (amEl) amEl.value = ob.aptMod || 'hepsi';
+  obAptModChange();
+
+  // Kayıtlı apt seçimlerini işaretle
+  if (ob.aptMod === 'secili' && ob.aptIds?.length) {
+    document.querySelectorAll('[data-ob-apt]').forEach(cb => {
+      cb.checked = ob.aptIds.includes(+cb.dataset.obApt);
+    });
+  }
+
+  const sonEl = document.getElementById('ob-son-calistirma');
+  if (sonEl) sonEl.textContent = ob.sonCalistirma || '—';
+
+  const sonrakiEl = document.getElementById('ob-sonraki');
+  if (sonrakiEl) {
+    sonrakiEl.textContent = ob.aktif ? _obSonrakiHesapla(ob.gun || 1) : '—';
+  }
+}
+
+function saveOtomatikBorc() {
+  if (!_guardCheck()) return;
+  const aktif    = document.getElementById('ob-aktif')?.checked || false;
+  const gun      = Math.min(28, Math.max(1, parseInt(document.getElementById('ob-gun')?.value) || 1));
+  const kategori = document.getElementById('ob-kategori')?.value || 'Aidat';
+  const kime     = document.getElementById('ob-kime')?.value || 'hepsi';
+  const tutarTur = document.getElementById('ob-tutar-tur')?.value || 'aidat';
+  const sabitTutar = parseFloat(document.getElementById('ob-sabit-tutar')?.value) || 0;
+  const aptMod   = document.getElementById('ob-apt-mod')?.value || 'hepsi';
+  const aptIds   = [];
+  document.querySelectorAll('[data-ob-apt]:checked').forEach(cb => aptIds.push(+cb.dataset.obApt));
+
+  const mevcut = S.ayarlar?.otomatikBorc || {};
+  if (!S.ayarlar) S.ayarlar = {};
+  S.ayarlar.otomatikBorc = {
+    aktif, gun, kategori, kime, tutarTur, sabitTutar, aptMod, aptIds,
+    sonCalistirma: mevcut.sonCalistirma || ''
+  };
+  save();
+
+  const sonrakiEl = document.getElementById('ob-sonraki');
+  if (sonrakiEl) sonrakiEl.textContent = aktif ? _obSonrakiHesapla(gun) : '—';
+
+  toast('Otomatik borçlandırma ayarları kaydedildi.', 'ok');
+}
+
+function checkOtomatikBorc() {
+  const ob = S.ayarlar?.otomatikBorc;
+  if (!ob || !ob.aktif) return;
+  const now     = new Date();
+  const bugun   = now.getDate();
+  const buAy    = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  if (bugun >= (ob.gun||1) && ob.sonCalistirma !== buAy) {
+    // Küçük gecikmeyle çalıştır (UI hazır olsun)
+    setTimeout(() => runOtomatikBorc(false), 1500);
+  }
+}
+
+function runOtomatikBorc(manuel) {
+  if (!_guardCheck()) return;
+  const ob = S.ayarlar?.otomatikBorc;
+  if (!ob) { if (manuel) toast('Önce ayarları kaydedin.', 'err'); return; }
+
+  const now    = new Date();
+  const buAy   = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  const donemLabel = now.toLocaleDateString('tr-TR', { month:'long', year:'numeric' });
+
+  if (!S.aidatBorclandir) S.aidatBorclandir = [];
+
+  // Apartmanları belirle
+  const tumAptlar = (S.apartmanlar||[]).filter(a => a.durum !== 'pasif');
+  const hedefAptlar = ob.aptMod === 'secili' && ob.aptIds?.length
+    ? tumAptlar.filter(a => ob.aptIds.includes(a.id))
+    : tumAptlar;
+
+  if (!hedefAptlar.length) {
+    if (manuel) toast('Hedef apartman bulunamadı.', 'err');
+    return;
+  }
+
+  let toplamSakin = 0, toplamTutar = 0, atlananApt = 0;
+  const kayitId = Date.now();
+
+  hedefAptlar.forEach((apt, aptIdx) => {
+    // Bu ay bu apt için zaten çalıştı mı?
+    const onceki = S.aidatBorclandir.find(k => k.aptId == apt.id && k.donem === buAy && k.kaynak === 'otomatik');
+    if (onceki) { atlananApt++; return; }
+
+    // Sakinleri filtrele
+    let sakinler = (S.sakinler||[]).filter(s => s.aptId == apt.id && s.durum !== 'pasif' && s.durum !== 'ayrildi');
+    if (ob.kime === 'malik') {
+      sakinler = sakinler.filter(s => s.tip === 'malik');
+    } else if (ob.kime === 'kiraci-once') {
+      // Daire başına: kiracı varsa kiracı, yoksa malik
+      const daireMap = {};
+      sakinler.forEach(s => {
+        const d = s.daire;
+        if (!daireMap[d]) daireMap[d] = [];
+        daireMap[d].push(s);
+      });
+      sakinler = [];
+      Object.values(daireMap).forEach(grp => {
+        const kiraci = grp.find(s => s.tip === 'kiraci');
+        sakinler.push(kiraci || grp[0]);
+      });
+    }
+
+    if (!sakinler.length) return;
+
+    const detaylar = [];
+    let aptBorc = 0;
+    let aptSakin = 0;
+
+    sakinler.forEach((sk, i) => {
+      let tutar = 0;
+      if (ob.tutarTur === 'sabit') {
+        tutar = ob.sabitTutar || 0;
+      } else {
+        tutar = sk.aidat || apt.aidat || 0;
+      }
+      if (tutar <= 0) return;
+
+      sk.borc = (sk.borc||0) + tutar;
+      aptBorc += tutar;
+      aptSakin++;
+      detaylar.push({
+        id: kayitId + aptIdx * 1000 + i,
+        sakId: sk.id, ad: sk.ad, daire: sk.daire,
+        tutar, kategori: ob.kategori||'Aidat', aciklama: 'Otomatik Borçlandırma', tarih: today()
+      });
+    });
+
+    if (detaylar.length) {
+      S.aidatBorclandir.push({
+        id: kayitId + aptIdx,
+        aptId: apt.id, aptAd: apt.ad,
+        donem: buAy, tarih: today(),
+        sonOdeme: '', kategori: ob.kategori||'Aidat',
+        aciklama: 'Otomatik Borçlandırma',
+        sakinSayisi: aptSakin, toplamBorc: aptBorc,
+        detaylar,
+        kaynak: 'otomatik'
+      });
+      toplamSakin += aptSakin;
+      toplamTutar += aptBorc;
+    }
+  });
+
+  // Son çalıştırma güncelle
+  if (!S.ayarlar) S.ayarlar = {};
+  if (!S.ayarlar.otomatikBorc) S.ayarlar.otomatikBorc = ob;
+  S.ayarlar.otomatikBorc.sonCalistirma = buAy;
+
+  AuditService.log({
+    action: 'OTOMATIK_BORCLANDIR',
+    entityType: 'otomatikBorc',
+    newValues: { donem: buAy, toplamSakin, toplamTutar, manuel: !!manuel }
+  });
+
+  save();
+
+  // UI güncelle
+  const sonEl = document.getElementById('ob-son-calistirma');
+  if (sonEl) sonEl.textContent = buAy;
+  if (typeof renderTahsilat==='function') try{renderTahsilat();}catch(e){}
+  if (typeof renderFinansalDurum==='function') try{renderFinansalDurum();}catch(e){}
+  refreshCariIfOpen();
+
+  if (atlananApt > 0 && toplamSakin === 0) {
+    if (manuel) toast(`${donemLabel} için tüm apartmanlarda borçlandırma zaten yapılmış.`, 'info');
+    return;
+  }
+  if (toplamSakin === 0) {
+    if (manuel) toast('Borçlandırılacak sakin bulunamadı.', 'err');
+    return;
+  }
+  toast(`✅ Otomatik Borçlandırma — ${donemLabel}: ${toplamSakin} sakin · ₺${fmt(toplamTutar)}${atlananApt?` (${atlananApt} apt. atlandı)`:''}`, 'ok');
 }
 
 function tbpGecmisDrilldown(kayitId, ay) {
