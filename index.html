@@ -141,6 +141,7 @@
   <div class="sb-sec">
     <div class="sb-sec-lbl" onclick="toggleSbSec(this)">Finans<svg class="sb-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
     <div class="ni" data-p="tahsilat" data-role="yonetici" data-tip="Tahsilat &amp; Borç"><div class="nico"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M2 11h20"/><circle cx="7" cy="16" r="2"/><line x1="11" y1="14" x2="18" y2="14"/><line x1="11" y1="18" x2="16" y2="18"/></svg></div>Tahsilat & Borç<span class="nbadge rd" id="bdg-borc" style="display:none">0</span></div>
+    <div class="ni" data-p="makbuzlar" data-role="yonetici" data-tip="Makbuzlar"><div class="nico"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>Makbuzlar</div>
     <div class="ni" data-p="finans" data-role="yonetici sakin" data-tip="Gelir/Gider"><div class="nico"><svg viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22"/><path d="M5 8l7-6 7 6"/><path d="M5 16l7 6 7-6"/></svg></div>Gelir/Gider<span class="nbadge" id="bdg-fin" style="display:none">!</span></div>
     <div class="ni" data-p="finansal-durum" data-role="yonetici" data-tip="Finansal Durum"><div class="nico"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>Finansal Durum</div>
     <div class="ni" data-p="toplu-borc" data-role="yonetici" data-tip="Toplu Borçlandırma"><div class="nico"><svg viewBox="0 0 24 24"><path d="M8 6H6a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1"/><path d="M10 4H8a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"/><path d="M12 2h6a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/><line x1="15" y1="5" x2="15" y2="8"/><circle cx="15" cy="10" r=".5" fill="currentColor"/></svg></div>Toplu Borçlandır</div>
@@ -1209,8 +1210,6 @@
   <div class="tabs">
     <div class="tab on" data-tab="tah-liste">Borç Listesi</div>
     <div class="tab" data-tab="tah-toplu">Toplu Tahsilat</div>
-    <div class="tab" data-tab="tah-borc-makbuz">Borç Makbuzları</div>
-    <div class="tab" data-tab="tah-tahsilat-makbuz">Tahsilat Makbuzları</div>
     <div class="tab" data-tab="tah-banka">Banka Entegrasyonu</div>
   </div>
 
@@ -1373,28 +1372,19 @@
     </div>
   </div>
 
-  <!-- BORÇ MAKBUZLARI -->
-  <div id="tah-borc-makbuz" style="display:none">
-    <div class="fbc mb12" style="flex-wrap:wrap;gap:10px">
-      <div class="fc g8" style="flex-wrap:wrap">
-        <div class="srch" style="width:220px"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="bm-srch" placeholder="Sakin veya daire ara…" oninput="renderBorcMakbuz()"></div>
-        <select class="fi sm" id="bm-f-kat" onchange="renderBorcMakbuz()" style="width:auto;padding:6px 10px"><option value="">Tüm Kategoriler</option></select>
-        <input type="date" class="fi sm" id="bm-f-bas" onchange="renderBorcMakbuz()" style="width:auto" title="Başlangıç Tarihi">
-        <input type="date" class="fi sm" id="bm-f-bit" onchange="renderBorcMakbuz()" style="width:auto" title="Bitiş Tarihi">
-      </div>
-      <div class="fc g8">
-        <span id="bm-toplam" class="t3" style="font-size:12px"></span>
-        <button class="btn bg sm" onclick="exportBorcMakbuz()"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Excel İndir</button>
-      </div>
-    </div>
-    <div class="card"><div class="tw"><table>
-      <thead><tr><th>#</th><th>Sakin</th><th>Daire</th><th>Apartman</th><th>Kategori</th><th>Dönem</th><th>Tutar</th><th>Borçlandırma Tarihi</th><th>Son Ödeme Tarihi</th><th>İşlemler</th></tr></thead>
-      <tbody id="bm-tbody"></tbody>
-    </table></div></div>
+  </div>
+</div>
+
+<!-- MAKBUZLAR -->
+<div id="page-makbuzlar" class="pg">
+  <div id="mak-apt-banner"></div>
+  <div class="tabs">
+    <div class="tab on" data-tab="mak-tahsilat-makbuz">Tahsilat Makbuzları</div>
+    <div class="tab" data-tab="mak-borc-makbuz">Borç Makbuzları</div>
   </div>
 
   <!-- TAHSİLAT MAKBUZLARI -->
-  <div id="tah-tahsilat-makbuz" style="display:none">
+  <div id="mak-tahsilat-makbuz">
     <div class="fbc mb12" style="flex-wrap:wrap;gap:10px">
       <div class="fc g8" style="flex-wrap:wrap">
         <div class="srch" style="width:220px"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="tm-srch" placeholder="Sakin veya makbuz ara…" oninput="renderTahsilatMakbuz()"></div>
@@ -1417,6 +1407,25 @@
       <tbody id="tm-tbody"></tbody>
     </table></div></div>
   </div>
+
+  <!-- BORÇ MAKBUZLARI -->
+  <div id="mak-borc-makbuz" style="display:none">
+    <div class="fbc mb12" style="flex-wrap:wrap;gap:10px">
+      <div class="fc g8" style="flex-wrap:wrap">
+        <div class="srch" style="width:220px"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="bm-srch" placeholder="Sakin veya daire ara…" oninput="renderBorcMakbuz()"></div>
+        <select class="fi sm" id="bm-f-kat" onchange="renderBorcMakbuz()" style="width:auto;padding:6px 10px"><option value="">Tüm Kategoriler</option></select>
+        <input type="date" class="fi sm" id="bm-f-bas" onchange="renderBorcMakbuz()" style="width:auto" title="Başlangıç Tarihi">
+        <input type="date" class="fi sm" id="bm-f-bit" onchange="renderBorcMakbuz()" style="width:auto" title="Bitiş Tarihi">
+      </div>
+      <div class="fc g8">
+        <span id="bm-toplam" class="t3" style="font-size:12px"></span>
+        <button class="btn bg sm" onclick="exportBorcMakbuz()"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Excel İndir</button>
+      </div>
+    </div>
+    <div class="card"><div class="tw"><table>
+      <thead><tr><th>#</th><th>Sakin</th><th>Daire</th><th>Apartman</th><th>Kategori</th><th>Dönem</th><th>Tutar</th><th>Borçlandırma Tarihi</th><th>Son Ödeme Tarihi</th><th>İşlemler</th></tr></thead>
+      <tbody id="bm-tbody"></tbody>
+    </table></div></div>
   </div>
 </div>
 

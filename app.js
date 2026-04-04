@@ -769,7 +769,7 @@ window.addEventListener('popstate', function(e) {
 // NAVIGATION
 //
 const PAGE_TITLES = { dashboard:'Anasayfa', apartmanlar:'Apartmanlar', karar:'Karar Metni Oluşturucu', isletme:'İşletme Projesi', 'isl-detay':'İşletme Projesi Detay', denetim:'Denetim Raporları', 'den-detay':'Denetim Raporu Detay', asansor:'Asansör Etiket Kontrolü', 'asan-detay':'Asansör Detay', teklifler:'Teklifler', gorevler:'Görev Yönetimi', icra:'İcra Listesi', finans:'Gelir / Gider Takibi', ayarlar:'Ayarlar', sakinler:'Sakin Yönetimi', personel:'Personel Yönetimi', duyurular:'Duyuru & İletişim', ariza:'Arıza & Bakım Yönetimi', tahsilat:'Tahsilat & Borç Takibi', raporlar:'Raporlar & Analitik', 'ai-asistan':'AI Yönetim Asistanı', sigorta:'Sigorta Takibi', toplanti:'Toplantı Yönetimi', fatura:'Fatura & Hizmet Yönetimi', superadmin:'Süper Admin Paneli', 'apt-detay':'Apartman Detay', 'daire-detay':'Daire Detay', 'finansal-durum':'Finansal Durum', 'sakin-cari':'Kişilere Göre Finansal Durum', 'tanimlama':'Evrak Kategorisi', 'proje':'Proje & Tadilat Takibi', 'iletisim':'İletişim Merkezi', 'toplu-borc':'Toplu Borçlandırma', 'sms-sablonlar':'SMS / WhatsApp Şablonları',
-'sakin-profil':'Sakin Profili', 'davet-yonetim':'Sakin Davetleri', 'davet-bekleyen':'Onay Bekleyenler', 'davet-kayit':'Sisteme Kayıt' };
+'sakin-profil':'Sakin Profili', 'davet-yonetim':'Sakin Davetleri', 'davet-bekleyen':'Onay Bekleyenler', 'davet-kayit':'Sisteme Kayıt', 'makbuzlar':'Makbuzlar' };
 
 function goPage(p) {
  if (!window._navRestoring) {
@@ -847,6 +847,7 @@ function goPage(p) {
   if (p==='duyurular') { renderDuyurular(); }
   if (p==='ariza') { renderAriza(); }
   if (p==='tahsilat') { renderTahsilat(); }
+  if (p==='makbuzlar') { try{renderTahsilatMakbuz();}catch(e){} }
   if (p==='raporlar') { renderRaporlar(); }
   if (p==='ai-asistan') { initAiAsistan(); }
   if (p==='sigorta') { renderSigorta(); }
@@ -887,8 +888,8 @@ function initTabs() {
     if (id==='top-takvim') { try{renderTopTakvim();}catch(e){} }
     if (id==='fat-liste') { try{renderFatura();}catch(e){} }
     if (id==='fat-ozet') { try{renderFaturaOzet();}catch(e){} }
-    if (id==='tah-borc-makbuz') { try{renderBorcMakbuz();}catch(e){} }
-    if (id==='tah-tahsilat-makbuz') { try{renderTahsilatMakbuz();}catch(e){} }
+    if (id==='mak-borc-makbuz') { try{renderBorcMakbuz();}catch(e){} }
+    if (id==='mak-tahsilat-makbuz') { try{renderTahsilatMakbuz();}catch(e){} }
     if (id==='tah-banka') { try{renderBankDosyalar();}catch(e){} }
  });
  });
