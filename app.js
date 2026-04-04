@@ -3284,7 +3284,7 @@ function renderSakinler() {
           <td>${sk.tel||'—'}</td>
           <td class="t2" style="font-size:11px">${sk.email||'—'}</td>
           <td style="color:var(--ok)">${sk.aidat?'₺'+fmt(sk.aidat):'-'}</td>
-          <td style="font-weight:700;color:${borc>0?'var(--err)':'var(--ok)'}">${borc>0?'₺'+fmt(borc):'Temiz'}</td>
+          <td style="font-weight:700;color:${borc>0?'var(--err)':'var(--ok)'}">${borc>0?'₺'+fmt(borc):'₺0'}</td>
           <td style="font-size:11px;font-family:monospace">${sk.plaka||'—'}</td>
           <td onclick="event.stopPropagation()"><div class="act">
             <button class="btn bg xs" onclick="goDaireDetay(${sk.id})" title="Daire Detay"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
@@ -3314,7 +3314,7 @@ function renderSakinler() {
               ${!aptId?`<div style="font-size:10.5px;color:var(--tx-4);margin-top:2px">🏢 ${sk.aptAd||'—'}</div>`:''}
             </div>
           </div>
-          ${borc>0?`<div style="font-size:11px;font-weight:700;color:var(--err);text-align:right">₺${fmt(borc)}<div style="font-size:10px;font-weight:400;color:var(--tx-3)">borç</div></div>`:'<div style="font-size:10px;color:var(--ok)">✓ Temiz</div>'}
+          ${borc>0?`<div style="font-size:11px;font-weight:700;color:var(--err);text-align:right">₺${fmt(borc)}<div style="font-size:10px;font-weight:400;color:var(--tx-3)">borç</div></div>`:'<div style="font-size:11px;font-weight:700;color:var(--ok);text-align:right">₺0<div style="font-size:10px;font-weight:400;color:var(--tx-3)">borç</div></div>'}
         </div>
         <div class="sakin-kart-grid">
           <div class="skf"><span class="skf-lbl">Telefon</span><span class="skf-val">${sk.tel||'—'}</span></div>
@@ -4494,7 +4494,7 @@ function renderTahsilat() {
       <td style="font-weight:700;color:var(--brand)">${sk.daire||'—'}</td>
       <td><span class="b ${sk.tip==='malik'?'b-bl':'b-am'}" style="font-size:10px">${sk.tip==='malik'?'Malik':'Kiracı'}</span></td>
       <td style="color:var(--ok)">${sk.aidat?'₺'+fmt(sk.aidat)+'/ay':'—'}</td>
-      <td style="font-weight:700;color:${borc>0?'var(--err)':'var(--ok)'}">${borc>0?'₺'+fmt(borc):'Temiz'}</td>
+      <td style="font-weight:700;color:${borc>0?'var(--err)':'var(--ok)'}">${borc>0?'₺'+fmt(borc):'₺0'}</td>
       <td class="t2" style="font-size:11px">—</td>
       <td class="t2" style="font-size:11px">${sonOdeme?sonOdeme.tarih:'—'}</td>
       <td>${risk}</td>
@@ -5877,9 +5877,9 @@ function renderTahsilatRaporSayfa(aptId,aptSakin){
       <td><span class="b ${sk.tip==='malik'?'b-bl':'b-am'}" style="font-size:10px">${sk.tip==='malik'?'Malik':'Kiracı'}</span></td>
       <td style="color:var(--ok)">${sk.aidat?'₺'+fmt(sk.aidat)+'/ay':'—'}</td>
       <td style="color:var(--ok);font-weight:700">₺${fmt(tahsilat)}</td>
-      <td style="color:${borc>0?'var(--err)':'var(--ok)'};font-weight:700">${borc>0?'₺'+fmt(borc):'Temiz'}</td>
+      <td style="color:${borc>0?'var(--err)':'var(--ok)'};font-weight:700">${borc>0?'₺'+fmt(borc):'₺0'}</td>
       <td><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;background:var(--s2);border-radius:3px;height:6px"><div style="background:${oran>80?'var(--ok)':oran>50?'var(--warn)':'var(--err)'};width:${Math.min(100,oran)}%;height:100%;border-radius:3px"></div></div><span style="font-size:11px;font-weight:700;width:36px">${oran}%</span></div></td>
-      <td><span class="b ${borc>0?'b-rd':'b-gr'}">${borc>0?'Borçlu':'Temiz'}</span></td>
+      <td><span class="b ${borc>0?'b-rd':'b-gr'}">${borc>0?'Borçlu':'₺0'}</span></td>
     </tr>`;
   }).join('');
 }
@@ -7039,7 +7039,7 @@ function globalSearch(q) {
     if (matched && !islenenDaire.has(key)) {
       islenenDaire.add(key);
       const tipLbl = sk.tip==='malik' ? 'Kat Maliki' : 'Kiracı';
-      const borcDrm = (sk.borc||0)>0 ? `₺${fmt(sk.borc)} borç` : 'Temiz';
+      const borcDrm = (sk.borc||0)>0 ? `₺${fmt(sk.borc)} borç` : '₺0';
       const blokGoster = sk.blok ? sk.blok+' / ' : '';
       items.push({
         tag:'Daire',
@@ -11271,7 +11271,7 @@ function exportAidatTahsilatRaporu() {
   const wb = XLSX.utils.book_new();
   const rows = [['Ad Soyad','Apartman','Daire','Aylık Aidat (₺)','Toplam Borç (₺)','Durum']];
   sakinler.sort((a,b)=>(b.borc||0)-(a.borc||0)).forEach(sk => {
-    rows.push([sk.ad, sk.aptAd||'', sk.daire||'', sk.aidat||0, sk.borc||0, (sk.borc||0)>0?'Borçlu':'Temiz']);
+    rows.push([sk.ad, sk.aptAd||'', sk.daire||'', sk.aidat||0, sk.borc||0, (sk.borc||0)>0?'Borçlu':'0']);
   });
   rows.push(['']);
   rows.push(['Toplam Aidat Geliri (Aylık)','','','',sakinler.reduce((s,x)=>s+(x.aidat||0),0),'']);
