@@ -883,6 +883,7 @@ function initTabs() {
     if (id==='per-liste') { try{renderPersonel();}catch(e){} }
     if (id==='sak-liste') { try{renderSakinler();}catch(e){} }
     if (id==='tbp-gecmis') { try{renderTopluBorcGecmis();}catch(e){} }
+    if (id==='tbp-excel')  { try{tbpExcelInit();}catch(e){} }
     if (id==='sig-liste') { try{renderSigorta();}catch(e){} }
     if (id==='top-liste') { try{renderToplanti();}catch(e){} }
     if (id==='top-takvim') { try{renderTopTakvim();}catch(e){} }
@@ -11009,6 +11010,322 @@ function renderTopluBorcGecmis() {
   });
 
   el.innerHTML = html;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// EXCEL İLE TOPLU BORÇ YÜKLEME
+// ════════════════════════════════════════════════════════════════════════════
+
+function tbpExcelInit() {
+  // Apartman dropdown'ını doldur
+  const sel = document.getElementById('tbp-xl-apt');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Seçin —</option>' +
+    (S.apartmanlar||[]).map(a=>`<option value="${a.id}"${a.id==cur?' selected':''}>${he(a.ad)}</option>`).join('');
+  // Varsayılan dönem: bu ay
+  const dm = document.getElementById('tbp-xl-donem');
+  if (dm && !dm.value) dm.value = new Date().toISOString().slice(0,7);
+}
+
+function tbpXlAptChange() {
+  // Önizlemeyi ve uygula barını temizle
+  const pw = document.getElementById('tbp-xl-preview-wrap');
+  const ab = document.getElementById('tbp-xl-apply-bar');
+  if (pw) pw.innerHTML = '';
+  if (ab) ab.style.display = 'none';
+  window._tbpXlRows = null;
+  const fi = document.getElementById('tbp-xl-file');
+  if (fi) fi.value = '';
+}
+
+function tbpExcelSablonIndir() {
+  if (typeof XLSX === 'undefined') { toast('Excel kütüphanesi yüklenmedi.', 'err'); return; }
+  const aptId = document.getElementById('tbp-xl-apt')?.value;
+  if (!aptId) { toast('Önce apartman seçin.', 'warn'); return; }
+  const apt = S.apartmanlar.find(a => a.id == aptId);
+  const donem = document.getElementById('tbp-xl-donem')?.value || new Date().toISOString().slice(0,7);
+
+  // Sakin listesi: seçili apartmandaki aktif sakinler
+  const sakinler = (S.sakinler||[]).filter(s => s.aptId == aptId && s.durum !== 'pasif' && s.durum !== 'ayrildi');
+  if (!sakinler.length) { toast('Bu apartmanda kayıtlı sakin bulunamadı.', 'warn'); return; }
+
+  const baslik = ['sakId', 'Sakin Adı', 'Daire', 'Apartman', 'Kategori', 'Dönem', 'Tutar (₺)', 'Açıklama'];
+  const satirlar = sakinler
+    .slice().sort((a,b) => String(a.daire).localeCompare(String(b.daire), 'tr', {numeric:true}))
+    .map(s => [s.id, s.ad||'', s.daire||'', apt?.ad||'', 'Aidat', donem, 0, '']);
+
+  const ws = XLSX.utils.aoa_to_sheet([baslik, ...satirlar]);
+
+  // Sütun genişlikleri
+  ws['!cols'] = [
+    {wch:10}, {wch:28}, {wch:10}, {wch:22}, {wch:14}, {wch:12}, {wch:12}, {wch:34}
+  ];
+
+  // sakId sütununu gizle (yorum ekle)
+  if (!ws['A1'].c) ws['A1'].c = [];
+  ws['A1'].c.push({a:'SiteYönet', t:'Bu sütunu silmeyin — eşleştirme için kullanılır.'});
+
+  // İlk satırı dondur (freeze)
+  ws['!freeze'] = {xSplit:0, ySplit:1};
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Borç Yükleme');
+  const dosyaAd = `borc_sablonu_${(apt?.ad||'site').replace(/\s/g,'_')}_${donem}.xlsx`;
+  XLSX.writeFile(wb, dosyaAd);
+  toast(`Şablon indirildi: ${dosyaAd}`, 'ok');
+}
+
+function tbpXlDrop(e) {
+  e.preventDefault();
+  document.getElementById('tbp-xl-drop')?.classList.remove('drag');
+  const file = e.dataTransfer?.files?.[0];
+  if (!file) return;
+  _parseTbpExcel(file);
+}
+
+function importTopluBorcExcel(input) {
+  const file = input?.files?.[0];
+  if (!file) return;
+  _parseTbpExcel(file);
+  input.value = '';
+}
+
+function _parseTbpExcel(file) {
+  if (typeof XLSX === 'undefined') { toast('Excel kütüphanesi yüklenmedi.', 'err'); return; }
+  const aptId = document.getElementById('tbp-xl-apt')?.value;
+  if (!aptId) { toast('Önce apartman seçin.', 'warn'); return; }
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      let data;
+      if (file.name.toLowerCase().endsWith('.csv')) {
+        const text = new TextDecoder('utf-8').decode(new Uint8Array(e.target.result));
+        const rows = text.split(/\r?\n/).map(r => r.split(/[,;]/));
+        data = rows;
+      } else {
+        const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        data = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      }
+
+      if (!data || data.length < 2) { toast('Dosya boş veya okunamadı.', 'err'); return; }
+
+      // Başlık satırını oku, sütun indekslerini bul
+      const head = data[0].map(h => String(h).trim().toLowerCase());
+      const col = k => head.findIndex(h => h.includes(k));
+
+      const iSakId    = col('sakid');
+      const iAd       = col('sakin');
+      const iDaire    = col('daire');
+      const iKategori = col('kategori');
+      const iDonem    = col('dönem') !== -1 ? col('dönem') : col('donem');
+      const iTutar    = col('tutar');
+      const iAciklama = col('açıklama') !== -1 ? col('açıklama') : col('aciklama');
+
+      if (iTutar === -1) { toast('"Tutar (₺)" sütunu bulunamadı. Şablonu kullanın.', 'err'); return; }
+
+      const satirlar = [];
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        if (!row || row.every(c => c === '' || c === null)) continue;
+
+        const tutar = parseFloat(String(row[iTutar]||'0').replace(',','.')) || 0;
+        if (tutar <= 0) continue; // Tutar girilmemiş satırları atla
+
+        // Sakini bul: önce sakId ile, sonra daire ile
+        let sk = null;
+        if (iSakId !== -1 && row[iSakId]) {
+          sk = (S.sakinler||[]).find(s => s.id == row[iSakId] && s.aptId == aptId);
+        }
+        if (!sk && iDaire !== -1 && row[iDaire]) {
+          const daireNo = String(row[iDaire]).trim();
+          sk = (S.sakinler||[]).find(s => String(s.daire).trim() === daireNo && s.aptId == aptId);
+        }
+
+        satirlar.push({
+          sk,
+          sakId:    sk?.id || null,
+          ad:       sk?.ad || (iAd !== -1 ? String(row[iAd]||'') : '?'),
+          daire:    sk?.daire || (iDaire !== -1 ? String(row[iDaire]||'') : '?'),
+          kategori: (iKategori !== -1 && row[iKategori]) ? String(row[iKategori]) : 'Aidat',
+          donem:    (iDonem !== -1 && row[iDonem]) ? String(row[iDonem]) : (document.getElementById('tbp-xl-donem')?.value||''),
+          tutar,
+          aciklama: iAciklama !== -1 ? String(row[iAciklama]||'') : '',
+          eslesti:  !!sk,
+        });
+      }
+
+      if (!satirlar.length) { toast('Geçerli tutar bulunan satır bulunamadı. Tutar (₺) sütununu doldurun.', 'warn'); return; }
+
+      window._tbpXlRows = satirlar;
+      window._tbpXlAptId = aptId;
+      _renderTbpExcelOnizle(satirlar, aptId);
+      toast(`${satirlar.length} satır okundu.`, 'ok');
+    } catch(err) {
+      toast('Dosya okuma hatası: ' + err.message, 'err');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function _renderTbpExcelOnizle(satirlar, aptId) {
+  const apt = S.apartmanlar.find(a => a.id == aptId);
+  const topTutar = satirlar.reduce((s,r) => s + r.tutar, 0);
+  const eslesmeyen = satirlar.filter(r => !r.eslesti).length;
+
+  const rows = satirlar.map((r,i) => `<tr style="${!r.eslesti ? 'background:rgba(245,158,11,.06)' : ''}">
+    <td style="text-align:center">
+      <input type="checkbox" class="tbp-xl-chk" data-idx="${i}" checked onchange="_tbpXlChkChange()">
+    </td>
+    <td style="font-weight:700;color:var(--brand)">${he(r.daire)}</td>
+    <td>${he(r.ad)}${!r.eslesti ? ' <span style="font-size:10px;color:var(--warn);font-weight:700">⚠ Eşleşmedi</span>' : ''}</td>
+    <td><span class="b b-bl" style="font-size:10px">${he(r.kategori)}</span></td>
+    <td style="font-size:11.5px;color:var(--tx-2)">${he(r.donem)}</td>
+    <td style="font-weight:700;color:var(--err)">₺${fmt(r.tutar)}</td>
+    <td style="font-size:11.5px;color:var(--tx-3);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${he(r.aciklama||'—')}</td>
+  </tr>`).join('');
+
+  const uyari = eslesmeyen > 0
+    ? `<div style="margin-bottom:10px;padding:9px 14px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:8px;font-size:12px;color:#92400e">
+        <strong>⚠ ${eslesmeyen} satır</strong> sistemdeki sakinlerle eşleştirilemedi. Bu satırları çıkarabilir veya sisteme kaydettikten sonra tekrar yükleyebilirsiniz.
+      </div>` : '';
+
+  const pw = document.getElementById('tbp-xl-preview-wrap');
+  if (pw) pw.innerHTML = `
+    <div class="card" style="padding:0">
+      <div style="padding:12px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px">
+        <div style="width:26px;height:26px;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
+        <div style="font-size:14px;font-weight:700;color:var(--tx-1)">Önizleme — ${he(apt?.ad||'')} · ${satirlar.length} satır · ₺${fmt(topTutar)}</div>
+        <div style="margin-left:auto">
+          <input type="checkbox" id="tbp-xl-chk-all" checked onchange="toggleAllTbpXl(this)" title="Tümünü seç/kaldır">
+        </div>
+      </div>
+      ${uyari ? '<div style="padding:10px 18px 0">' + uyari + '</div>' : ''}
+      <div class="tw">
+        <table>
+          <thead><tr>
+            <th style="width:36px"><input type="checkbox" id="tbp-xl-chk-all2" checked onchange="toggleAllTbpXl(this)"></th>
+            <th>Daire</th><th>Sakin</th><th>Kategori</th><th>Dönem</th><th>Tutar</th><th>Açıklama</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+
+  _tbpXlChkChange();
+}
+
+function toggleAllTbpXl(chk) {
+  document.querySelectorAll('.tbp-xl-chk').forEach(c => c.checked = chk.checked);
+  ['tbp-xl-chk-all','tbp-xl-chk-all2'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.checked = chk.checked;
+  });
+  _tbpXlChkChange();
+}
+
+function _tbpXlChkChange() {
+  const secili = [...document.querySelectorAll('.tbp-xl-chk:checked')];
+  const rows = window._tbpXlRows || [];
+  const topTutar = secili.reduce((s,c) => s + (rows[+c.dataset.idx]?.tutar||0), 0);
+  const ab = document.getElementById('tbp-xl-apply-bar');
+  const oz = document.getElementById('tbp-xl-apply-ozet');
+  if (ab) ab.style.display = secili.length ? 'flex' : 'none';
+  if (oz) oz.textContent = `${secili.length} sakin · Toplam: ₺${fmt(topTutar)}`;
+  // sync tümünü seç
+  const all = document.querySelectorAll('.tbp-xl-chk');
+  ['tbp-xl-chk-all','tbp-xl-chk-all2'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.indeterminate = secili.length > 0 && secili.length < all.length;
+    el.checked = all.length > 0 && secili.length === all.length;
+  });
+}
+
+function saveTbpExcelBorc() {
+  if (!_guardCheck()) return;
+  const rows = window._tbpXlRows || [];
+  const aptId = window._tbpXlAptId;
+  if (!aptId || !rows.length) { toast('Yüklenecek veri yok.', 'err'); return; }
+
+  const seciliIdx = new Set([...document.querySelectorAll('.tbp-xl-chk:checked')].map(c => +c.dataset.idx));
+  const secili = rows.filter((_,i) => seciliIdx.has(i));
+  if (!secili.length) { toast('En az bir satır seçin.', 'warn'); return; }
+
+  const apt = S.apartmanlar.find(a => a.id == aptId);
+  const tarih = today();
+  if (!S.aidatBorclandir) S.aidatBorclandir = [];
+
+  // Dönem + kategori bazında grupla → her grup için ayrı aidatBorclandir kaydı
+  const gruplar = {};
+  secili.forEach(r => {
+    const key = `${r.donem}||${r.kategori}`;
+    if (!gruplar[key]) gruplar[key] = [];
+    gruplar[key].push(r);
+  });
+
+  let toplamSakin = 0, toplamTutar = 0;
+
+  Object.entries(gruplar).forEach(([key, liste]) => {
+    const [donem, kategori] = key.split('||');
+    let toplamBorc = 0;
+    let ok = 0;
+    const detaylar = [];
+
+    liste.forEach((r, i) => {
+      if (!r.sk && !r.sakId) return; // eşleşmeyen sakin, yine de ekle
+      const tutar = r.tutar;
+      // Sakin borcunu güncelle
+      if (r.sk) r.sk.borc = (r.sk.borc||0) + tutar;
+      toplamBorc += tutar; ok++;
+      detaylar.push({
+        id: Date.now() + toplamSakin + i,
+        sakId: r.sakId || r.sk?.id || null,
+        ad: r.ad,
+        daire: r.daire,
+        tutar,
+        kategori,
+        aciklama: r.aciklama || '',
+        tarih,
+        aptAd: apt?.ad||''
+      });
+    });
+
+    if (!ok) return;
+    toplamSakin += ok;
+    toplamTutar += toplamBorc;
+
+    S.aidatBorclandir.push({
+      id: Date.now() + Math.random(),
+      aptId: +aptId,
+      aptAd: apt?.ad||'',
+      donem,
+      tarih,
+      sonOdeme: '',
+      kategori,
+      aciklama: `Excel Yükleme — ${donem}`,
+      sakinSayisi: ok,
+      toplamBorc,
+      detaylar,
+      kaynak: 'excel'
+    });
+  });
+
+  if (!toplamSakin) { toast('Kaydedilecek geçerli satır bulunamadı.', 'err'); return; }
+
+  save();
+  if (typeof refreshCariIfOpen === 'function') refreshCariIfOpen();
+  toast(`✅ ${toplamSakin} sakin · ₺${fmt(toplamTutar)} borçlandırıldı.`, 'ok');
+
+  // Temizle
+  window._tbpXlRows = null;
+  const pw = document.getElementById('tbp-xl-preview-wrap');
+  const ab = document.getElementById('tbp-xl-apply-bar');
+  if (pw) pw.innerHTML = '';
+  if (ab) ab.style.display = 'none';
+
+  setTimeout(() => goTab('tbp-gecmis'), 300);
 }
 
 function tbpGecmisDrilldown(kayitId, ay) {
