@@ -372,6 +372,7 @@ const DEF_STATE = { apartmanlar:[], denetimler:[], teklifler:[], gorevler:[], as
   ledgerEntries:[],    // çift taraflı muhasebe defteri
   auditLogs:[],        // kim/ne zaman/ne yaptı
   accounts:[],         // banka + kasa hesapları
+  kasaHareketler:[],   // kasa/banka hareket geçmişi
   bekleyenKayitlar:[], // davet ile kayıt başvuruları (onay bekleyen)
   tekrarKontrol:{},    // tekrarlayan işlem idempotency haritası
   _ledgerMigrated: false  // migration bayrağı
@@ -770,7 +771,7 @@ window.addEventListener('popstate', function(e) {
 // NAVIGATION
 //
 const PAGE_TITLES = { dashboard:'Anasayfa', apartmanlar:'Apartmanlar', karar:'Karar Metni Oluşturucu', isletme:'İşletme Projesi', 'isl-detay':'İşletme Projesi Detay', denetim:'Denetim Raporları', 'den-detay':'Denetim Raporu Detay', asansor:'Asansör Etiket Kontrolü', 'asan-detay':'Asansör Detay', teklifler:'Teklifler', gorevler:'Görev Yönetimi', icra:'İcra Listesi', finans:'Gelir / Gider Takibi', ayarlar:'Ayarlar', sakinler:'Sakin Yönetimi', personel:'Personel Yönetimi', duyurular:'Duyuru & İletişim', ariza:'Arıza & Bakım Yönetimi', tahsilat:'Tahsilat & Borç Takibi', raporlar:'Raporlar & Analitik', 'ai-asistan':'AI Yönetim Asistanı', sigorta:'Sigorta Takibi', toplanti:'Toplantı Yönetimi', fatura:'Fatura & Hizmet Yönetimi', superadmin:'Süper Admin Paneli', 'apt-detay':'Apartman Detay', 'daire-detay':'Daire Detay', 'finansal-durum':'Finansal Durum', 'sakin-cari':'Kişilere Göre Finansal Durum', 'tanimlama':'Evrak Kategorisi', 'proje':'Proje & Tadilat Takibi', 'iletisim':'İletişim Merkezi', 'toplu-borc':'Toplu Borçlandırma', 'sms-sablonlar':'SMS / WhatsApp Şablonları',
-'sakin-profil':'Sakin Profili', 'davet-yonetim':'Sakin Davetleri', 'davet-bekleyen':'Onay Bekleyenler', 'davet-kayit':'Sisteme Kayıt', 'makbuzlar':'Makbuzlar', 'devir-bakiye':'Devir Bakiye Girişi' };
+'sakin-profil':'Sakin Profili', 'davet-yonetim':'Sakin Davetleri', 'davet-bekleyen':'Onay Bekleyenler', 'davet-kayit':'Sisteme Kayıt', 'makbuzlar':'Makbuzlar', 'devir-bakiye':'Devir Bakiye Girişi', 'kasa':'Kasa & Banka' };
 
 function goPage(p) {
  if (!window._navRestoring) {
@@ -850,6 +851,7 @@ function goPage(p) {
   if (p==='tahsilat') { renderTahsilat(); }
   if (p==='makbuzlar') { try{renderTahsilatMakbuz();}catch(e){} }
   if (p==='devir-bakiye') { try{initDevirBakiye();}catch(e){} }
+  if (p==='kasa') { try{initKasa();}catch(e){} }
   if (p==='raporlar') { renderRaporlar(); }
   if (p==='ai-asistan') { initAiAsistan(); }
   if (p==='sigorta') { renderSigorta(); }
@@ -11615,6 +11617,287 @@ function saveDevirBakiye() {
 
   // Tabloyu yenile (kayıtlı değerleri göster)
   renderDevirBakiye();
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// KASA & BANKA
+// ══════════════════════════════════════════════════════════════════════
+
+function initKasa() {
+  if (!S.accounts)       S.accounts = [];
+  if (!S.kasaHareketler) S.kasaHareketler = [];
+  _kasaFillAptFilters();
+  renderKasa();
+}
+
+function _kasaHesapBakiye(hesapId) {
+  const h = (S.accounts||[]).find(a => a.id == hesapId);
+  if (!h) return 0;
+  const hareketler = (S.kasaHareketler||[]).filter(k => k.hesapId == hesapId);
+  const giris  = hareketler.filter(k => k.tur === 'giris').reduce((s,k) => s + (k.tutar||0), 0);
+  const cikis  = hareketler.filter(k => k.tur === 'cikis').reduce((s,k) => s + (k.tutar||0), 0);
+  return (h.acilisBakiye||0) + giris - cikis;
+}
+
+function _kasaFillAptFilters() {
+  const aptlar = (S.apartmanlar||[]).filter(a => a.durum !== 'pasif');
+  const opts   = '<option value="">Tüm Apartmanlar</option>' + aptlar.map(a => `<option value="${a.id}">${he(a.ad)}</option>`).join('');
+  const el = document.getElementById('kasa-filter-apt');
+  if (el) el.innerHTML = opts;
+}
+
+function renderKasa() {
+  if (!S.accounts)       S.accounts = [];
+  if (!S.kasaHareketler) S.kasaHareketler = [];
+
+  const aptFilter = document.getElementById('kasa-filter-apt')?.value || '';
+  const hesaplar  = S.accounts.filter(h => h.durum !== 'silindi' && (!aptFilter || h.aptId == aptFilter));
+
+  // ── Hesap kartları ──
+  const grid = document.getElementById('kasa-hesaplar');
+  if (grid) {
+    if (!hesaplar.length) {
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--tx-3);font-size:13px">
+        Henüz hesap eklenmedi. <button class="btn bp sm" style="margin-left:8px" onclick="openKasaEkle()">Hesap Ekle</button>
+      </div>`;
+    } else {
+      const toplamBakiye = hesaplar.reduce((s,h) => s + _kasaHesapBakiye(h.id), 0);
+      grid.innerHTML = hesaplar.map(h => {
+        const bakiye  = _kasaHesapBakiye(h.id);
+        const isNakit = h.tip === 'nakit';
+        const renk    = bakiye >= 0 ? 'var(--ok)' : 'var(--err)';
+        const tipIco  = isNakit
+          ? `<svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M7 7V5a5 5 0 0 1 10 0v2"/><circle cx="12" cy="14" r="3"/></svg>`
+          : `<svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8"><rect x="2" y="6" width="20" height="14" rx="2"/><line x1="2" y1="11" x2="22" y2="11"/><line x1="6" y1="15" x2="10" y2="15"/><line x1="6" y1="18" x2="8" y2="18"/></svg>`;
+        return `<div class="card" style="cursor:pointer;border:2px solid transparent;transition:border-color .15s" onclick="kasaHesapSec(${h.id})" id="kasa-card-${h.id}">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="width:38px;height:38px;border-radius:10px;background:${isNakit?'#d1fae5':'#dbeafe'};color:${isNakit?'#059669':'#2563eb'};display:flex;align-items:center;justify-content:center">${tipIco}</div>
+              <div>
+                <div style="font-weight:700;font-size:13.5px;color:var(--tx-1)">${he(h.ad)}</div>
+                <div style="font-size:11px;color:var(--tx-3)">${isNakit?'Nakit Kasa':`Banka${h.bankaAd?' · '+he(h.bankaAd):''}`}</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:4px">
+              <button class="btn bg xs" title="Düzenle" onclick="event.stopPropagation();openKasaEkle(${h.id})">✎</button>
+              <button class="btn xs" style="background:#fef2f2;color:#dc2626" title="Sil" onclick="event.stopPropagation();deleteKasaHesap(${h.id})">✕</button>
+            </div>
+          </div>
+          ${h.iban ? `<div style="font-size:10.5px;color:var(--tx-3);margin-bottom:8px;font-family:monospace">${he(h.iban)}</div>` : ''}
+          <div style="font-size:22px;font-weight:800;color:${renk};letter-spacing:-0.5px">₺${fmt(Math.abs(bakiye))}${bakiye<0?' <span style="font-size:13px">(Eksi)</span>':''}</div>
+          <div style="font-size:11px;color:var(--tx-3);margin-top:2px">Güncel Bakiye</div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // Hareket filtresi hesap listesini doldur
+  _kasaFillHesapFilter(aptFilter);
+  renderKasaHareketler();
+}
+
+function _kasaFillHesapFilter(aptFilter) {
+  const hesaplar = (S.accounts||[]).filter(h => h.durum !== 'silindi' && (!aptFilter || h.aptId == aptFilter));
+  const el = document.getElementById('kasa-filter-hesap');
+  if (!el) return;
+  const prev = el.value;
+  el.innerHTML = '<option value="">Tüm Hesaplar</option>' + hesaplar.map(h => `<option value="${h.id}">${he(h.ad)}</option>`).join('');
+  if (prev) el.value = prev;
+}
+
+function renderKasaHareketler() {
+  const aptFilter   = document.getElementById('kasa-filter-apt')?.value || '';
+  const hesapFilter = document.getElementById('kasa-filter-hesap')?.value || '';
+  const turFilter   = document.getElementById('kasa-filter-tur')?.value || '';
+  const srch        = (document.getElementById('kasa-srch')?.value || '').toLowerCase();
+
+  let hareketler = (S.kasaHareketler||[]).filter(k => {
+    const h = (S.accounts||[]).find(a => a.id == k.hesapId);
+    if (!h || h.durum === 'silindi') return false;
+    if (aptFilter   && h.aptId != aptFilter)   return false;
+    if (hesapFilter && k.hesapId != hesapFilter) return false;
+    if (turFilter   && k.tur !== turFilter)     return false;
+    if (srch && !(k.aciklama||'').toLowerCase().includes(srch) && !(k.kategori||'').toLowerCase().includes(srch)) return false;
+    return true;
+  });
+
+  // Tarihe göre sırala (en yeni üstte)
+  hareketler = hareketler.slice().sort((a,b) => (b.tarih||'').localeCompare(a.tarih||''));
+
+  const tbody = document.getElementById('kasa-hareket-tbody');
+  const empty = document.getElementById('kasa-hareket-empty');
+  if (!tbody) return;
+
+  if (!hareketler.length) {
+    tbody.innerHTML = '';
+    if (empty) empty.style.display = '';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  // Kümülatif bakiye hesapla (en eski → en yeni)
+  const sirali = hareketler.slice().sort((a,b) => (a.tarih||'').localeCompare(b.tarih||''));
+  const bakiyeMap = {};
+  sirali.forEach(k => {
+    const h = (S.accounts||[]).find(a => a.id == k.hesapId);
+    if (!bakiyeMap[k.hesapId]) bakiyeMap[k.hesapId] = (h?.acilisBakiye||0);
+    if (k.tur === 'giris') bakiyeMap[k.hesapId] += (k.tutar||0);
+    else bakiyeMap[k.hesapId] -= (k.tutar||0);
+    k._bakiye = bakiyeMap[k.hesapId];
+  });
+
+  tbody.innerHTML = hareketler.map(k => {
+    const h    = (S.accounts||[]).find(a => a.id == k.hesapId);
+    const isG  = k.tur === 'giris';
+    const bak  = k._bakiye ?? 0;
+    return `<tr>
+      <td style="font-size:12px;color:var(--tx-3)">${k.tarih||'—'}</td>
+      <td><span style="font-size:12px;font-weight:600">${he(h?.ad||'?')}</span></td>
+      <td style="font-size:12.5px">${he(k.aciklama||'—')}</td>
+      <td><span class="b b-bl" style="font-size:10.5px">${he(k.kategori||'—')}</span></td>
+      <td style="font-weight:700;color:var(--ok)">${isG ? '₺'+fmt(k.tutar) : ''}</td>
+      <td style="font-weight:700;color:var(--err)">${!isG ? '₺'+fmt(k.tutar) : ''}</td>
+      <td style="font-weight:700;color:${bak>=0?'var(--tx-1)':'var(--err)'}">₺${fmt(bak)}</td>
+      <td>
+        <button class="btn bg xs" title="Sil" onclick="deleteKasaIslem(${k.id})">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function kasaHesapSec(hesapId) {
+  // Kart vurgusu
+  document.querySelectorAll('[id^="kasa-card-"]').forEach(c => c.style.borderColor = 'transparent');
+  const card = document.getElementById('kasa-card-' + hesapId);
+  if (card) card.style.borderColor = 'var(--brand)';
+  // Filtre güncelle
+  const el = document.getElementById('kasa-filter-hesap');
+  if (el) { el.value = hesapId; renderKasaHareketler(); }
+  const h = (S.accounts||[]).find(a => a.id == hesapId);
+  const baslik = document.getElementById('kasa-hareket-baslik');
+  const alt    = document.getElementById('kasa-hareket-alt');
+  if (baslik && h) baslik.textContent = he(h.ad) + ' — Hareket Geçmişi';
+  if (alt && h) alt.textContent = `Bakiye: ₺${fmt(_kasaHesapBakiye(h.id))}`;
+}
+
+function openKasaEkle(editId) {
+  const h = editId ? (S.accounts||[]).find(a => a.id == editId) : null;
+  document.getElementById('kh-edit-id').value = editId || '';
+  document.getElementById('kh-ad').value       = h?.ad || '';
+  document.getElementById('kh-tip').value      = h?.tip || 'nakit';
+  document.getElementById('kh-banka-ad').value = h?.bankaAd || '';
+  document.getElementById('kh-iban').value     = h?.iban || '';
+  document.getElementById('kh-acilis').value   = h?.acilisBakiye || '';
+  // Apt seçeneği doldur
+  const aptEl = document.getElementById('kh-apt');
+  if (aptEl) {
+    aptEl.innerHTML = '<option value="">— Genel —</option>' + (S.apartmanlar||[]).filter(a=>a.durum!=='pasif').map(a=>`<option value="${a.id}"${h?.aptId==a.id?' selected':''}>${he(a.ad)}</option>`).join('');
+  }
+  khTipChange();
+  document.getElementById('kasa-hesap-modal-t').textContent = editId ? 'Hesap Düzenle' : 'Yeni Hesap Ekle';
+  document.getElementById('mod-kasa-hesap').classList.add('open');
+}
+
+function khTipChange() {
+  const v = document.getElementById('kh-tip')?.value;
+  const w = document.getElementById('kh-banka-wrap');
+  if (w) { w.style.display = v === 'banka' ? 'grid' : 'none'; }
+}
+
+function saveKasaHesap() {
+  if (!_guardCheck()) return;
+  const editId = document.getElementById('kh-edit-id').value;
+  const ad     = document.getElementById('kh-ad').value.trim();
+  if (!ad) { toast('Hesap adı girin.', 'err'); return; }
+  const tip        = document.getElementById('kh-tip').value;
+  const bankaAd    = document.getElementById('kh-banka-ad').value.trim();
+  const iban       = document.getElementById('kh-iban').value.trim();
+  const acilisBakiye = parseFloat(document.getElementById('kh-acilis').value) || 0;
+  const aptId      = document.getElementById('kh-apt').value ? +document.getElementById('kh-apt').value : null;
+
+  if (!S.accounts) S.accounts = [];
+  if (editId) {
+    const h = S.accounts.find(a => a.id == editId);
+    if (h) { h.ad = ad; h.tip = tip; h.bankaAd = bankaAd; h.iban = iban; h.acilisBakiye = acilisBakiye; h.aptId = aptId; }
+  } else {
+    S.accounts.push({ id: Date.now(), ad, tip, bankaAd, iban, acilisBakiye, aptId, tarih: today(), durum: 'aktif' });
+  }
+  AuditService.log({ action: editId ? 'KASA_HESAP_GUNCELLE' : 'KASA_HESAP_EKLE', entityType: 'kasaHesap', newValues: { ad, tip } });
+  save();
+  closeModal('mod-kasa-hesap');
+  renderKasa();
+  toast(editId ? 'Hesap güncellendi.' : 'Hesap eklendi.', 'ok');
+}
+
+function deleteKasaHesap(id) {
+  const h = (S.accounts||[]).find(a => a.id == id);
+  if (!h) return;
+  if (!confirm(`"${h.ad}" hesabını silmek istiyor musunuz? Bu hesaba ait hareketler de silinir.`)) return;
+  S.accounts = S.accounts.filter(a => a.id != id);
+  S.kasaHareketler = (S.kasaHareketler||[]).filter(k => k.hesapId != id);
+  AuditService.log({ action: 'KASA_HESAP_SIL', entityType: 'kasaHesap', newValues: { id, ad: h.ad } });
+  save();
+  renderKasa();
+  toast('Hesap silindi.', 'ok');
+}
+
+function openKasaIslem(tur, editId) {
+  const k = editId ? (S.kasaHareketler||[]).find(x => x.id == editId) : null;
+  const t = k ? k.tur : (tur || 'giris');
+  document.getElementById('ki-edit-id').value  = editId || '';
+  document.getElementById('ki-tur').value      = t;
+  document.getElementById('ki-tarih').value    = k?.tarih || today();
+  document.getElementById('ki-tutar').value    = k?.tutar || '';
+  document.getElementById('ki-aciklama').value = k?.aciklama || '';
+  // Hesap seçeneği doldur
+  const hesapEl = document.getElementById('ki-hesap');
+  if (hesapEl) {
+    const hesaplar = (S.accounts||[]).filter(h => h.durum !== 'silindi');
+    hesapEl.innerHTML = '<option value="">— Hesap seçin —</option>' + hesaplar.map(h=>`<option value="${h.id}"${k?.hesapId==h.id?' selected':''}>${he(h.ad)}</option>`).join('');
+  }
+  const katEl = document.getElementById('ki-kategori');
+  if (katEl && k?.kategori) katEl.value = k.kategori;
+  document.getElementById('kasa-islem-modal-t').textContent = t === 'giris' ? 'Nakit / Banka Girişi' : 'Nakit / Banka Çıkışı';
+  document.getElementById('mod-kasa-islem').classList.add('open');
+}
+
+function saveKasaIslem() {
+  if (!_guardCheck()) return;
+  const editId   = document.getElementById('ki-edit-id').value;
+  const tur      = document.getElementById('ki-tur').value;
+  const hesapId  = +document.getElementById('ki-hesap').value;
+  const tarih    = document.getElementById('ki-tarih').value;
+  const tutar    = parseFloat(document.getElementById('ki-tutar').value) || 0;
+  const aciklama = document.getElementById('ki-aciklama').value.trim();
+  const kategori = document.getElementById('ki-kategori').value;
+
+  if (!hesapId) { toast('Hesap seçin.', 'err'); return; }
+  if (!tarih)   { toast('Tarih girin.', 'err'); return; }
+  if (tutar <= 0) { toast('Geçerli bir tutar girin.', 'err'); return; }
+
+  const h = (S.accounts||[]).find(a => a.id == hesapId);
+  if (!S.kasaHareketler) S.kasaHareketler = [];
+
+  if (editId) {
+    const k = S.kasaHareketler.find(x => x.id == editId);
+    if (k) { k.hesapId = hesapId; k.hesapAd = h?.ad||''; k.tarih = tarih; k.tutar = tutar; k.tur = tur; k.aciklama = aciklama; k.kategori = kategori; }
+  } else {
+    S.kasaHareketler.push({ id: Date.now(), hesapId, hesapAd: h?.ad||'', tarih, tutar, tur, aciklama, kategori, aptId: h?.aptId||null });
+  }
+  AuditService.log({ action: editId ? 'KASA_ISLEM_GUNCELLE' : 'KASA_ISLEM_EKLE', entityType: 'kasaHareket', newValues: { tur, tutar, hesapId } });
+  save();
+  closeModal('mod-kasa-islem');
+  renderKasa();
+  toast(tur === 'giris' ? `₺${fmt(tutar)} giriş kaydedildi.` : `₺${fmt(tutar)} çıkış kaydedildi.`, 'ok');
+}
+
+function deleteKasaIslem(id) {
+  if (!confirm('Bu hareketi silmek istiyor musunuz?')) return;
+  S.kasaHareketler = (S.kasaHareketler||[]).filter(k => k.id != id);
+  AuditService.log({ action: 'KASA_ISLEM_SIL', entityType: 'kasaHareket', newValues: { id } });
+  save();
+  renderKasa();
+  toast('Hareket silindi.', 'ok');
 }
 
 // ══════════════════════════════════════════════════════════════════════

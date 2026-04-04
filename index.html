@@ -144,6 +144,7 @@
     <div class="ni" data-p="makbuzlar" data-role="yonetici" data-tip="Makbuzlar"><div class="nico"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>Makbuzlar</div>
     <div class="ni" data-p="finans" data-role="yonetici sakin" data-tip="Gelir/Gider"><div class="nico"><svg viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22"/><path d="M5 8l7-6 7 6"/><path d="M5 16l7 6 7-6"/></svg></div>Gelir/Gider<span class="nbadge" id="bdg-fin" style="display:none">!</span></div>
     <div class="ni" data-p="finansal-durum" data-role="yonetici" data-tip="Finansal Durum"><div class="nico"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>Finansal Durum</div>
+    <div class="ni" data-p="kasa" data-role="yonetici" data-tip="Kasa & Banka"><div class="nico"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="14" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M6 10h.01M18 10h.01"/><path d="M7 2l-2 4M17 2l2 4"/></svg></div>Kasa & Banka</div>
     <div class="ni" data-p="devir-bakiye" data-role="yonetici" data-tip="Devir Bakiye Girişi"><div class="nico"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>Devir Bakiye</div>
     <div class="ni" data-p="toplu-borc" data-role="yonetici" data-tip="Toplu Borçlandırma"><div class="nico"><svg viewBox="0 0 24 24"><path d="M8 6H6a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1"/><path d="M10 4H8a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"/><path d="M12 2h6a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/><line x1="15" y1="5" x2="15" y2="8"/><circle cx="15" cy="10" r=".5" fill="currentColor"/></svg></div>Toplu Borçlandır</div>
     <div class="ni" data-p="isletme" data-role="yonetici" data-tip="İşletme Projesi"><div class="nico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M11 4v16"/><path d="M5.5 14h3M5.5 17h3M13 14h6M13 17h4"/></svg></div>İşletme Projesi</div>
@@ -2297,6 +2298,174 @@
         <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
         Borçlandırmayı Uygula
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- KASA & BANKA -->
+<div id="page-kasa" class="pg">
+
+  <!-- Üst araç çubuğu -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn bp" onclick="openKasaEkle()">
+        <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Yeni Hesap Ekle
+      </button>
+      <button class="btn bg" onclick="openKasaIslem('giris')">
+        <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+        Giriş
+      </button>
+      <button class="btn" style="background:#dc2626;color:#fff" onclick="openKasaIslem('cikis')">
+        <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+        Çıkış
+      </button>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <select class="fi sm" id="kasa-filter-apt" onchange="renderKasa()" style="width:180px">
+        <option value="">Tüm Apartmanlar</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Hesap kartları -->
+  <div id="kasa-hesaplar" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:22px"></div>
+
+  <!-- Hareket geçmişi -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <div>
+        <div class="card-t" id="kasa-hareket-baslik">Hareket Geçmişi</div>
+        <div class="card-s" id="kasa-hareket-alt">Tüm hesaplara ait işlemler</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select class="fi sm" id="kasa-filter-hesap" onchange="renderKasaHareketler()" style="width:160px">
+          <option value="">Tüm Hesaplar</option>
+        </select>
+        <select class="fi sm" id="kasa-filter-tur" onchange="renderKasaHareketler()" style="width:130px">
+          <option value="">Giriş & Çıkış</option>
+          <option value="giris">Yalnızca Giriş</option>
+          <option value="cikis">Yalnızca Çıkış</option>
+        </select>
+        <div class="srch" style="width:180px">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="kasa-srch" placeholder="Açıklama ara…" oninput="renderKasaHareketler()">
+        </div>
+      </div>
+    </div>
+    <div class="tw">
+      <table>
+        <thead>
+          <tr>
+            <th>Tarih</th>
+            <th>Hesap</th>
+            <th>Açıklama</th>
+            <th>Kategori</th>
+            <th>Giriş</th>
+            <th>Çıkış</th>
+            <th>Bakiye</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="kasa-hareket-tbody"></tbody>
+      </table>
+    </div>
+    <div id="kasa-hareket-empty" style="display:none;text-align:center;padding:32px;color:var(--tx-3);font-size:13px">Henüz işlem yok.</div>
+  </div>
+</div>
+
+<!-- KASA HESAP EKLEME MODALI -->
+<div class="ov" id="mod-kasa-hesap">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-h">
+      <div class="modal-t" id="kasa-hesap-modal-t">Yeni Hesap Ekle</div>
+      <button class="modal-x" onclick="closeModal('mod-kasa-hesap')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div style="padding:18px 20px;display:grid;gap:13px">
+      <input type="hidden" id="kh-edit-id">
+      <div>
+        <label class="fi-lbl">Hesap Adı *</label>
+        <input class="fi" id="kh-ad" placeholder="ör. Nakit Kasa, Garanti Bankası…">
+      </div>
+      <div>
+        <label class="fi-lbl">Hesap Tipi *</label>
+        <select class="fi" id="kh-tip" onchange="khTipChange()">
+          <option value="nakit">Nakit Kasa</option>
+          <option value="banka">Banka Hesabı</option>
+        </select>
+      </div>
+      <div id="kh-banka-wrap" style="display:none;display:grid;gap:10px">
+        <div>
+          <label class="fi-lbl">Banka Adı</label>
+          <input class="fi" id="kh-banka-ad" placeholder="ör. Garanti, Ziraat…">
+        </div>
+        <div>
+          <label class="fi-lbl">IBAN</label>
+          <input class="fi" id="kh-iban" placeholder="TR…" maxlength="32">
+        </div>
+      </div>
+      <div>
+        <label class="fi-lbl">Açılış Bakiyesi (₺)</label>
+        <input type="number" class="fi" id="kh-acilis" placeholder="0.00" min="0" step="0.01">
+      </div>
+      <div>
+        <label class="fi-lbl">Apartman (opsiyonel)</label>
+        <select class="fi" id="kh-apt">
+          <option value="">— Genel (tüm siteler) —</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-f">
+      <button class="btn bp" onclick="saveKasaHesap()">Kaydet</button>
+      <button class="btn bg" onclick="closeModal('mod-kasa-hesap')">İptal</button>
+    </div>
+  </div>
+</div>
+
+<!-- KASA İŞLEM MODALI -->
+<div class="ov" id="mod-kasa-islem">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-h">
+      <div class="modal-t" id="kasa-islem-modal-t">Nakit Girişi</div>
+      <button class="modal-x" onclick="closeModal('mod-kasa-islem')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div style="padding:18px 20px;display:grid;gap:13px">
+      <input type="hidden" id="ki-edit-id">
+      <input type="hidden" id="ki-tur" value="giris">
+      <div>
+        <label class="fi-lbl">Hesap *</label>
+        <select class="fi" id="ki-hesap"></select>
+      </div>
+      <div>
+        <label class="fi-lbl">Tarih *</label>
+        <input type="date" class="fi" id="ki-tarih">
+      </div>
+      <div>
+        <label class="fi-lbl">Tutar (₺) *</label>
+        <input type="number" class="fi" id="ki-tutar" placeholder="0.00" min="0.01" step="0.01">
+      </div>
+      <div>
+        <label class="fi-lbl">Açıklama</label>
+        <input class="fi" id="ki-aciklama" placeholder="İşlem açıklaması…">
+      </div>
+      <div>
+        <label class="fi-lbl">Kategori</label>
+        <select class="fi" id="ki-kategori">
+          <option value="Aidat">Aidat</option>
+          <option value="Kira">Kira</option>
+          <option value="Bakım">Bakım</option>
+          <option value="Elektrik">Elektrik</option>
+          <option value="Su">Su</option>
+          <option value="Doğalgaz">Doğalgaz</option>
+          <option value="Maaş">Maaş</option>
+          <option value="Temizlik">Temizlik</option>
+          <option value="Diğer">Diğer</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-f">
+      <button class="btn bp" onclick="saveKasaIslem()">Kaydet</button>
+      <button class="btn bg" onclick="closeModal('mod-kasa-islem')">İptal</button>
     </div>
   </div>
 </div>
