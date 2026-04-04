@@ -5942,9 +5942,120 @@ function bulkPdfBm() {
   toast(`${rows.length} makbuz PDF hazırlandı.`, 'ok');
 }
 
-// ── TOPLU DÜZENLEME (stub — fonksiyon sonraki aşamada tamamlanacak) ─────────
-function bulkEditTm() { toast('Toplu düzenleme yakında.', 'warn'); }
-function bulkEditBm() { toast('Toplu düzenleme yakında.', 'warn'); }
+// ── TOPLU DÜZENLEME ───────────────────────────────────────────────────────────
+function _tgRow(id, label, inputHtml, required) {
+  return `<div style="display:grid;grid-template-columns:20px 1fr 1fr;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid var(--bd)">
+    <input type="checkbox" id="tg-chk-${id}" onchange="tgToggle('${id}')" style="cursor:pointer;width:16px;height:16px">
+    <label for="tg-chk-${id}" style="font-size:13px;font-weight:600;color:var(--tx-1);cursor:pointer;user-select:none">${label}${required?'<span style="color:var(--err);margin-left:2px">*</span>':''}</label>
+    <div id="tg-inp-wrap-${id}" style="opacity:.35;pointer-events:none">${inputHtml}</div>
+  </div>`;
+}
+function tgToggle(id) {
+  const chk = document.getElementById('tg-chk-' + id);
+  const wrap = document.getElementById('tg-inp-wrap-' + id);
+  if (!wrap) return;
+  wrap.style.opacity = chk.checked ? '1' : '.35';
+  wrap.style.pointerEvents = chk.checked ? 'auto' : 'none';
+}
+function _tgVal(id) {
+  const chk = document.getElementById('tg-chk-' + id);
+  if (!chk || !chk.checked) return null;
+  const el = document.querySelector(`#tg-inp-wrap-${id} input, #tg-inp-wrap-${id} select, #tg-inp-wrap-${id} textarea`);
+  return el ? el.value : null;
+}
+
+function bulkEditBm() {
+  const indices = [...document.querySelectorAll('.bm-chk:checked')].map(c => +c.dataset.idx);
+  if (!indices.length) { toast('Önce kayıt seçin.', 'warn'); return; }
+  window._tgMode = 'bm';
+  window._tgIndices = indices;
+  document.getElementById('tg-title').textContent = 'Toplu Güncelleme';
+  document.getElementById('tg-subtitle').textContent = `Seçili ${indices.length} borç kaydı güncellenecek`;
+
+  // Kategori seçeneklerini oluştur
+  const kategoriler = [...new Set((S.aidatBorclandir||[]).flatMap(k=>(k.detaylar||[]).map(d=>d.kategori||'Aidat')))].filter(Boolean).sort();
+  const katOpts = ['Aidat','Kira','Yakıt','Elektrik','Su','Doğalgaz','Asansör','Temizlik','Güvenlik','Sigorta','Diğer',...kategoriler]
+    .filter((v,i,a)=>a.indexOf(v)===i).map(k=>`<option value="${he(k)}">${he(k)}</option>`).join('');
+
+  document.getElementById('tg-fields').innerHTML =
+    _tgRow('tarih',     'Tarih',            `<input type="date" class="fi" style="width:100%">`) +
+    _tgRow('donem',     'Dönem',            `<input type="text" class="fi" placeholder="Nisan 2026" style="width:100%">`) +
+    _tgRow('kategori',  'Kategori',         `<select class="fi" style="width:100%"><option value="">Seçin…</option>${katOpts}</select>`) +
+    _tgRow('sonOdeme',  'Son Ödeme Tarihi', `<input type="date" class="fi" style="width:100%">`);
+
+  openModal('mod-toplu-guncelle');
+}
+
+function bulkEditTm() {
+  const ids = [...document.querySelectorAll('.tm-chk:checked')].map(c => +c.dataset.id);
+  if (!ids.length) { toast('Önce kayıt seçin.', 'warn'); return; }
+  window._tgMode = 'tm';
+  window._tgIds = ids;
+  document.getElementById('tg-title').textContent = 'Toplu Güncelleme';
+  document.getElementById('tg-subtitle').textContent = `Seçili ${ids.length} tahsilat kaydı güncellenecek`;
+
+  document.getElementById('tg-fields').innerHTML =
+    _tgRow('tarih',   'Tarih',   `<input type="date" class="fi" style="width:100%">`) +
+    _tgRow('donem',   'Dönem',   `<input type="text" class="fi" placeholder="Nisan 2026" style="width:100%">`) +
+    _tgRow('tip',     'Tip',     `<select class="fi" style="width:100%"><option value="">Seçin…</option><option value="aidat">Aidat</option><option value="kira">Kira</option><option value="borc">Borç Ödemesi</option><option value="avans">Avans</option><option value="diger">Diğer</option></select>`) +
+    _tgRow('yontem',  'Yöntem',  `<select class="fi" style="width:100%"><option value="">Seçin…</option><option value="nakit">Nakit</option><option value="banka">Banka</option><option value="eft">EFT</option><option value="kredi">Kredi Kartı</option><option value="havale">Havale</option></select>`) +
+    _tgRow('not',     'Not',     `<textarea class="fi" rows="2" style="width:100%;resize:vertical" placeholder="Açıklama…"></textarea>`);
+
+  openModal('mod-toplu-guncelle');
+}
+
+function saveBulkEdit() {
+  if (window._tgMode === 'bm') {
+    const indices = window._tgIndices || [];
+    const rows = indices.map(i => (window._bmRows||[])[i]).filter(Boolean);
+    if (!rows.length) return;
+    const tarih    = _tgVal('tarih');
+    const donem    = _tgVal('donem');
+    const kategori = _tgVal('kategori');
+    const sonOdeme = _tgVal('sonOdeme');
+    if (!tarih && !donem && !kategori && !sonOdeme) { toast('En az bir alan etkinleştirin.', 'warn'); return; }
+    let n = 0;
+    rows.forEach(r => {
+      if (!r._detayRef) return;
+      if (tarih)    { r._kayitRef.tarih    = tarih;    }
+      if (donem)    { r._kayitRef.donem    = donem; r._kayitRef.donemLabel = donem; }
+      if (kategori) { r._detayRef.kategori = kategori; }
+      if (sonOdeme) { r._kayitRef.sonOdeme = sonOdeme; }
+      n++;
+    });
+    if (n) {
+      AuditService.log({ action:'BULK_EDIT', entityType:'aidatBorclandir', newValues:{ tarih, donem, kategori, sonOdeme, count:n } });
+      save(); toast(`${n} borç kaydı güncellendi.`, 'ok');
+      closeModal('mod-toplu-guncelle');
+      renderBorcMakbuz();
+    }
+  } else if (window._tgMode === 'tm') {
+    const ids = window._tgIds || [];
+    const items = (S.tahsilatlar||[]).filter(o => ids.includes(o.id) && o.status !== 'cancelled');
+    if (!items.length) return;
+    const tarih  = _tgVal('tarih');
+    const donem  = _tgVal('donem');
+    const tip    = _tgVal('tip');
+    const yontem = _tgVal('yontem');
+    const not    = _tgVal('not');
+    if (!tarih && !donem && !tip && !yontem && !not) { toast('En az bir alan etkinleştirin.', 'warn'); return; }
+    let n = 0;
+    items.forEach(o => {
+      if (tarih)  o.tarih  = tarih;
+      if (donem)  o.donem  = donem;
+      if (tip)    o.tip    = tip;
+      if (yontem) o.yontem = yontem;
+      if (not !== null) o.not = not;
+      n++;
+    });
+    if (n) {
+      AuditService.log({ action:'BULK_EDIT', entityType:'tahsilatlar', newValues:{ tarih, donem, tip, yontem, count:n } });
+      save(); toast(`${n} tahsilat kaydı güncellendi.`, 'ok');
+      closeModal('mod-toplu-guncelle');
+      renderTahsilatMakbuz();
+    }
+  }
+}
 
 async function genTahsilatRaporu() {
   const panel=document.getElementById('tah-ai-rapor'); if(panel) panel.style.display='';

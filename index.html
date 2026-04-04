@@ -2438,6 +2438,29 @@
 </div>
 <div id="fd-drawer-overlay" onclick="fdDrawerClose()" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:1199;backdrop-filter:blur(2px)"></div>
 
+<!-- MODAL: Toplu Güncelleme -->
+<div class="ov" id="mod-toplu-guncelle" onclick="if(event.target===this)closeModal('mod-toplu-guncelle')">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-h">
+      <div>
+        <div class="modal-t" id="tg-title">Toplu Güncelleme</div>
+        <div class="modal-s" id="tg-subtitle"></div>
+      </div>
+      <button class="modal-x" onclick="closeModal('mod-toplu-guncelle')">×</button>
+    </div>
+    <div class="modal-b" style="padding:0">
+      <div style="padding:10px 20px 4px;background:var(--bg);border-bottom:1px solid var(--bd)">
+        <div style="font-size:11.5px;color:var(--tx-3)">Güncellemek istediğiniz alanları <strong style="color:var(--tx-1)">etkinleştirip</strong> değer girin. İşaretlenmemiş alanlar değişmez.</div>
+      </div>
+      <div id="tg-fields" style="padding:8px 20px 4px"></div>
+    </div>
+    <div class="modal-f">
+      <button class="btn bp" onclick="saveBulkEdit()"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg> Toplu Güncelle</button>
+      <button class="btn bg" onclick="closeModal('mod-toplu-guncelle')">Vazgeç</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: Yönetici Profil -->
 <div class="ov" id="mod-yon-profil" onclick="if(event.target===this)closeModal('mod-yon-profil')">
   <div class="modal" style="max-width:400px;text-align:center">
