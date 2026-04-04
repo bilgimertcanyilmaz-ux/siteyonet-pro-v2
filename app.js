@@ -5831,6 +5831,121 @@ function bulkExportBm() {
   toast('Seçili kayıtlar indirildi.', 'ok');
 }
 
+// ── TOPLU PDF ─────────────────────────────────────────────────────────────────
+function _makbuzPrintStyles() {
+  return `*{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff;color:#111;padding:16px;max-width:580px;margin:0 auto}
+  :root{--brand:#2563eb;--bg:#f6f7f9;--bd:#e5e7eb;--tx-1:#111827;--tx-2:#374151;--tx-3:#6b7280;--ok:#16a34a;--err:#dc2626}
+  .page{border:1.5px solid #e5e7eb;border-radius:14px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.08);margin-bottom:24px;background:#fff}
+  @media print{@page{margin:10mm;size:A4}.page{page-break-after:always;margin-bottom:0;box-shadow:none}button{display:none!important}}`;
+}
+
+function bulkPdfTm() {
+  const ids = [...document.querySelectorAll('.tm-chk:checked')].map(c => +c.dataset.id);
+  if (!ids.length) { toast('Önce kayıt seçin.', 'warn'); return; }
+  const items = (S.tahsilatlar||[]).filter(o => ids.includes(o.id));
+  if (!items.length) return;
+  const kaynakMap = {
+    'excel':             {label:'Excel İçe Aktarma',   col:'#d97706', bg:'#fffbeb', bc:'#fde68a'},
+    'banka-entegrasyon': {label:'Banka Entegrasyonu',  col:'#059669', bg:'#f0fdf4', bc:'#a7f3d0'},
+    'banka-ent':         {label:'Banka Entegrasyonu',  col:'#059669', bg:'#f0fdf4', bc:'#a7f3d0'},
+  };
+  const tipLbl = {aidat:'Aidat',kira:'Kira',borc:'Borç Ödemesi',avans:'Avans',diger:'Diğer',gecmis_borc:'Geçmiş Borç'};
+  const yonLbl = {nakit:'Nakit',banka:'Banka Transferi',eft:'EFT',kredi:'Kredi Kartı',havale:'Havale'};
+  const firma = _makbuzFirmaHtml();
+  const pages = items.map(o => {
+    const src = kaynakMap[o.yontem] || {label:'Manuel Giriş', col:'#2563eb', bg:'#eff6ff', bc:'#bfdbfe'};
+    return `<div class="page">
+      ${firma}
+      <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);padding:14px 22px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #86efac">
+        <div>
+          <div style="font-size:10px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:.8px">Tahsilat Makbuzu</div>
+          <div style="font-size:22px;font-weight:800;color:#111827;margin-top:3px;letter-spacing:-.3px">${he(o.no||'—')}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px">Tahsilat Tarihi</div>
+          <div style="font-size:14px;font-weight:700;color:#111827;margin-top:3px">${o.tarih||'—'}</div>
+        </div>
+      </div>
+      <div style="padding:18px 22px;display:grid;grid-template-columns:1fr 1fr;gap:10px;background:#f6f7f9">
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px">
+          <div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Sakin Bilgisi</div>
+          <div style="font-size:14px;font-weight:700;color:#111827">${he(o.sakAd||'—')}</div>
+          <div style="font-size:12px;color:#374151;margin-top:4px">Daire <strong>${he(o.daire||'—')}</strong></div>
+          <div style="font-size:11px;color:#6b7280;margin-top:3px">${he(o.aptAd||'—')}</div>
+        </div>
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px">
+          <div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Ödeme Detayı</div>
+          <div style="font-size:12px;color:#374151">Tip: <strong>${he(tipLbl[o.tip]||o.tip||'—')}</strong></div>
+          <div style="font-size:12px;color:#374151;margin-top:5px">Dönem: <strong>${he(o.donem||'—')}</strong></div>
+          ${yonLbl[o.yontem]?`<div style="font-size:12px;color:#374151;margin-top:5px">Yöntem: <strong>${yonLbl[o.yontem]}</strong></div>`:''}
+        </div>
+      </div>
+      <div style="padding:10px 22px;background:#f6f7f9;border-top:1px solid #e5e7eb;display:flex;align-items:center;gap:8px">
+        <span style="font-size:12px;font-weight:600;color:${src.col}">${src.label}</span>
+      </div>
+      ${o.not?`<div style="padding:10px 22px;background:#f6f7f9;border-top:1px solid #e5e7eb;font-size:12px;color:#374151"><span style="font-weight:600">Not:</span> ${he(o.not)}</div>`:''}
+      <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-top:1px solid #86efac;padding:16px 22px;display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:12px;font-weight:700;color:#166534;text-transform:uppercase;letter-spacing:.5px">Tahsil Edilen Tutar</div>
+        <div style="font-size:26px;font-weight:800;color:#16a34a;letter-spacing:-.5px">₺${fmt(o.tutar)}</div>
+      </div>
+    </div>`;
+  }).join('');
+  const w = window.open('', '_blank', 'width=640,height=900');
+  if (!w) { toast('Popup engelleyici açık — PDF açılamadı!', 'warn'); return; }
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Tahsilat Makbuzları (${items.length})</title><style>${_makbuzPrintStyles()}</style></head><body>${pages}<div style="text-align:center;font-size:11px;color:#9ca3af;margin-top:8px">Bu makbuzlar elektronik ortamda düzenlenmiştir.</div><script>window.onload=function(){window.print();}<\/script></body></html>`);
+  w.document.close();
+  toast(`${items.length} makbuz PDF hazırlandı.`, 'ok');
+}
+
+function bulkPdfBm() {
+  const indices = [...document.querySelectorAll('.bm-chk:checked')].map(c => +c.dataset.idx);
+  if (!indices.length) { toast('Önce kayıt seçin.', 'warn'); return; }
+  const rows = indices.map(i => (window._bmRows||[])[i]).filter(Boolean);
+  if (!rows.length) return;
+  const firma = _makbuzFirmaHtml();
+  const pages = rows.map((r, i) => `<div class="page">
+    ${firma}
+    <div style="background:linear-gradient(135deg,#eff6ff,#dbeafe);padding:14px 22px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #bfdbfe">
+      <div>
+        <div style="font-size:10px;font-weight:700;color:#2563eb;text-transform:uppercase;letter-spacing:.8px">Borç Makbuzu</div>
+        <div style="font-size:22px;font-weight:800;color:#111827;margin-top:3px;letter-spacing:-.3px">BM-${String(i+1).padStart(4,'0')}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px">Borçlandırma Tarihi</div>
+        <div style="font-size:14px;font-weight:700;color:#111827;margin-top:3px">${r.tarih||'—'}</div>
+      </div>
+    </div>
+    <div style="padding:18px 22px;display:grid;grid-template-columns:1fr 1fr;gap:10px;background:#f6f7f9">
+      <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px">
+        <div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Sakin Bilgisi</div>
+        <div style="font-size:14px;font-weight:700;color:#111827">${he(r.sakAd)}</div>
+        <div style="font-size:12px;color:#374151;margin-top:4px">Daire <strong>${he(r.daire)}</strong></div>
+        <div style="font-size:11px;color:#6b7280;margin-top:3px">${he(r.aptAd)}</div>
+      </div>
+      <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px">
+        <div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Borç Detayı</div>
+        <div style="font-size:12px;color:#374151">Kategori: <strong>${he(r.kategori)}</strong></div>
+        <div style="font-size:12px;color:#374151;margin-top:5px">Dönem: <strong>${he(r.donem)}</strong></div>
+        <div style="font-size:12px;color:#374151;margin-top:5px">Son Ödeme: <strong style="color:#dc2626">${r.sonOdeme||'—'}</strong></div>
+      </div>
+    </div>
+    <div style="background:linear-gradient(135deg,#fef2f2,#fee2e2);border-top:1px solid #fca5a5;padding:16px 22px;display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:12px;font-weight:700;color:#991b1b;text-transform:uppercase;letter-spacing:.5px">Borç Tutarı</div>
+      <div style="font-size:26px;font-weight:800;color:#dc2626;letter-spacing:-.5px">₺${fmt(r.tutar)}</div>
+    </div>
+  </div>`).join('');
+  const w = window.open('', '_blank', 'width=640,height=900');
+  if (!w) { toast('Popup engelleyici açık — PDF açılamadı!', 'warn'); return; }
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Borç Makbuzları (${rows.length})</title><style>${_makbuzPrintStyles()}</style></head><body>${pages}<div style="text-align:center;font-size:11px;color:#9ca3af;margin-top:8px">Bu makbuzlar elektronik ortamda düzenlenmiştir.</div><script>window.onload=function(){window.print();}<\/script></body></html>`);
+  w.document.close();
+  toast(`${rows.length} makbuz PDF hazırlandı.`, 'ok');
+}
+
+// ── TOPLU DÜZENLEME (stub — fonksiyon sonraki aşamada tamamlanacak) ─────────
+function bulkEditTm() { toast('Toplu düzenleme yakında.', 'warn'); }
+function bulkEditBm() { toast('Toplu düzenleme yakında.', 'warn'); }
+
 async function genTahsilatRaporu() {
   const panel=document.getElementById('tah-ai-rapor'); if(panel) panel.style.display='';
   const out=document.getElementById('tah-ai-out'); out.textContent='AI tahsilat analizi yapılıyor…';
