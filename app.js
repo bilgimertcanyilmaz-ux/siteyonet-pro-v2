@@ -5250,8 +5250,13 @@ function renderBorcMakbuz() {
   window._bmRows = rows;
   const tb = document.getElementById('bm-tbody');
   if (!tb) return;
-  if (!rows.length) { tb.innerHTML=`<tr><td colspan="10">${emp('📄','Borç kaydı bulunamadı')}</td></tr>`; return; }
+  const bmPanel = document.getElementById('bm-bulk-panel');
+  if (bmPanel) bmPanel.style.display = 'none';
+  const bmChkAll = document.getElementById('bm-chk-all');
+  if (bmChkAll) { bmChkAll.checked = false; bmChkAll.indeterminate = false; }
+  if (!rows.length) { tb.innerHTML=`<tr><td colspan="11">${emp('📄','Borç kaydı bulunamadı')}</td></tr>`; return; }
   tb.innerHTML = rows.map((r,i)=>`<tr>
+    <td style="width:36px;text-align:center"><input type="checkbox" class="bm-chk" data-idx="${i}" onchange="bmChkChange()"></td>
     <td style="font-family:monospace;font-size:11px;color:var(--tx-3)">${String(i+1).padStart(4,'0')}</td>
     <td><strong>${he(r.sakAd)}</strong></td>
     <td style="font-weight:700;color:var(--brand)">${he(r.daire)}</td>
@@ -5677,10 +5682,15 @@ function renderTahsilatMakbuz() {
 
   const tb = document.getElementById('tm-tbody');
   if (!tb) return;
-  if (!list.length) { tb.innerHTML=`<tr><td colspan="11">${emp('💳','Tahsilat kaydı bulunamadı')}</td></tr>`; return; }
+  const tmPanel = document.getElementById('tm-bulk-panel');
+  if (tmPanel) tmPanel.style.display = 'none';
+  const tmChkAll = document.getElementById('tm-chk-all');
+  if (tmChkAll) { tmChkAll.checked = false; tmChkAll.indeterminate = false; }
+  if (!list.length) { tb.innerHTML=`<tr><td colspan="12">${emp('💳','Tahsilat kaydı bulunamadı')}</td></tr>`; return; }
   tb.innerHTML = list.map(o=>{
     const kSrc = kaynakBilgi(o.yontem);
     return `<tr>
+      <td style="width:36px;text-align:center"><input type="checkbox" class="tm-chk" data-id="${o.id}" onchange="tmChkChange()"></td>
       <td style="font-family:monospace;font-size:11px;color:var(--brand)">${he(o.no||'—')}</td>
       <td><strong>${he(o.sakAd||'—')}</strong></td>
       <td style="font-weight:700;color:var(--brand)">${he(o.daire||'—')}</td>
@@ -5715,6 +5725,110 @@ function exportTahsilatMakbuz() {
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Tahsilat Makbuzları');
   XLSX.writeFile(wb,`tahsilat_makbuzlari_${today()}.xlsx`);
   toast('Excel indirildi.','ok');
+}
+
+// ── TOPLU SEÇİM — TAHSİLAT MAKBUZLARI ───────────────────────────────────────
+function toggleAllTm(chk) {
+  document.querySelectorAll('.tm-chk').forEach(c => c.checked = chk.checked);
+  tmChkChange();
+}
+function tmChkChange() {
+  const all = document.querySelectorAll('.tm-chk');
+  const selected = [...all].filter(c => c.checked);
+  const panel = document.getElementById('tm-bulk-panel');
+  const cnt = document.getElementById('tm-bulk-count');
+  if (panel) panel.style.display = selected.length ? 'flex' : 'none';
+  if (cnt) cnt.textContent = `${selected.length} kayıt seçildi`;
+  const allChk = document.getElementById('tm-chk-all');
+  if (allChk) {
+    allChk.indeterminate = selected.length > 0 && selected.length < all.length;
+    allChk.checked = all.length > 0 && selected.length === all.length;
+  }
+}
+function bulkDeleteTm() {
+  const ids = [...document.querySelectorAll('.tm-chk:checked')].map(c => +c.dataset.id);
+  if (!ids.length) return;
+  if (!confirm(`${ids.length} tahsilat kaydı iptal edilsin mi?\n(Soft-cancel — kayıtlar silinmez, iptal durumuna alınır.)`)) return;
+  ids.forEach(id => {
+    const o = (S.tahsilatlar||[]).find(x => x.id == id);
+    if (!o || o.status === 'cancelled') return;
+    o.status = 'cancelled';
+    o.cancelledAt = new Date().toISOString();
+    const sk = S.sakinler.find(x => x.id == (o.sakId || o.sakinId));
+    if (sk) sk.borc = (sk.borc || 0) + (o.tutar || 0);
+  });
+  save();
+  toast(`${ids.length} tahsilat kaydı iptal edildi.`, 'warn');
+  renderTahsilatMakbuz();
+  if (typeof refreshCariIfOpen === 'function') refreshCariIfOpen();
+}
+function bulkExportTm() {
+  if (typeof XLSX === 'undefined') { toast('Excel kütüphanesi yüklenmedi.', 'err'); return; }
+  const ids = new Set([...document.querySelectorAll('.tm-chk:checked')].map(c => +c.dataset.id));
+  if (!ids.size) { toast('Önce kayıt seçin.', 'warn'); return; }
+  const tipLbl = {aidat:'Aidat',kira:'Kira',borc:'Borç Ödemesi',avans:'Avans',diger:'Diğer',gecmis_borc:'Geçmiş Borç'};
+  const kaynakBilgi = y => { if (y==='excel') return 'Excel İçe Aktarma'; if (y==='banka-entegrasyon'||y==='banka-ent') return 'Banka Entegrasyonu'; return 'Manuel Giriş'; };
+  const list = (S.tahsilatlar||[]).filter(o => ids.has(o.id));
+  const rows = list.map(o => [o.no||'—',o.sakAd||'—',o.daire||'—',o.aptAd||'—',tipLbl[o.tip]||o.tip||'—',o.donem||'—',o.tutar||0,o.tarih||'—',kaynakBilgi(o.yontem),o.not||'']);
+  const ws = XLSX.utils.aoa_to_sheet([['Makbuz No','Sakin','Daire','Apartman','Tip','Dönem','Tutar','Tarih','Giriş Kaynağı','Not'],...rows]);
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Seçili Tahsilatlar');
+  XLSX.writeFile(wb, `secili_tahsilatlar_${today()}.xlsx`);
+  toast('Seçili kayıtlar indirildi.', 'ok');
+}
+
+// ── TOPLU SEÇİM — BORÇ MAKBUZLARI ────────────────────────────────────────────
+function toggleAllBm(chk) {
+  document.querySelectorAll('.bm-chk').forEach(c => c.checked = chk.checked);
+  bmChkChange();
+}
+function bmChkChange() {
+  const all = document.querySelectorAll('.bm-chk');
+  const selected = [...all].filter(c => c.checked);
+  const panel = document.getElementById('bm-bulk-panel');
+  const cnt = document.getElementById('bm-bulk-count');
+  if (panel) panel.style.display = selected.length ? 'flex' : 'none';
+  if (cnt) cnt.textContent = `${selected.length} kayıt seçildi`;
+  const allChk = document.getElementById('bm-chk-all');
+  if (allChk) {
+    allChk.indeterminate = selected.length > 0 && selected.length < all.length;
+    allChk.checked = all.length > 0 && selected.length === all.length;
+  }
+}
+function bulkDeleteBm() {
+  const indices = [...document.querySelectorAll('.bm-chk:checked')].map(c => +c.dataset.idx);
+  if (!indices.length) return;
+  const rows = (window._bmRows || []);
+  const valid = indices.map(i => rows[i]).filter(Boolean);
+  if (!valid.length) return;
+  const topTutar = valid.reduce((s, r) => s + r.tutar, 0);
+  if (!confirm(`${valid.length} borç kaydı iptal edilsin mi?\nToplam: ₺${fmt(topTutar)}\n(Soft-cancel — kayıtlar iptal durumuna alınır ve borç düşürülür.)`)) return;
+  valid.forEach(r => {
+    if (r._detayRef) {
+      r._detayRef.status = 'cancelled';
+      r._detayRef.cancelledAt = new Date().toISOString();
+      r._detayRef.cancelledBy = _currentUser?.id || 'local';
+    }
+    if (r._kayitRef) {
+      r._kayitRef.toplamBorc = (r._kayitRef.detaylar||[]).filter(d => d.status !== 'cancelled').reduce((s, d) => s + (d.tutar||0), 0);
+    }
+    const sk = S.sakinler.find(x => x.id == r._sakId);
+    if (sk) sk.borc = Math.max(0, (sk.borc||0) - r.tutar);
+  });
+  save();
+  toast(`${valid.length} borç kaydı iptal edildi.`, 'warn');
+  renderBorcMakbuz();
+  if (typeof refreshCariIfOpen === 'function') refreshCariIfOpen();
+}
+function bulkExportBm() {
+  if (typeof XLSX === 'undefined') { toast('Excel kütüphanesi yüklenmedi.', 'err'); return; }
+  const indices = new Set([...document.querySelectorAll('.bm-chk:checked')].map(c => +c.dataset.idx));
+  if (!indices.size) { toast('Önce kayıt seçin.', 'warn'); return; }
+  const rows = (window._bmRows||[]).filter((_,i) => indices.has(i));
+  const data = rows.map(r => [r.sakAd, r.daire, r.aptAd, r.kategori, r.donem, r.tutar, r.tarih||'—', r.sonOdeme||'—']);
+  const ws = XLSX.utils.aoa_to_sheet([['Sakin','Daire','Apartman','Kategori','Dönem','Tutar','Borçlandırma Tarihi','Son Ödeme'],...data]);
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Seçili Borçlar');
+  XLSX.writeFile(wb, `secili_borclar_${today()}.xlsx`);
+  toast('Seçili kayıtlar indirildi.', 'ok');
 }
 
 async function genTahsilatRaporu() {
