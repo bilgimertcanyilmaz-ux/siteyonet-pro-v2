@@ -144,6 +144,7 @@
     <div class="ni" data-p="makbuzlar" data-role="yonetici" data-tip="Makbuzlar"><div class="nico"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>Makbuzlar</div>
     <div class="ni" data-p="finans" data-role="yonetici sakin" data-tip="Gelir/Gider"><div class="nico"><svg viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22"/><path d="M5 8l7-6 7 6"/><path d="M5 16l7 6 7-6"/></svg></div>Gelir/Gider<span class="nbadge" id="bdg-fin" style="display:none">!</span></div>
     <div class="ni" data-p="finansal-durum" data-role="yonetici" data-tip="Finansal Durum"><div class="nico"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>Finansal Durum</div>
+    <div class="ni" data-p="devir-bakiye" data-role="yonetici" data-tip="Devir Bakiye Girişi"><div class="nico"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>Devir Bakiye</div>
     <div class="ni" data-p="toplu-borc" data-role="yonetici" data-tip="Toplu Borçlandırma"><div class="nico"><svg viewBox="0 0 24 24"><path d="M8 6H6a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1"/><path d="M10 4H8a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"/><path d="M12 2h6a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/><line x1="15" y1="5" x2="15" y2="8"/><circle cx="15" cy="10" r=".5" fill="currentColor"/></svg></div>Toplu Borçlandır</div>
     <div class="ni" data-p="isletme" data-role="yonetici" data-tip="İşletme Projesi"><div class="nico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M11 4v16"/><path d="M5.5 14h3M5.5 17h3M13 14h6M13 17h4"/></svg></div>İşletme Projesi</div>
   </div>
@@ -1963,6 +1964,54 @@
 <!-- APARTMAN DETAY -->
 <div id="page-apt-detay" class="pg">
   <div id="apt-detay-content"></div>
+</div>
+
+<!-- DEVİR BAKİYE SAYFASI -->
+<div id="page-devir-bakiye" class="pg">
+
+  <!-- Üst ayarlar -->
+  <div class="card mb14">
+    <div style="font-size:13px;font-weight:700;color:var(--tx-1);margin-bottom:14px;display:flex;align-items:center;gap:8px">
+      <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:var(--brand);stroke-width:2;fill:none"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      Açılış Devir Bakiyesi — Parametreler
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 160px 1fr;gap:14px;align-items:end">
+      <div>
+        <label class="fi-lbl">Apartman / Site <span style="color:var(--err)">*</span></label>
+        <select id="db-apt" class="fi" onchange="renderDevirBakiye()"><option value="">— Seçin —</option></select>
+      </div>
+      <div>
+        <label class="fi-lbl">Devir Tarihi <span style="color:var(--err)">*</span></label>
+        <input type="date" id="db-tarih" class="fi" value="">
+      </div>
+      <div>
+        <label class="fi-lbl">Açıklama / Not</label>
+        <input type="text" id="db-not" class="fi" placeholder="Örn: Sistem açılış devri — Ocak 2026">
+      </div>
+    </div>
+    <div style="margin-top:10px;padding:10px 14px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:12px;color:#92400e">
+      <strong>Nasıl kullanılır:</strong> Sisteme ilk geçişte sakinlerin daha önceki döneme ait borç veya alacak bakiyelerini girin.
+      Borç <strong>ve</strong> alacak aynı anda girilemez — birini girin diğerini boş bırakın. Sıfır bırakılan satırlar kaydedilmez.
+    </div>
+  </div>
+
+  <!-- Tablo -->
+  <div id="db-tablo-wrap"></div>
+
+  <!-- Kaydet barı -->
+  <div id="db-kaydet-bar" style="display:none;justify-content:space-between;align-items:center;margin-top:14px;background:var(--ok-bg);border:1px solid var(--ok-bd);border-radius:12px;padding:14px 20px">
+    <div>
+      <div style="font-size:14px;font-weight:700;color:var(--ok)">Devir Bakiyesi Kaydedilecek</div>
+      <div id="db-kaydet-ozet" style="font-size:12px;color:var(--tx-3);margin-top:2px"></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn bg" onclick="dbTemizle()">Temizle</button>
+      <button class="btn bp" onclick="saveDevirBakiye()">
+        <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+        Devir Bakiyelerini Kaydet
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- TOPLU BORÇLANDIRMA SAYFASI -->

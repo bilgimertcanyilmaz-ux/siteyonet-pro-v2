@@ -769,7 +769,7 @@ window.addEventListener('popstate', function(e) {
 // NAVIGATION
 //
 const PAGE_TITLES = { dashboard:'Anasayfa', apartmanlar:'Apartmanlar', karar:'Karar Metni Oluşturucu', isletme:'İşletme Projesi', 'isl-detay':'İşletme Projesi Detay', denetim:'Denetim Raporları', 'den-detay':'Denetim Raporu Detay', asansor:'Asansör Etiket Kontrolü', 'asan-detay':'Asansör Detay', teklifler:'Teklifler', gorevler:'Görev Yönetimi', icra:'İcra Listesi', finans:'Gelir / Gider Takibi', ayarlar:'Ayarlar', sakinler:'Sakin Yönetimi', personel:'Personel Yönetimi', duyurular:'Duyuru & İletişim', ariza:'Arıza & Bakım Yönetimi', tahsilat:'Tahsilat & Borç Takibi', raporlar:'Raporlar & Analitik', 'ai-asistan':'AI Yönetim Asistanı', sigorta:'Sigorta Takibi', toplanti:'Toplantı Yönetimi', fatura:'Fatura & Hizmet Yönetimi', superadmin:'Süper Admin Paneli', 'apt-detay':'Apartman Detay', 'daire-detay':'Daire Detay', 'finansal-durum':'Finansal Durum', 'sakin-cari':'Kişilere Göre Finansal Durum', 'tanimlama':'Evrak Kategorisi', 'proje':'Proje & Tadilat Takibi', 'iletisim':'İletişim Merkezi', 'toplu-borc':'Toplu Borçlandırma', 'sms-sablonlar':'SMS / WhatsApp Şablonları',
-'sakin-profil':'Sakin Profili', 'davet-yonetim':'Sakin Davetleri', 'davet-bekleyen':'Onay Bekleyenler', 'davet-kayit':'Sisteme Kayıt', 'makbuzlar':'Makbuzlar' };
+'sakin-profil':'Sakin Profili', 'davet-yonetim':'Sakin Davetleri', 'davet-bekleyen':'Onay Bekleyenler', 'davet-kayit':'Sisteme Kayıt', 'makbuzlar':'Makbuzlar', 'devir-bakiye':'Devir Bakiye Girişi' };
 
 function goPage(p) {
  if (!window._navRestoring) {
@@ -848,6 +848,7 @@ function goPage(p) {
   if (p==='ariza') { renderAriza(); }
   if (p==='tahsilat') { renderTahsilat(); }
   if (p==='makbuzlar') { try{renderTahsilatMakbuz();}catch(e){} }
+  if (p==='devir-bakiye') { try{initDevirBakiye();}catch(e){} }
   if (p==='raporlar') { renderRaporlar(); }
   if (p==='ai-asistan') { initAiAsistan(); }
   if (p==='sigorta') { renderSigorta(); }
@@ -11326,6 +11327,291 @@ function saveTbpExcelBorc() {
   if (ab) ab.style.display = 'none';
 
   setTimeout(() => goTab('tbp-gecmis'), 300);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// DEVİR BAKİYE GİRİŞİ
+// ════════════════════════════════════════════════════════════════════════════
+
+function initDevirBakiye() {
+  const sel = document.getElementById('db-apt');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Seçin —</option>' +
+    (S.apartmanlar||[]).map(a => `<option value="${a.id}"${a.id==cur?' selected':''}>${he(a.ad)}</option>`).join('');
+  const tEl = document.getElementById('db-tarih');
+  if (tEl && !tEl.value) tEl.value = today();
+  if (cur) renderDevirBakiye();
+}
+
+function renderDevirBakiye() {
+  const aptId = document.getElementById('db-apt')?.value;
+  const wrap = document.getElementById('db-tablo-wrap');
+  const bar  = document.getElementById('db-kaydet-bar');
+  if (!wrap) return;
+  if (!aptId) {
+    wrap.innerHTML = `<div class="card" style="text-align:center;padding:48px;color:var(--tx-3)">
+      <svg viewBox="0 0 24 24" style="width:40px;height:40px;stroke:var(--tx-4);fill:none;stroke-width:1.5;margin-bottom:12px"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <div style="font-weight:600;font-size:14px">Apartman seçin</div>
+      <div style="font-size:12px;margin-top:6px">Yukarıdan apartman seçerek sakin listesini görüntüleyin.</div>
+    </div>`;
+    if (bar) bar.style.display = 'none';
+    return;
+  }
+
+  const apt = S.apartmanlar.find(a => a.id == aptId);
+  const sakinler = (S.sakinler||[])
+    .filter(s => s.aptId == aptId && s.durum !== 'pasif' && s.durum !== 'ayrildi')
+    .sort((a,b) => String(a.daire).localeCompare(String(b.daire), 'tr', {numeric:true}));
+
+  if (!sakinler.length) {
+    wrap.innerHTML = `<div class="card" style="text-align:center;padding:40px;color:var(--tx-3)"><div style="font-size:13px">Bu apartmanda kayıtlı aktif sakin bulunamadı.</div></div>`;
+    if (bar) bar.style.display = 'none';
+    return;
+  }
+
+  // Mevcut devir kayıtlarını al (daha önce girilmişse göster)
+  const mevcutDevirBorc = {};
+  const mevcutDevirAlacak = {};
+  (S.aidatBorclandir||[]).forEach(kayit => {
+    if (kayit.aptId == aptId && kayit.kategori === 'Devir') {
+      (kayit.detaylar||[]).forEach(d => { mevcutDevirBorc[d.sakId] = (mevcutDevirBorc[d.sakId]||0) + d.tutar; });
+    }
+  });
+  (S.tahsilatlar||[]).forEach(t => {
+    if (t.aptId == aptId && t.tip === 'devir_alacak' && t.status !== 'cancelled') {
+      mevcutDevirAlacak[t.sakId||t.sakinId] = (mevcutDevirAlacak[t.sakId||t.sakinId]||0) + (t.tutar||0);
+    }
+  });
+
+  const rows = sakinler.map(s => {
+    const mBorc   = mevcutDevirBorc[s.id]   || 0;
+    const mAlacak = mevcutDevirAlacak[s.id] || 0;
+    const tipBadge = s.tip === 'kiralik'
+      ? `<span class="b" style="background:#fef3c7;color:#b45309;font-size:10px">Kiracı</span>`
+      : `<span class="b b-bl" style="font-size:10px">Malik</span>`;
+    return `<tr id="db-row-${s.id}">
+      <td style="font-weight:700;color:var(--brand);font-size:13px">${he(s.daire)}</td>
+      <td>
+        <div style="font-weight:600;font-size:13px">${he(s.ad)}</div>
+        <div style="margin-top:2px">${tipBadge}</div>
+      </td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:12px;color:var(--err);font-weight:700">₺</span>
+          <input type="number" id="db-borc-${s.id}" class="fi sm" min="0" step="0.01" placeholder="0"
+            value="${mBorc > 0 ? mBorc : ''}"
+            style="width:110px;border-color:rgba(220,38,38,.3)"
+            oninput="dbInputChange('${s.id}','borc')" onfocus="this.select()">
+        </div>
+        ${mBorc > 0 ? `<div style="font-size:10px;color:var(--tx-3);margin-top:3px">Kayıtlı: ₺${fmt(mBorc)}</div>` : ''}
+      </td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:12px;color:var(--ok);font-weight:700">₺</span>
+          <input type="number" id="db-alacak-${s.id}" class="fi sm" min="0" step="0.01" placeholder="0"
+            value="${mAlacak > 0 ? mAlacak : ''}"
+            style="width:110px;border-color:rgba(22,163,74,.3)"
+            oninput="dbInputChange('${s.id}','alacak')" onfocus="this.select()">
+        </div>
+        ${mAlacak > 0 ? `<div style="font-size:10px;color:var(--tx-3);margin-top:3px">Kayıtlı: ₺${fmt(mAlacak)}</div>` : ''}
+      </td>
+      <td style="text-align:center" id="db-durum-${s.id}">
+        ${mBorc > 0 ? `<span class="b" style="background:#fee2e2;color:#dc2626;font-size:11px">Borçlu ₺${fmt(mBorc)}</span>` :
+          mAlacak > 0 ? `<span class="b" style="background:#dcfce7;color:#16a34a;font-size:11px">Alacaklı ₺${fmt(mAlacak)}</span>` :
+          `<span style="font-size:11px;color:var(--tx-4)">—</span>`}
+      </td>
+    </tr>`;
+  }).join('');
+
+  wrap.innerHTML = `<div class="card" style="padding:0">
+    <div style="padding:12px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:14px;font-weight:700;color:var(--tx-1)">${he(apt?.ad||'')} — ${sakinler.length} Sakin</div>
+      <div style="display:flex;gap:8px">
+        <span style="font-size:12px;color:var(--err);font-weight:600">Kırmızı = Devir Borç</span>
+        <span style="font-size:12px;color:var(--ok);font-weight:600">Yeşil = Devir Alacak</span>
+      </div>
+    </div>
+    <div class="tw"><table>
+      <thead><tr>
+        <th>Daire</th>
+        <th>Sakin</th>
+        <th style="color:var(--err)">Devir Borç (₺)</th>
+        <th style="color:var(--ok)">Devir Alacak (₺)</th>
+        <th>Durum</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+  </div>`;
+
+  dbGuncelleBilgi();
+}
+
+function dbInputChange(sakId, tip) {
+  const borcEl   = document.getElementById('db-borc-'   + sakId);
+  const alacakEl = document.getElementById('db-alacak-' + sakId);
+  if (!borcEl || !alacakEl) return;
+
+  // Biri girilince diğerini sıfırla (borç ve alacak aynı anda olamaz)
+  if (tip === 'borc' && parseFloat(borcEl.value||0) > 0) {
+    alacakEl.value = '';
+    alacakEl.style.opacity = '.4';
+  } else if (tip === 'alacak' && parseFloat(alacakEl.value||0) > 0) {
+    borcEl.value = '';
+    borcEl.style.opacity = '.4';
+  } else {
+    borcEl.style.opacity   = '1';
+    alacakEl.style.opacity = '1';
+  }
+
+  // Durum sütununu güncelle
+  const borc   = parseFloat(borcEl.value||0)   || 0;
+  const alacak = parseFloat(alacakEl.value||0) || 0;
+  const durumEl = document.getElementById('db-durum-' + sakId);
+  if (durumEl) {
+    durumEl.innerHTML = borc > 0
+      ? `<span class="b" style="background:#fee2e2;color:#dc2626;font-size:11px">Borçlu ₺${fmt(borc)}</span>`
+      : alacak > 0
+      ? `<span class="b" style="background:#dcfce7;color:#16a34a;font-size:11px">Alacaklı ₺${fmt(alacak)}</span>`
+      : `<span style="font-size:11px;color:var(--tx-4)">—</span>`;
+  }
+
+  dbGuncelleBilgi();
+}
+
+function dbGuncelleBilgi() {
+  const aptId = document.getElementById('db-apt')?.value;
+  if (!aptId) return;
+  const sakinler = (S.sakinler||[]).filter(s => s.aptId == aptId && s.durum !== 'pasif' && s.durum !== 'ayrildi');
+
+  let topBorc = 0, topAlacak = 0, borcSakin = 0, alacakSakin = 0;
+  sakinler.forEach(s => {
+    const b = parseFloat(document.getElementById('db-borc-'   + s.id)?.value||0) || 0;
+    const a = parseFloat(document.getElementById('db-alacak-' + s.id)?.value||0) || 0;
+    if (b > 0) { topBorc   += b; borcSakin++;   }
+    if (a > 0) { topAlacak += a; alacakSakin++; }
+  });
+
+  const bar  = document.getElementById('db-kaydet-bar');
+  const ozet = document.getElementById('db-kaydet-ozet');
+  const herhangi = topBorc > 0 || topAlacak > 0;
+  if (bar) bar.style.display = herhangi ? 'flex' : 'none';
+  if (ozet) ozet.textContent =
+    (borcSakin   > 0 ? `${borcSakin} borçlu sakin · ₺${fmt(topBorc)} devir borç  ` : '') +
+    (alacakSakin > 0 ? `${alacakSakin} alacaklı sakin · ₺${fmt(topAlacak)} devir alacak` : '');
+}
+
+function dbTemizle() {
+  const aptId = document.getElementById('db-apt')?.value;
+  if (!aptId) return;
+  const sakinler = (S.sakinler||[]).filter(s => s.aptId == aptId);
+  sakinler.forEach(s => {
+    const bEl = document.getElementById('db-borc-'   + s.id);
+    const aEl = document.getElementById('db-alacak-' + s.id);
+    if (bEl) { bEl.value = ''; bEl.style.opacity = '1'; }
+    if (aEl) { aEl.value = ''; aEl.style.opacity = '1'; }
+    const dEl = document.getElementById('db-durum-' + s.id);
+    if (dEl) dEl.innerHTML = `<span style="font-size:11px;color:var(--tx-4)">—</span>`;
+  });
+  const bar = document.getElementById('db-kaydet-bar');
+  if (bar) bar.style.display = 'none';
+}
+
+function saveDevirBakiye() {
+  if (!_guardCheck()) return;
+  const aptId = document.getElementById('db-apt')?.value;
+  if (!aptId) { toast('Apartman seçin.', 'err'); return; }
+  const tarih = document.getElementById('db-tarih')?.value || today();
+  const not   = document.getElementById('db-not')?.value?.trim() || 'Açılış Devir Bakiyesi';
+  const apt   = S.apartmanlar.find(a => a.id == aptId);
+
+  const sakinler = (S.sakinler||[]).filter(s => s.aptId == aptId && s.durum !== 'pasif' && s.durum !== 'ayrildi');
+
+  if (!S.aidatBorclandir) S.aidatBorclandir = [];
+  if (!S.tahsilatlar) S.tahsilatlar = [];
+
+  const borcDetaylar = [];
+  let toplamBorc = 0, toplamAlacak = 0, borcSakin = 0, alacakSakin = 0;
+
+  sakinler.forEach(s => {
+    const borc   = parseFloat(document.getElementById('db-borc-'   + s.id)?.value||0) || 0;
+    const alacak = parseFloat(document.getElementById('db-alacak-' + s.id)?.value||0) || 0;
+
+    if (borc > 0) {
+      // Devir borç: aidatBorclandir + sk.borc artır
+      s.borc = (s.borc||0) + borc;
+      toplamBorc += borc; borcSakin++;
+      borcDetaylar.push({
+        id: Date.now() + borcSakin,
+        sakId: s.id,
+        ad: s.ad,
+        daire: s.daire,
+        tutar: borc,
+        kategori: 'Devir',
+        aciklama: not,
+        tarih,
+        aptAd: apt?.ad||''
+      });
+    }
+
+    if (alacak > 0) {
+      // Devir alacak: tahsilatlar kaydı + sk.borc azalt
+      s.borc = (s.borc||0) - alacak;
+      toplamAlacak += alacak; alacakSakin++;
+      const no = 'DEV-' + String(Date.now()).slice(-6) + '-' + alacakSakin;
+      S.tahsilatlar.push({
+        id: Date.now() + alacakSakin + 1000,
+        no,
+        aptId: +aptId,
+        aptAd: apt?.ad||'',
+        sakId: s.id,
+        sakAd: s.ad,
+        daire: s.daire,
+        tip: 'devir_alacak',
+        donem: tarih.slice(0,7),
+        tutar: alacak,
+        tarih,
+        yontem: 'devir',
+        not,
+        kaynak: 'devir'
+      });
+    }
+  });
+
+  // Borç detaylarını tek aidatBorclandir kaydı olarak kaydet
+  if (borcDetaylar.length > 0) {
+    S.aidatBorclandir.push({
+      id: Date.now(),
+      aptId: +aptId,
+      aptAd: apt?.ad||'',
+      donem: tarih.slice(0,7),
+      tarih,
+      sonOdeme: '',
+      kategori: 'Devir',
+      aciklama: not,
+      sakinSayisi: borcSakin,
+      toplamBorc,
+      detaylar: borcDetaylar,
+      kaynak: 'devir'
+    });
+  }
+
+  AuditService.log({
+    action: 'DEVIR_BAKIYE',
+    entityType: 'devirBakiye',
+    newValues: { aptId, tarih, borcSakin, alacakSakin, toplamBorc, toplamAlacak }
+  });
+
+  save();
+  if (typeof refreshCariIfOpen === 'function') refreshCariIfOpen();
+
+  const mesaj = [];
+  if (borcSakin   > 0) mesaj.push(`${borcSakin} borçlu sakin · ₺${fmt(toplamBorc)}`);
+  if (alacakSakin > 0) mesaj.push(`${alacakSakin} alacaklı sakin · ₺${fmt(toplamAlacak)}`);
+  toast(`✅ Devir bakiyesi kaydedildi — ${mesaj.join(' | ')}`, 'ok');
+
+  // Tabloyu yenile (kayıtlı değerleri göster)
+  renderDevirBakiye();
 }
 
 function tbpGecmisDrilldown(kayitId, ay) {
