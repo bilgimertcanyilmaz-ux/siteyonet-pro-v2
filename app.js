@@ -4873,22 +4873,25 @@ function bankSatirOnayla(id){
   const apt=S.apartmanlar.find(a=>a.id==aptId);
   if(!makbuzNo)makbuzNo=5000;
   const uid=Date.now();
+  const tahId=uid;
+  const finId=uid+1;
   if(r.tutar>0&&r.eslesme){
     makbuzNo++;
     S.tahsilatlar=S.tahsilatlar||[];
-    S.tahsilatlar.push({id:uid,no:'B-'+makbuzNo,sakId:r.eslesme.id,sakAd:r.eslesme.ad,
+    S.tahsilatlar.push({id:tahId,no:'B-'+makbuzNo,sakId:r.eslesme.id,sakAd:r.eslesme.ad,
       aptId:+aptId,aptAd:apt?.ad||'',daire:r.eslesme.daire,
-      tip:'aidat',donem:'',tutar:r.tutar,tarih:r.tarih,yontem:'banka',not:r.aciklama,kaynak:'banka'});
+      tip:'aidat',donem:'',tutar:r.tutar,tarih:r.tarih,yontem:'banka',not:r.aciklama,
+      kaynak:'banka',linkedFinansId:finId});
     const sk=S.sakinler.find(x=>x.id==r.eslesme.id);
     if(sk&&sk.borc>0)sk.borc=Math.max(0,(sk.borc||0)-r.tutar);
   }
   const ekAciklama=r.ekAciklama||'';
   S.finansIslemler=S.finansIslemler||[];
-  S.finansIslemler.push({id:uid+1,aptId:+aptId,aptAd:apt?.ad||'',
+  S.finansIslemler.push({id:finId,aptId:+aptId,aptAd:apt?.ad||'',
     tarih:r.tarih,tur:r.tutar>0?'gelir':'gider',
     kat:r.tutar>0?'aidat':(r.giderKat||'Diğer').toLowerCase(),
     tutar:Math.abs(r.tutar),aciklama:ekAciklama||r.aciklama,belge:'Banka',
-    kasaId:window._bankKasaId||null});
+    kasaId:window._bankKasaId||null,linkedTahsilatId:r.tutar>0?tahId:null});
   const kasaId=window._bankKasaId||'';
   if(kasaId)_kasaGirisEkle(kasaId,Math.abs(r.tutar),ekAciklama||r.aciklama,r.tarih);
   const dosya=(S.bankDosyalar||[]).find(d=>d.id===window._currentBankDosyaId);
@@ -4962,22 +4965,25 @@ function bankOnayliKaydet(){
     makbuzNo++;
     const ekAciklama=r.ekAciklama||'';
     const aciklama=ekAciklama||r.aciklama;
+    const tahId=Date.now()+ok;
+    const finId=Date.now()+ok+100;
     // Tahsilata ekle
     if(r.eslesme&&r.tutar>0){
       S.tahsilatlar.push({
-        id:Date.now()+ok,no:'B-'+makbuzNo,sakId:r.eslesme.id,sakAd:r.eslesme.ad,
+        id:tahId,no:'B-'+makbuzNo,sakId:r.eslesme.id,sakAd:r.eslesme.ad,
         aptId:+aptId,aptAd:apt?apt.ad:'',daire:r.eslesme.daire,
         tip:'banka',donem:'',tutar:Math.abs(r.tutar),tarih:r.tarih,yontem:'banka',
-        not:aciklama,kasaId:kasaId||null
+        not:aciklama,kasaId:kasaId||null,linkedFinansId:finId
       });
       if(r.eslesme.borc>0)r.eslesme.borc=Math.max(0,r.eslesme.borc-Math.abs(r.tutar));
     }
     // Finansal işleme de ekle
     S.finansIslemler.push({
-      id:Date.now()+ok+100,aptId:+aptId,aptAd:apt?apt.ad:'',
+      id:finId,aptId:+aptId,aptAd:apt?apt.ad:'',
       tarih:r.tarih,tur:r.tutar>0?'gelir':'gider',
       kat:r.tutar>0?'aidat':'diger',
-      tutar:Math.abs(r.tutar),aciklama:aciklama,belge:'Banka',kasaId:kasaId||null
+      tutar:Math.abs(r.tutar),aciklama:aciklama,belge:'Banka',kasaId:kasaId||null,
+      linkedTahsilatId:r.tutar>0?tahId:null
     });
     // Kasa hareketi
     if(kasaId)_kasaGirisEkle(kasaId,Math.abs(r.tutar),aciklama,r.tarih);
@@ -5299,10 +5305,22 @@ function softCancelCollection(id) {
     siteId:     t.aptId
   });
 
+  // 5. Bağlı finansIslem kaydını da iptal et
+  if (t.linkedFinansId) {
+    const f = (S.finansIslemler || []).find(x => x.id == t.linkedFinansId);
+    if (f && f.status !== 'cancelled') {
+      f.status      = 'cancelled';
+      f.cancelledAt = new Date().toISOString();
+      f.cancelledBy = _currentUser?.id || 'local';
+      f.cancelReason = 'Bağlı tahsilat kaydı iptal edildi';
+    }
+  }
+
   save();
   toast(`İptal edildi: ${t.no || ''} · Borç geri eklendi: ₺${fmt(eskiTutar)}`, 'warn');
   if (typeof renderTahsilatMakbuz === 'function') renderTahsilatMakbuz();
   if (typeof renderOdemeGecmis   === 'function') renderOdemeGecmis();
+  if (typeof renderFinans        === 'function') try { renderFinans(); } catch(e) {}
   setTimeout(() => { if (typeof renderDashboard === 'function') renderDashboard(); }, 50);
 }
 
@@ -8040,8 +8058,22 @@ function softCancelFinans(id) {
     siteId: f.aptId
   });
 
+  // Bağlı tahsilat kaydını da iptal et
+  if (f.linkedTahsilatId) {
+    const t = (S.tahsilatlar || []).find(x => x.id == f.linkedTahsilatId);
+    if (t && t.status !== 'cancelled') {
+      t.status       = 'cancelled';
+      t.cancelledAt  = new Date().toISOString();
+      t.cancelledBy  = _currentUser?.id || 'local';
+      t.cancelReason = 'Bağlı gelir/gider kaydı iptal edildi';
+      const sk = (S.sakinler || []).find(x => x.id == (t.sakId || t.sakinId));
+      if (sk) sk.borc = (sk.borc || 0) + (t.tutar || 0);
+    }
+  }
+
   save(); toast(`İptal edildi: ${f.kat || turLbl} · ₺${fmt(tutar)}`, 'warn');
   renderFinans();
+  if (typeof renderOdemeGecmis === 'function') try { renderOdemeGecmis(); } catch(e) {}
   setTimeout(() => { if (typeof renderDashboard === 'function') renderDashboard(); }, 50);
 }
 
@@ -8073,12 +8105,28 @@ function _renderFinBulkBar() {
 function finBulkDelete() {
   if (!_finSelected.size) return;
   if (!confirm(_finSelected.size + ' kaydı silmek istediğinize emin misiniz?')) return;
+  const now = new Date().toISOString();
+  const by  = _currentUser?.id || 'local';
   _finSelected.forEach(id => {
-    const idx = (S.finansIslemler||[]).findIndex(f=>f.id===id);
-    if (idx>=0) { S.finansIslemler[idx].status='cancelled'; AuditService.log('sil','finansIslem',S.finansIslemler[idx]); }
+    const f = (S.finansIslemler||[]).find(x=>x.id===id);
+    if (!f || f.status==='cancelled') return;
+    f.status='cancelled'; f.cancelledAt=now; f.cancelledBy=by;
+    AuditService.log('sil','finansIslem',f);
+    // Bağlı tahsilat kaydını da iptal et
+    if (f.linkedTahsilatId) {
+      const t = (S.tahsilatlar||[]).find(x=>x.id==f.linkedTahsilatId);
+      if (t && t.status!=='cancelled') {
+        t.status='cancelled'; t.cancelledAt=now; t.cancelledBy=by;
+        t.cancelReason='Bağlı gelir/gider kaydı toplu silindi';
+        const sk = (S.sakinler||[]).find(x=>x.id==(t.sakId||t.sakinId));
+        if (sk) sk.borc = (sk.borc||0) + (t.tutar||0);
+      }
+    }
   });
   _finSelected.clear();
-  save(); renderFinans(); toast('Seçili kayıtlar silindi.','ok');
+  save(); renderFinans();
+  if (typeof renderOdemeGecmis === 'function') try { renderOdemeGecmis(); } catch(e) {}
+  toast('Seçili kayıtlar silindi.','ok');
 }
 function finBulkOde() {
   if (!_finSelected.size) return;
