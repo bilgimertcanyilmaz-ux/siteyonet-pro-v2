@@ -1363,7 +1363,11 @@ select.fi,select.fs{
   .cari-side-btns{flex-direction:row;flex-wrap:wrap;}
   .csb-btn{width:auto;flex:1;min-width:130px;justify-content:center;}
 
-  #content{padding:14px 14px;}
+  #content{
+    padding:14px 14px;
+    /* Mobil tarayıcı alt çubuğu içeriği kesmemesi için */
+    padding-bottom:calc(90px + env(safe-area-inset-bottom, 0px));
+  }
 
   /* Stats: 2 column */
   .sg{grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
@@ -1415,7 +1419,7 @@ select.fi,select.fs{
   #global-search-bar{display:none;}
   .ep-n{font-size:20px;}
   .card{padding:12px 14px;}
-  #content{padding:12px 10px;}
+  #content{padding:12px 10px;padding-bottom:calc(100px + env(safe-area-inset-bottom, 0px));}
   /* Smaller topbar actions */
   #topbar-acts .btn span{display:none;}
   /* Tighter page title on tiny screens */
