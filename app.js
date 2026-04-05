@@ -5337,6 +5337,7 @@ function softCancelCollection(id) {
   if (typeof renderTahsilatMakbuz === 'function') renderTahsilatMakbuz();
   if (typeof renderOdemeGecmis   === 'function') renderOdemeGecmis();
   if (typeof renderFinans        === 'function') try { renderFinans(); } catch(e) {}
+  refreshCariIfOpen();
   setTimeout(() => { if (typeof renderDashboard === 'function') renderDashboard(); }, 50);
 }
 
@@ -8240,6 +8241,7 @@ function softCancelFinans(id) {
   save(); toast(`İptal edildi: ${f.kat || turLbl} · ₺${fmt(tutar)}`, 'warn');
   renderFinans();
   if (typeof renderOdemeGecmis === 'function') try { renderOdemeGecmis(); } catch(e) {}
+  refreshCariIfOpen();
   setTimeout(() => { if (typeof renderDashboard === 'function') renderDashboard(); }, 50);
 }
 
@@ -8292,6 +8294,7 @@ function finBulkDelete() {
   _finSelected.clear();
   save(); renderFinans();
   if (typeof renderOdemeGecmis === 'function') try { renderOdemeGecmis(); } catch(e) {}
+  refreshCariIfOpen();
   toast('Seçili kayıtlar silindi.','ok');
 }
 function finBulkOde() {
