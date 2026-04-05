@@ -8040,12 +8040,36 @@ function finFormTemizle() { gelirFormTemizle(); }
 function delFinans(id) { softCancelFinans(id); }
 
 // ── BORÇ LİSTESİ PDF ─────────────────────────────────────────────────────────
+/** Modalı aç — sütun seçimi için */
 function borcListesiPDF() {
-  const aptId = selectedAptId;
-  if (!aptId) { toast('Apartman seçilmedi.', 'warn'); return; }
-  const apt = S.apartmanlar.find(a => a.id == aptId);
+  if (!selectedAptId) { toast('Apartman seçilmedi.', 'warn'); return; }
+  openModal('mod-borc-pdf');
+}
 
-  // Mevcut filtreleri oku
+/** Modal onayından sonra çağrılır — seçili sütunlara göre PDF üretir */
+function borcPdfOlustur() {
+  closeModal('mod-borc-pdf');
+
+  const chk = id => !!document.getElementById(id)?.checked;
+  const cols = {
+    daire:    chk('pcol-daire'),
+    tip:      chk('pcol-tip'),
+    aidat:    chk('pcol-aidat'),
+    borc:     chk('pcol-borc'),
+    sonodeme: chk('pcol-sonodeme'),
+    risk:     chk('pcol-risk'),
+    giris:    chk('pcol-giris'),
+    tc:       chk('pcol-tc'),
+    tel:      chk('pcol-tel'),
+    tel2:     chk('pcol-tel2'),
+    email:    chk('pcol-email'),
+    dogum:    chk('pcol-dogum'),
+  };
+
+  const aptId = selectedAptId;
+  const apt   = S.apartmanlar.find(a => a.id == aptId);
+
+  // Aktif filtreleri uygula (renderTahsilat ile aynı mantık)
   const s    = (document.getElementById('tah-srch')?.value || '').toLowerCase();
   const fD   = document.getElementById('tah-f-durum')?.value || '';
   const fR   = document.getElementById('tah-f-risk')?.value  || '';
@@ -8070,8 +8094,6 @@ function borcListesiPDF() {
       .forEach(k => (k.detaylar || []).filter(d => (d.kategori || 'Aidat') === fKat).forEach(d => katSakIds.add(d.sakId)));
     if (katSakIds.size) list = list.filter(x => katSakIds.has(x.id));
   }
-
-  // Borça göre büyükten küçüğe sırala
   list = list.slice().sort((a, b) => (b.borc || 0) - (a.borc || 0));
 
   const topBorc  = list.reduce((s, x) => s + (x.borc || 0), 0);
@@ -8079,9 +8101,9 @@ function borcListesiPDF() {
   const temizSy  = list.length - borcluSy;
   const topAidat = list.reduce((s, x) => s + (x.aidat || 0), 0);
 
-  const riskLbl  = b => b > 3000 ? 'Yüksek' : b > 500 ? 'Orta' : b > 0 ? 'Düşük' : '—';
-  const riskClr  = b => b > 3000 ? '#dc2626' : b > 500 ? '#d97706' : b > 0 ? '#16a34a' : '#9ca3af';
-  const sonOd    = sakId => {
+  const riskLbl = b => b > 3000 ? 'Yüksek' : b > 500 ? 'Orta' : b > 0 ? 'Düşük' : '—';
+  const riskClr = b => b > 3000 ? '#dc2626' : b > 500 ? '#d97706' : b > 0 ? '#16a34a' : '#9ca3af';
+  const sonOd   = sakId => {
     const t = (S.tahsilatlar || []).filter(x => x.sakId == sakId && x.status !== 'cancelled')
       .sort((a, b) => (b.tarih || '').localeCompare(a.tarih || '')).slice(0, 1)[0];
     return t ? t.tarih : '—';
@@ -8096,6 +8118,27 @@ function borcListesiPDF() {
   if (fKat)              filtreLbl.push('Kategori: ' + fKat);
   if (s)                 filtreLbl.push('Arama: "' + s + '"');
 
+  // Seçili kişisel bilgi varsa uyarı satırı
+  const gizliVar = cols.tc || cols.tel || cols.tel2 || cols.email || cols.dogum;
+
+  // Aktif sütun başlıklarını derle (# ve Sakin Adı sabit)
+  const thList = ['#', 'Sakin Adı'];
+  if (cols.daire)    thList.push('Daire');
+  if (cols.tip)      thList.push('Tip');
+  if (cols.tc)       thList.push('T.C. Kimlik No');
+  if (cols.dogum)    thList.push('Doğum Tarihi');
+  if (cols.tel)      thList.push('Telefon');
+  if (cols.tel2)     thList.push('2. Telefon');
+  if (cols.email)    thList.push('E-posta');
+  if (cols.giris)    thList.push('Giriş Tarihi');
+  if (cols.aidat)    thList.push('Aidat/Ay');
+  if (cols.borc)     thList.push('Toplam Borç');
+  if (cols.sonodeme) thList.push('Son Ödeme');
+  if (cols.risk)     thList.push('Risk');
+
+  // Toplam borç sütunu colspan hesabı (sol + borç öncesi sütun sayısı)
+  const leftCols = thList.indexOf('Toplam Borç');
+
   let html = _pdfOpen('Borç Listesi', apt ? apt.ad : '');
   html += `
   <div class="stats">
@@ -8103,44 +8146,39 @@ function borcListesiPDF() {
     <div class="stat"><div class="stat-v" style="color:#dc2626">${borcluSy}</div><div class="stat-l">Borçlu Sakin</div></div>
     <div class="stat"><div class="stat-v" style="color:#16a34a">${temizSy}</div><div class="stat-l">Borçsuz Sakin</div></div>
     <div class="stat"><div class="stat-v">${list.length}</div><div class="stat-l">Toplam Sakin</div></div>
-    <div class="stat"><div class="stat-v">₺${fmt(topAidat)}</div><div class="stat-l">Aylık Aidat Toplamı</div></div>
+    <div class="stat"><div class="stat-v">₺${fmt(topAidat)}</div><div class="stat-l">Aylık Aidat</div></div>
   </div>
-  ${filtreLbl.length ? `<p style="font-size:11px;color:#6b7280;margin:0 0 14px;padding:7px 10px;background:#f9fafb;border-radius:6px;border:1px solid #e5e7eb">🔍 Filtre: ${filtreLbl.join(' &nbsp;·&nbsp; ')}</p>` : ''}
+  ${filtreLbl.length ? `<p style="font-size:11px;color:#6b7280;margin:0 0 10px;padding:6px 10px;background:#f9fafb;border-radius:6px;border:1px solid #e5e7eb">🔍 ${filtreLbl.join(' &nbsp;·&nbsp; ')}</p>` : ''}
+  ${gizliVar ? `<p style="font-size:10.5px;color:#92400e;margin:0 0 12px;padding:6px 10px;background:#fffbeb;border-radius:6px;border:1px solid #fde68a">⚠ Bu belgede kişisel veri bulunmaktadır. Yalnızca yetkili kişilerle paylaşın.</p>` : ''}
   <table>
     <thead>
-      <tr>
-        <th style="width:26px;text-align:center">#</th>
-        <th>Sakin Adı</th>
-        <th style="text-align:center">Daire</th>
-        <th style="text-align:center">Tip</th>
-        <th style="text-align:right">Aidat/Ay</th>
-        <th style="text-align:right">Toplam Borç</th>
-        <th style="text-align:center">Son Ödeme</th>
-        <th style="text-align:center">Risk</th>
-      </tr>
+      <tr>${thList.map((h, i) => `<th style="${i===0?'width:26px;':''}text-align:${['Aidat/Ay','Toplam Borç'].includes(h)?'right':'center'}">${h}</th>`).join('')}</tr>
     </thead>
     <tbody>
       ${list.map((sk, i) => {
         const borc = sk.borc || 0;
-        return `<tr${borc > 0 ? ' style="background:#fff5f5"' : ''}>
-          <td style="text-align:center;color:#9ca3af;font-size:10px">${i + 1}</td>
-          <td><strong>${he(sk.ad)}</strong><br><span style="font-size:10px;color:#9ca3af">${sk.tip === 'malik' ? 'Malik' : 'Kiracı'}</span></td>
-          <td style="text-align:center;font-weight:700">${he(sk.daire || '—')}</td>
-          <td style="text-align:center"><span style="padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;background:${sk.tip === 'malik' ? '#eff6ff' : '#fffbeb'};color:${sk.tip === 'malik' ? '#1d4ed8' : '#92400e'}">${sk.tip === 'malik' ? 'Malik' : 'Kiracı'}</span></td>
-          <td style="text-align:right">${sk.aidat ? '₺' + fmt(sk.aidat) : '—'}</td>
-          <td style="text-align:right;font-weight:700;font-size:13px;color:${borc > 0 ? '#dc2626' : '#16a34a'}">${borc > 0 ? '₺' + fmt(borc) : '₺0'}</td>
-          <td style="text-align:center;font-size:11px">${sonOd(sk.id)}</td>
-          <td style="text-align:center;font-weight:600;color:${riskClr(borc)}">${riskLbl(borc)}</td>
-        </tr>`;
+        const cells = [`<td style="text-align:center;color:#9ca3af;font-size:10px">${i + 1}</td>`];
+        cells.push(`<td><strong>${he(sk.ad)}</strong></td>`);
+        if (cols.daire)    cells.push(`<td style="text-align:center;font-weight:700">${he(sk.daire || '—')}</td>`);
+        if (cols.tip)      cells.push(`<td style="text-align:center"><span style="padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;background:${sk.tip==='malik'?'#eff6ff':'#fffbeb'};color:${sk.tip==='malik'?'#1d4ed8':'#92400e'}">${sk.tip==='malik'?'Malik':'Kiracı'}</span></td>`);
+        if (cols.tc)       cells.push(`<td style="text-align:center;font-size:11px;font-family:monospace">${he(sk.tc||'—')}</td>`);
+        if (cols.dogum)    cells.push(`<td style="text-align:center;font-size:11px">${he(sk.dogum||'—')}</td>`);
+        if (cols.tel)      cells.push(`<td style="text-align:center;font-size:11px">${he(sk.tel||'—')}</td>`);
+        if (cols.tel2)     cells.push(`<td style="text-align:center;font-size:11px">${he(sk.tel2||'—')}</td>`);
+        if (cols.email)    cells.push(`<td style="text-align:center;font-size:11px">${he(sk.email||'—')}</td>`);
+        if (cols.giris)    cells.push(`<td style="text-align:center;font-size:11px">${he(sk.giris||'—')}</td>`);
+        if (cols.aidat)    cells.push(`<td style="text-align:right">${sk.aidat?'₺'+fmt(sk.aidat):'—'}</td>`);
+        if (cols.borc)     cells.push(`<td style="text-align:right;font-weight:700;font-size:13px;color:${borc>0?'#dc2626':'#16a34a'}">${borc>0?'₺'+fmt(borc):'₺0'}</td>`);
+        if (cols.sonodeme) cells.push(`<td style="text-align:center;font-size:11px">${sonOd(sk.id)}</td>`);
+        if (cols.risk)     cells.push(`<td style="text-align:center;font-weight:600;color:${riskClr(borc)}">${riskLbl(borc)}</td>`);
+        return `<tr${borc > 0 ? ' style="background:#fff5f5"' : ''}>${cells.join('')}</tr>`;
       }).join('')}
     </tbody>
-    <tfoot>
-      <tr style="background:#fef2f2;font-weight:800">
-        <td colspan="5" style="text-align:right;padding:10px 8px;font-size:12px;letter-spacing:.3px">TOPLAM ALACAK</td>
-        <td style="text-align:right;font-size:15px;color:#dc2626;padding:10px 8px">₺${fmt(topBorc)}</td>
-        <td colspan="2"></td>
-      </tr>
-    </tfoot>
+    ${cols.borc ? `<tfoot><tr style="background:#fef2f2;font-weight:800">
+      <td colspan="${leftCols > 0 ? leftCols : thList.length - 1}" style="text-align:right;padding:10px 8px;font-size:12px">TOPLAM ALACAK</td>
+      <td style="text-align:right;font-size:15px;color:#dc2626;padding:10px 8px">₺${fmt(topBorc)}</td>
+      <td colspan="${thList.length - leftCols - 1}"></td>
+    </tr></tfoot>` : ''}
   </table>`;
   html += _pdfClose();
 

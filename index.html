@@ -3001,6 +3001,87 @@
   </div>
 </div>
 
+<!-- BORÇ LİSTESİ PDF SÜTUN SEÇİM MODALI -->
+<div class="ov" id="mod-borc-pdf" onclick="if(event.target===this)closeModal('mod-borc-pdf')">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-h">
+      <div class="modal-t">PDF Sütun Seçimi</div>
+      <button class="modal-x" onclick="closeModal('mod-borc-pdf')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+
+    <div style="padding:18px 20px 4px">
+      <!-- Standart Sütunlar -->
+      <div style="font-size:11px;font-weight:700;color:var(--tx-3);letter-spacing:.6px;text-transform:uppercase;margin-bottom:10px">Standart Sütunlar</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px">
+        <label class="pdf-col-chk" style="opacity:.55;cursor:not-allowed" title="Sakin adı her zaman gösterilir">
+          <input type="checkbox" checked disabled> Sakin Adı
+        </label>
+        <label class="pdf-col-chk">
+          <input type="checkbox" id="pcol-daire" checked> Daire No
+        </label>
+        <label class="pdf-col-chk">
+          <input type="checkbox" id="pcol-tip" checked> Tip (Malik/Kiracı)
+        </label>
+        <label class="pdf-col-chk">
+          <input type="checkbox" id="pcol-aidat" checked> Aidat/Ay
+        </label>
+        <label class="pdf-col-chk">
+          <input type="checkbox" id="pcol-borc" checked> Toplam Borç
+        </label>
+        <label class="pdf-col-chk">
+          <input type="checkbox" id="pcol-sonodeme" checked> Son Ödeme
+        </label>
+        <label class="pdf-col-chk">
+          <input type="checkbox" id="pcol-risk" checked> Risk Seviyesi
+        </label>
+        <label class="pdf-col-chk">
+          <input type="checkbox" id="pcol-giris"> Giriş Tarihi
+        </label>
+      </div>
+
+      <!-- Kişisel Bilgiler -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div style="font-size:11px;font-weight:700;color:var(--tx-3);letter-spacing:.6px;text-transform:uppercase">Kişisel Bilgiler</div>
+        <span style="font-size:10px;background:#fef3c7;color:#92400e;padding:2px 7px;border-radius:10px;font-weight:600">⚠ Gizlilik</span>
+      </div>
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;margin-bottom:6px">
+        <div style="font-size:11px;color:#92400e;margin-bottom:10px">Bu alanlar hassas kişisel veri içerir. Yalnızca yetkili kişilerle paylaşın.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <label class="pdf-col-chk">
+            <input type="checkbox" id="pcol-tc"> T.C. Kimlik No
+          </label>
+          <label class="pdf-col-chk">
+            <input type="checkbox" id="pcol-tel"> Telefon
+          </label>
+          <label class="pdf-col-chk">
+            <input type="checkbox" id="pcol-tel2"> 2. Telefon
+          </label>
+          <label class="pdf-col-chk">
+            <input type="checkbox" id="pcol-email"> E-posta
+          </label>
+          <label class="pdf-col-chk">
+            <input type="checkbox" id="pcol-dogum"> Doğum Tarihi
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-f" style="justify-content:space-between">
+      <div class="fc g8">
+        <button class="btn bg sm" onclick="document.querySelectorAll('#mod-borc-pdf input[type=checkbox]:not(:disabled)').forEach(c=>c.checked=true)" style="font-size:11px">Tümünü Seç</button>
+        <button class="btn bg sm" onclick="document.querySelectorAll('#mod-borc-pdf input[type=checkbox]:not(:disabled):not(#pcol-borc):not(#pcol-daire)').forEach(c=>c.checked=false)" style="font-size:11px">Varsayılana Dön</button>
+      </div>
+      <div class="fc g8">
+        <button class="btn bg" onclick="closeModal('mod-borc-pdf')">İptal</button>
+        <button class="btn bp" onclick="borcPdfOlustur()">
+          <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          PDF Oluştur
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="app.js"></script>
 </body>
 </html>

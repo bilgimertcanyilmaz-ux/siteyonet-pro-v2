@@ -2887,3 +2887,23 @@ button:focus-visible, a:focus-visible {
   #dab-root .sg { grid-template-columns: 1fr 1fr !important; }
 }
 
+
+
+/* ── PDF SÜTUN SEÇİM KARTI ───────────────────────────────── */
+.pdf-col-chk {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--tx-2);
+  padding: 7px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--bd);
+  background: var(--surface);
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+  user-select: none;
+}
+.pdf-col-chk:hover { background: var(--bg); border-color: var(--brand); color: var(--tx-1); }
+.pdf-col-chk input[type=checkbox] { accent-color: var(--brand); width: 14px; height: 14px; cursor: pointer; flex-shrink: 0; }
