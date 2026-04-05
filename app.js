@@ -4541,7 +4541,7 @@ function renderTahsilat() {
     const sonOdeme=S.tahsilatlar.filter(x=>x.sakId==sk.id).sort((a,b)=>b.tarih?.localeCompare(a.tarih||'')).slice(0,1)[0];
     return `<tr>
       <td><input type="checkbox" class="tah-chk" data-id="${sk.id}" onchange="updateTahSecili()"></td>
-      <td><strong>${sk.ad}</strong><div class="t3" style="font-size:10.5px">${sk.tip==='malik'?'Malik':'Kiracı'}</div></td>
+      <td><strong onclick="goSakinCari(${sk.id},false)" style="cursor:pointer;color:var(--brand)" title="Cari sayfasını aç">${sk.ad}</strong><div class="t3" style="font-size:10.5px">${sk.tip==='malik'?'Malik':'Kiracı'}</div></td>
       <td style="font-weight:700;color:var(--brand)">${sk.daire||'—'}</td>
       <td><span class="b ${sk.tip==='malik'?'b-bl':'b-am'}" style="font-size:10px">${sk.tip==='malik'?'Malik':'Kiracı'}</span></td>
       <td style="color:var(--ok)">${sk.aidat?'₺'+fmt(sk.aidat)+'/ay':'—'}</td>
