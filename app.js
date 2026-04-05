@@ -4486,13 +4486,11 @@ function renderTahsilat() {
   const fR=document.getElementById('tah-f-risk')?.value||'';
   const fKat=document.getElementById('tah-f-kat')?.value||'';
 
-  // Kategori select'i doldur
+  // Kategori select'i doldur — yalnızca bu apt'ta gerçekten kullanılmış kategoriler
   const katEl=document.getElementById('tah-f-kat');
   if(katEl){
-    const sabitKatlar=['Aidat','Kira','Yakıt','Elektrik','Su','Doğalgaz','Asansör','Temizlik','Güvenlik','Sigorta','Diğer'];
-    const dinamikKatlar=[...new Set((S.aidatBorclandir||[]).filter(k=>k.aptId==aptId).flatMap(k=>(k.detaylar||[]).map(d=>d.kategori||'Aidat')).filter(Boolean))];
-    const tumKatlar=[...new Set([...sabitKatlar,...dinamikKatlar])].sort();
-    katEl.innerHTML='<option value="">Tüm Kategoriler</option>'+tumKatlar.map(k=>`<option value="${k}"${k===fKat?' selected':''}>${k}</option>`).join('');
+    const kullanilan=[...new Set((S.aidatBorclandir||[]).filter(k=>k.aptId==aptId).flatMap(k=>(k.detaylar||[]).map(d=>d.kategori||k.kategori||'Aidat')).filter(Boolean))].sort();
+    katEl.innerHTML='<option value="">Tüm Kategoriler</option>'+kullanilan.map(k=>`<option value="${k}"${k===fKat?' selected':''}>${k}</option>`).join('');
   }
 
   let list=S.sakinler.filter(x=>x.aptId==aptId);
