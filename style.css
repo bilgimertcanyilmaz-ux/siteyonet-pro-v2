@@ -2907,3 +2907,650 @@ button:focus-visible, a:focus-visible {
 }
 .pdf-col-chk:hover { background: var(--bg); border-color: var(--brand); color: var(--tx-1); }
 .pdf-col-chk input[type=checkbox] { accent-color: var(--brand); width: 14px; height: 14px; cursor: pointer; flex-shrink: 0; }
+
+/* ═══════════════════════════════════════════════════════════
+   MOBİL UYUMLULUK — KAPSAMLI DÜZELTMELER v5
+   Hedef: 320px+ ekranlarda tüm sayfalar eksiksiz kullanılabilir
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Genel taşma koruması ────────────────────────── */
+body { overflow-x: hidden; }
+.pg { overflow-x: hidden; min-width: 0; }
+* { min-width: 0; }
+/* Inline grid/flex öğelerin minimum genişliği sıfırlanıyor (taşmayı önler) */
+.fg > * { min-width: 0; }
+
+/* ── Inline style ile tanımlı grid'ler için overflow-x scroll ── */
+[style*="grid-template-columns"] { min-width: 0; }
+
+/* ── AUTH & SETUP ekranları — küçük telefon ── */
+@media (max-width: 480px) {
+  .auth-box, .setup-box {
+    padding: 24px 18px;
+    border-radius: 16px;
+    max-width: calc(100vw - 24px);
+  }
+  .auth-logo-text { font-size: 17px; }
+  .auth-btn { padding: 12px; font-size: 13.5px; }
+  .role-box h1 { font-size: 22px; }
+  .role-box p { font-size: 12px; }
+  .role-card { padding: 14px 16px; gap: 12px; }
+  .role-card .rc-ico { width: 40px; height: 40px; border-radius: 10px; }
+  .role-card .rc-title { font-size: 14px; }
+  .role-card .rc-desc { font-size: 11px; }
+}
+@media (max-width: 380px) {
+  .auth-box, .setup-box { padding: 18px 14px; }
+}
+
+/* ── PAGE HEADER — mobilde dikey stack ── */
+@media (max-width: 768px) {
+  .page-hdr {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .page-hdr-acts { width: 100%; }
+  .page-hdr-title { font-size: 17px; }
+}
+@media (max-width: 480px) {
+  .page-hdr-title { font-size: 15px; }
+  .page-hdr-sub { font-size: 11.5px; }
+}
+
+/* ── FİNANS MODÜLÜ — fin-stat grid ── */
+@media (max-width: 768px) {
+  #page-finans .fin-stat { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+}
+@media (max-width: 480px) {
+  #page-finans .fin-stat { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .fin-card .fin-val { font-size: 18px; }
+}
+
+/* ── DAİRE DETAY — inline 4-sütun stat grid ── */
+@media (max-width: 768px) {
+  /* #fd-stats repeat(5,1fr) → 2-sütun */
+  #fd-stats { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
+  /* Finans durum sayfası: 1fr 180px yan panel → tek sütun */
+  #page-finansal-durum [style*="grid-template-columns:1fr 180px"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+@media (max-width: 480px) {
+  #fd-stats { grid-template-columns: 1fr 1fr !important; }
+}
+
+/* ── İCRA/FİNANS SAYFALARI — repeat(4,1fr) stat grids ── */
+@media (max-width: 768px) {
+  #icra-rapor-stats,
+  #ff-stats,
+  #page-icra .sg {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+}
+@media (max-width: 480px) {
+  #icra-rapor-stats,
+  #ff-stats {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+/* ── TOPLU BORÇ — uygulama satırı ve stat grid ── */
+@media (max-width: 768px) {
+  #page-toplu-borc .sg { grid-template-columns: 1fr 1fr !important; }
+  /* Toplu borç gider listesi header: 7-sütun → scroll */
+  #page-toplu-borc [style*="grid-template-columns:1fr 80px 80px 80px 130px 90px 32px"] {
+    display: none !important;
+  }
+}
+
+/* ── KASA & BANKA MODÜLÜ ── */
+@media (max-width: 768px) {
+  /* Kasa hesap kartları: auto-fill → 2-col */
+  #kasa-hesaplar { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+  /* İşlem tablosu: scrollable */
+  #page-kasa .tw { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  #page-kasa .tw table { min-width: 500px; }
+}
+@media (max-width: 480px) {
+  #kasa-hesaplar { grid-template-columns: 1fr !important; }
+}
+
+/* ── MAKBUZLAR / TAHSİLAT MODÜLÜ ── */
+@media (max-width: 768px) {
+  #page-makbuzlar .tw table { min-width: 480px; }
+  #page-tahsilat .tw table { min-width: 480px; }
+}
+
+/* ── PERSONEL MODÜLÜ ── */
+@media (max-width: 768px) {
+  #page-personel .tw table { min-width: 560px; }
+}
+
+/* ── RAPORLAR SAYFASI ── */
+@media (max-width: 768px) {
+  /* Tahsilat özet: repeat(3,1fr) → 1fr 1fr */
+  #rap-tah-ozet { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
+  /* Arıza stats: 2-col korunuyor */
+  #rap-arz-stats { grid-template-columns: 1fr 1fr !important; }
+}
+@media (max-width: 480px) {
+  #rap-tah-ozet { grid-template-columns: 1fr !important; }
+}
+
+/* ── İSLETME PROJE — gider/gelir satır header ── */
+@media (max-width: 600px) {
+  /* Gider kalemi header satırı: 4-sütun → 2-sütun */
+  #page-isletme [style*="grid-template-columns:1fr 100px 100px 24px"] {
+    grid-template-columns: 1fr 90px 28px !important;
+    gap: 4px !important;
+  }
+  /* Gider liste satırları scroll */
+  #isl-tbody-wrap, #gider-list, #gelir-list { overflow-x: auto; }
+  /* Net özet: 3-sütun → tek sütun */
+  #page-isletme [style*="grid-template-columns:1fr 1fr 1fr"] {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+/* ── DUYURULAR — duy-grid ── */
+@media (max-width: 600px) {
+  #duy-grid { grid-template-columns: 1fr !important; }
+}
+
+/* ── SAKIN PROFİL SAYFALARI — sp-2col ── */
+@media (max-width: 640px) {
+  .sp-2col { grid-template-columns: 1fr !important; }
+  #sp-root { max-width: 100%; padding-left: 0 !important; padding-right: 0 !important; }
+}
+
+/* ── ARIZA/BAKIM KARTI GRID ── */
+@media (max-width: 600px) {
+  .arz-kart { padding: 12px 14px; }
+  .arz-kart-head { gap: 8px; }
+}
+
+/* ── PROJE TAKİBİ ── */
+@media (max-width: 640px) {
+  .proje-kart { padding: 14px; }
+  .proje-kart-head { gap: 8px; }
+}
+
+/* ── ASANSÖR/TOPLANTI/KİRA METİN — form grid kompakt ── */
+@media (max-width: 480px) {
+  .f3.fg { grid-template-columns: 1fr 1fr !important; }
+}
+@media (max-width: 380px) {
+  .f3.fg { grid-template-columns: 1fr !important; }
+}
+
+/* ── SIDEBAR FOOTER — topbar baskı ── */
+@media (max-width: 380px) {
+  .sb-foot { padding: 8px 6px; }
+  .sb-user { padding: 7px 8px; }
+}
+
+/* ── WELCOME BANNER ── */
+@media (max-width: 600px) {
+  .welcome-banner { padding: 18px 18px; }
+  .welcome-banner h2 { font-size: 16px; }
+  .welcome-banner p { font-size: 12px; }
+  .welcome-banner .wb-date { position: static; display: block; margin-top: 8px; font-size: 11px; }
+}
+
+/* ── DS-HERO (DASHBOARD) ── */
+@media (max-width: 480px) {
+  .ds-hero { padding: 18px 16px; border-radius: 14px; }
+  .ds-hero-title { font-size: 18px; }
+  .ds-hero-sub { font-size: 12px; margin-bottom: 14px; }
+  .ds-hero-chips { gap: 6px; }
+  .ds-hero-chip { font-size: 11px; padding: 4px 10px 4px 8px; }
+}
+@media (max-width: 380px) {
+  .ds-qa-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 7px; }
+  .ds-qa-item { padding: 12px 8px 10px; border-radius: 10px; }
+  .ds-qa-ico { width: 32px; height: 32px; border-radius: 8px; }
+  .ds-qa-lbl { font-size: 10.5px; }
+  .ds-kpi-grid { gap: 7px; }
+  .ds-kpi { padding: 14px 12px 10px; border-radius: 12px; }
+  .ds-kpi-val { font-size: 20px; }
+}
+
+/* ── SECTION-BOX: HEADER WRAP ── */
+@media (max-width: 600px) {
+  .section-box-hdr { flex-wrap: wrap; gap: 8px; }
+  .section-box-body { padding: 12px 14px; }
+}
+
+/* ── MODAL FOOTER — butonlar alt alta ── */
+@media (max-width: 400px) {
+  .modal-f { flex-direction: column; }
+  .modal-f .btn { width: 100%; justify-content: center; }
+}
+
+/* ── NOTIFY PANELİ — dar ekranda tam genişlik ── */
+@media (max-width: 400px) {
+  #notif-panel { right: 4px; left: 4px; width: auto; }
+}
+
+/* ── TAHSİLAT / MAKBUZsürekli STAT KARTLARI ── */
+@media (max-width: 600px) {
+  #page-tahsilat .sg { grid-template-columns: 1fr 1fr; gap: 8px; }
+  #page-makbuzlar .sg { grid-template-columns: 1fr 1fr; gap: 8px; }
+  #page-kasa .sg { grid-template-columns: 1fr 1fr; gap: 8px; }
+  #page-personel .sg { grid-template-columns: 1fr 1fr; gap: 8px; }
+  #page-raporlar .sg { grid-template-columns: 1fr 1fr; gap: 8px; }
+  #page-duyurular .sg { grid-template-columns: 1fr 1fr; gap: 8px; }
+  #page-proje .sg { grid-template-columns: 1fr 1fr; gap: 8px; }
+  #page-ariza .sg { grid-template-columns: 1fr 1fr; gap: 8px; }
+}
+
+/* ── FİNANSAL DURUM — yan panel ── */
+@media (max-width: 640px) {
+  #page-finansal-durum .cari-page { grid-template-columns: 1fr; }
+  #page-finansal-durum .cari-side { position: static; }
+}
+
+/* ── İLETİŞİM LOGU — item ── */
+@media (max-width: 480px) {
+  .ilet-item { gap: 8px; }
+  .ilet-tur-ico { width: 30px; height: 30px; font-size: 14px; border-radius: 8px; }
+  .ilet-konu { font-size: 12.5px; }
+  .ilet-meta { font-size: 10.5px; }
+}
+
+/* ── EKSTRİM KÜÇÜK (320px) — son güvenlik ağı ── */
+@media (max-width: 340px) {
+  #content { padding: 6px 4px; }
+  .card { padding: 10px 10px; }
+  .btn { font-size: 12px; padding: 8px 12px; min-height: 40px; }
+  .sm { font-size: 11.5px; min-height: 36px; }
+  .xs { font-size: 11px; min-height: 34px; }
+  .sg { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .sc-val { font-size: 17px; }
+  .modal { padding: 10px; }
+  .tabs { gap: 1px; }
+  .tab { padding: 5px 8px; font-size: 11px; }
+  #page-title { font-size: 11.5px; }
+}
+
+/* ── TOAST — mobil konumlandırma ── */
+@media (max-width: 600px) {
+  .toast {
+    bottom: 16px;
+    right: 12px;
+    left: 12px;
+    max-width: none;
+    text-align: center;
+    justify-content: center;
+  }
+}
+
+/* ── BOTTOM BAR — pozisyon koruması ── */
+@media (max-width: 768px) {
+  .bottom-bar { padding: 10px 14px; gap: 8px; }
+  .bottom-bar .btn { flex: 1; justify-content: center; }
+}
+
+/* ── SRCH (arama kutusu) — genişlik override ── */
+@media (max-width: 600px) {
+  .srch[style*="width:250px"],
+  .srch[style*="width:260px"],
+  .srch[style*="width:230px"] {
+    width: 100% !important;
+  }
+}
+
+/* ── FILTER BAR select genişlikleri ── */
+@media (max-width: 600px) {
+  .fc.g8[style*="flex-wrap:wrap"] > select.fi {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+/* ── KANBAN: mobil scroll desteği ── */
+@media (max-width: 768px) {
+  .kanban-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .kanban-grid { min-width: 0; }
+}
+
+/* ── BÜYÜK TABLO SAYFALARİ: yatay scroll zorunlu ── */
+@media (max-width: 600px) {
+  #page-denetim .tw table { min-width: 600px; }
+  #page-toplanti .tw table { min-width: 480px; }
+  #page-sakinler .tw table { min-width: 500px; }
+  #page-ariza .tw table { min-width: 520px; }
+  #page-icra .tw table { min-width: 520px; }
+  #page-proje .tw table { min-width: 480px; }
+  #page-isletme .tw table { min-width: 480px; }
+  #page-karar .tw table { min-width: 400px; }
+  #page-asansor .tw table { min-width: 420px; }
+  #page-sigorta .tw table { min-width: 480px; }
+  #page-gorevler .tw table { min-width: 420px; }
+  #page-duyurular .tw table { min-width: 400px; }
+}
+
+/* ── METRİC CARD — dar ekranda stack ── */
+@media (max-width: 480px) {
+  .metric-card { padding: 14px 14px; }
+  .metric-val { font-size: 18px; }
+}
+
+/* ── EXPORT GRID — tek sütun ── */
+@media (max-width: 600px) {
+  .export-grid { grid-template-columns: 1fr; }
+  .export-card { padding: 14px; }
+}
+
+/* ── BANKA DOSYA KARTLARI — scroll yatay ── */
+@media (max-width: 600px) {
+  .bank-dosyalar-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .bank-dosya-kart { min-width: 180px; }
+}
+
+/* ── RAPOR KPİ GRID — 4-col zaten var, ek küçük telefon ── */
+@media (max-width: 380px) {
+  #rap-kpi-grid { grid-template-columns: 1fr 1fr !important; gap: 7px !important; }
+}
+
+/* ── MOBİL KARTI: g2/g3 ek güvenlik ── */
+@media (max-width: 420px) {
+  .g3 { grid-template-columns: 1fr !important; }
+}
+
+/* ── TOPLANTI VE GÖREVLER ── */
+@media (max-width: 640px) {
+  #page-toplanti .card-h { flex-direction: column; align-items: flex-start; }
+  #page-gorevler .card-h { flex-direction: column; align-items: flex-start; }
+}
+
+/* ── FORM GRIDS — tüm büyük formlar dar ekranda tek sütun ── */
+@media (max-width: 480px) {
+  .f2 { grid-template-columns: 1fr !important; }
+  .f3 { grid-template-columns: 1fr !important; }
+  /* Modal form grids */
+  .modal .f2 { grid-template-columns: 1fr !important; }
+  .modal .f3 { grid-template-columns: 1fr !important; }
+}
+
+/* ── AYLIK RAPOR SAYFASI ── */
+@media (max-width: 640px) {
+  .aylik-tablo td, .aylik-tablo th { padding: 5px 8px; font-size: 11.5px; }
+}
+@media (max-width: 480px) {
+  .aylik-tablo td, .aylik-tablo th { padding: 4px 6px; font-size: 11px; }
+  #page-aylik-rapor .tw table { min-width: 420px; }
+}
+
+/* ── AI PANELİ — dar ekranda ── */
+@media (max-width: 480px) {
+  .ai-wrap { padding: 12px; }
+  .ai-out { font-size: 11.5px; padding: 10px; }
+  .ai-head { gap: 8px; margin-bottom: 10px; }
+  .ai-lbl { font-size: 12px; }
+  .ai-sub { font-size: 10px; }
+}
+
+/* ── QUICK-ACTIONS DASHBOARDv1 (eski) ── */
+@media (max-width: 480px) {
+  .quick-actions { grid-template-columns: repeat(3, 1fr); gap: 7px; }
+  .qa-btn { padding: 10px 8px; }
+  .qa-btn .qa-ico { font-size: 18px; margin-bottom: 4px; }
+  .qa-btn .qa-lbl { font-size: 11px; }
+}
+@media (max-width: 360px) {
+  .quick-actions { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ── ELEVATOR PİLLS — epills wrap ── */
+@media (max-width: 600px) {
+  .epills { gap: 7px; }
+  .ep { flex: 1; min-width: 90px; }
+}
+
+/* ── SUPERADMİN ── */
+@media (max-width: 480px) {
+  .sa-stat-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .sa-stat { padding: 14px 14px; }
+  .sa-stat .sa-val { font-size: 22px; }
+  .sa-site-row { grid-template-columns: 1fr auto; font-size: 11.5px; padding: 10px 12px; }
+  .sa-site-row > :not(:first-child):not(:last-child) { display: none; }
+  .sa-site-header > :not(:first-child):not(:last-child) { display: none; }
+}
+
+/* ── İNLINE STYLE OVERRIDE: repeat(3,1fr) → 2 sütun ── */
+@media (max-width: 640px) {
+  [style*="grid-template-columns:repeat(3,1fr)"],
+  [style*="grid-template-columns: repeat(3, 1fr)"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+@media (max-width: 420px) {
+  [style*="grid-template-columns:repeat(3,1fr)"],
+  [style*="grid-template-columns: repeat(3, 1fr)"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── İNLINE STYLE OVERRIDE: repeat(4,1fr) → 2 sütun ── */
+@media (max-width: 768px) {
+  [style*="grid-template-columns:repeat(4,1fr)"],
+  [style*="grid-template-columns: repeat(4, 1fr)"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+@media (max-width: 380px) {
+  [style*="grid-template-columns:repeat(4,1fr)"],
+  [style*="grid-template-columns: repeat(4, 1fr)"] {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+/* ── İNLINE STYLE OVERRIDE: repeat(5,1fr) → 2-3 sütun ── */
+@media (max-width: 860px) {
+  [style*="grid-template-columns:repeat(5,1fr)"],
+  [style*="grid-template-columns: repeat(5, 1fr)"] {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+@media (max-width: 600px) {
+  [style*="grid-template-columns:repeat(5,1fr)"],
+  [style*="grid-template-columns: repeat(5, 1fr)"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* ── İNLINE STYLE OVERRIDE: sabit piksel genişlikli çok sütunlu gridler ── */
+/* Bu gridler genellikle tablo başlıkları — içeren .tw ile scroll edilmeli */
+@media (max-width: 640px) {
+  [style*="grid-template-columns:90px 1fr 108px 160px 78px 76px"],
+  [style*="grid-template-columns:40px 140px 80px 100px 120px 110px 40px"],
+  [style*="grid-template-columns:1fr 80px 80px 80px 130px 90px 32px"] {
+    display: none !important; /* tablo header satırları — tablo scrolllanacak */
+  }
+}
+
+/* ── devir-bakiye, finansal-durum ek düzeltme ── */
+@media (max-width: 640px) {
+  #page-devir-bakiye .g2 { grid-template-columns: 1fr; }
+  #page-devir-bakiye .card { padding: 14px; }
+  /* 1fr 160px 1fr → tek sütun */
+  #page-devir-bakiye [style*="grid-template-columns:1fr 160px 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+  /* finansal durum: 1fr 180px → tek sütun */
+  #page-finansal-durum [style*="grid-template-columns:1fr 180px"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── TEKLIFLER / SİGORTA sayfaları ── */
+@media (max-width: 640px) {
+  #page-teklifler .tw table { min-width: 520px; }
+  #page-sigorta .f3 { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 480px) {
+  #page-sigorta .f3 { grid-template-columns: 1fr; }
+}
+
+/* ── DAVET SAYFASI ── */
+@media (max-width: 600px) {
+  #page-davet-yonetim .tw table { min-width: 400px; }
+  #page-davet-bekleyen .tw table { min-width: 400px; }
+  #page-davet-kayit .card { padding: 14px; }
+}
+
+/* ── TOPBAR: search placeholder kısalt ── */
+@media (max-width: 400px) {
+  #global-search-bar input::placeholder { content: 'Ara…'; }
+  #global-search-bar { max-width: 110px; }
+  #global-search-bar input { width: 100px; }
+}
+
+/* ── Dokunmatik cihazlar: hover efektlerini devre dışı bırak ── */
+@media (hover: none) and (pointer: coarse) {
+  .sc:hover, .card:hover, .sakin-kart:hover,
+  .arz-kart:hover, .proje-kart:hover,
+  .ds-kpi:hover, .ds-qa-item:hover,
+  .metric-card:hover, .btn.bp:hover {
+    transform: none !important;
+  }
+  /* Dokunmatik tap feedback */
+  .btn:active, .tab:active, .ni:active,
+  .ds-qa-item:active, .qa-btn:active { opacity: .75; }
+}
+
+/* ── Kaydırma hızlandırma — tüm scroll alanları ── */
+#content, .modal, .tw, .tabs, .cari-accordion,
+.dd-tabs-bar, .notif-list, #notif-panel {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── SAFE AREA: notch/home indicator desteği (iPhone X+) ── */
+@supports (padding: env(safe-area-inset-bottom)) {
+  #content { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+  .toast { bottom: calc(16px + env(safe-area-inset-bottom)); }
+  #sb { padding-bottom: env(safe-area-inset-bottom); }
+  .bottom-bar { padding-bottom: calc(14px + env(safe-area-inset-bottom)); }
+}
+
+/* ── TOPBAR — safe area top ── */
+@supports (padding: env(safe-area-inset-top)) {
+  #topbar { padding-top: env(safe-area-inset-top); }
+  #sb { padding-top: env(safe-area-inset-top); }
+}
+
+/* ════════════════════════════════════════════════
+   MOBİL TAMAMLAMA — Eksik Sayfa Kuralları
+   (Görev 3: style.css mobil blok tamamlaması)
+   ════════════════════════════════════════════════ */
+
+/* ── BANKA HAREKETLERİ — bekleyen satır grid scroll ── */
+@media (max-width: 640px) {
+  /* Bekleyen satırlar scroll kapsayıcısı */
+  #bank-hareket-liste {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* Her bekleyen satırdaki sabit-px grid scroll ile görüntülenir */
+  #bank-hareket-liste > div {
+    min-width: 520px;
+  }
+  /* Arıza toplu ekleme satırları */
+  #arz-toplu-rows {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  #arz-toplu-rows > div {
+    min-width: 480px;
+  }
+}
+
+/* ── KARARLAR SAYFASI (#page-karar) — ek mobil ── */
+@media (max-width: 768px) {
+  /* g2 form paneli alt alta */
+  #page-karar .g2 { grid-template-columns: 1fr; }
+  /* AI çıktı kutusu yüksekliği azalt */
+  #page-karar .ai-out { min-height: 200px !important; }
+}
+@media (max-width: 480px) {
+  /* Karar butonları tam genişlik */
+  #page-karar .fc.g8 { flex-wrap: wrap; }
+  #page-karar .fc.g8 .btn { flex: 1; min-width: 0; justify-content: center; }
+  /* Tablo min-width */
+  #page-karar .tw table { min-width: 360px; }
+}
+
+/* ── PERSONEL SAYFASI (#page-personel) — ek mobil ── */
+@media (max-width: 480px) {
+  /* Stats kartları tek sütun küçük ekranda */
+  #page-personel .sg { grid-template-columns: 1fr 1fr; gap: 8px; }
+  /* Personel formu g2 → tek sütun */
+  #page-personel .g2 { grid-template-columns: 1fr; }
+}
+@media (max-width: 380px) {
+  #page-personel .sg { grid-template-columns: 1fr; }
+}
+
+/* ── DENETİM SAYFASI (#page-denetim) — ek mobil ── */
+@media (max-width: 768px) {
+  /* Form paneli alt alta */
+  #page-denetim .g2 { grid-template-columns: 1fr; }
+  /* AI çıktı kompakt */
+  #page-denetim .ai-out { min-height: 120px !important; }
+}
+@media (max-width: 480px) {
+  #page-denetim .f3.fg { grid-template-columns: 1fr 1fr; }
+  #page-denetim .card-t { font-size: 13px; }
+}
+
+/* ── TOPLANTI SAYFASI (#page-toplanti) — ek mobil ── */
+@media (max-width: 768px) {
+  #page-toplanti .g2 { grid-template-columns: 1fr; }
+  #page-toplanti .f2 { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  #page-toplanti .sg { grid-template-columns: 1fr 1fr; gap: 8px; }
+  #page-toplanti .card-h { flex-direction: column; align-items: flex-start; gap: 8px; }
+}
+
+/* ── PROJE SAYFASI (#page-proje) — ek mobil ── */
+@media (max-width: 768px) {
+  /* Proje kart grid: auto-fill zaten responsive, ama min kısıt ─ */
+  #page-proje .proje-kart-head { gap: 8px; }
+}
+@media (max-width: 480px) {
+  #page-proje .sg { grid-template-columns: 1fr 1fr; gap: 8px; }
+  #page-proje .proje-kart { padding: 12px 14px; }
+  #page-proje .card-h { flex-direction: column; align-items: flex-start; gap: 8px; }
+}
+
+/* ── SİGORTA SAYFASI (#page-sigorta) — ek mobil ── */
+@media (max-width: 768px) {
+  #page-sigorta .g2 { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  #page-sigorta .sg { grid-template-columns: 1fr 1fr; gap: 8px; }
+  #page-sigorta .card-h { flex-direction: column; align-items: flex-start; gap: 8px; }
+}
+
+/* ── SİDEBAR DRAWER — mobil doğrulama ── */
+/* #sb z-index:300 ve #sb-overlay z-index:299 — zaten doğru.
+   Overlay click ile sidebar kapanır (toggleSidebar).
+   Ek kural: overlay görünür hale geldiğinde pointer-events aktif */
+@media (max-width: 768px) {
+  #sb-overlay { pointer-events: auto; }
+  /* Sidebar açıkken body scroll kilidi destek sınıfı */
+  body.sb-open { overflow: hidden; }
+}
+
+/* ── BOTTOM NAVİGATION (opsiyonel — .bottom-bar varsa) ── */
+/* Mevcut .bottom-bar kuralı @1319'da zaten var.
+   Ek: küçük telefon için ikon ve metin düzeni */
+@media (max-width: 480px) {
+  .bottom-bar { padding: 8px 10px; gap: 6px; }
+  .bottom-bar .btn { padding: 7px 10px; font-size: 11.5px; }
+}
