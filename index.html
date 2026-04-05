@@ -145,6 +145,7 @@
     <div class="ni" data-p="finans" data-role="yonetici sakin" data-tip="Gelir/Gider"><div class="nico"><svg viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22"/><path d="M5 8l7-6 7 6"/><path d="M5 16l7 6 7-6"/></svg></div>Gelir/Gider<span class="nbadge" id="bdg-fin" style="display:none">!</span></div>
     <div class="ni" data-p="finansal-durum" data-role="yonetici" data-tip="Finansal Durum"><div class="nico"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>Finansal Durum</div>
     <div class="ni" data-p="kasa" data-role="yonetici" data-tip="Kasa & Banka"><div class="nico"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="14" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M6 10h.01M18 10h.01"/><path d="M7 2l-2 4M17 2l2 4"/></svg></div>Kasa & Banka</div>
+    <div class="ni" data-p="aylik-rapor" data-role="yonetici" data-tip="Aylık Gelir/Gider Raporu"><div class="nico"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>Aylık Rapor</div>
     <div class="ni" data-p="devir-bakiye" data-role="yonetici" data-tip="Devir Bakiye Girişi"><div class="nico"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>Devir Bakiye</div>
     <div class="ni" data-p="toplu-borc" data-role="yonetici" data-tip="Toplu Borçlandırma"><div class="nico"><svg viewBox="0 0 24 24"><path d="M8 6H6a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1"/><path d="M10 4H8a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"/><path d="M12 2h6a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/><line x1="15" y1="5" x2="15" y2="8"/><circle cx="15" cy="10" r=".5" fill="currentColor"/></svg></div>Toplu Borçlandır</div>
     <div class="ni" data-p="isletme" data-role="yonetici" data-tip="İşletme Projesi"><div class="nico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M11 4v16"/><path d="M5.5 14h3M5.5 17h3M13 14h6M13 17h4"/></svg></div>İşletme Projesi</div>
@@ -2430,6 +2431,45 @@
         <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
         Borçlandırmayı Uygula
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- AYLIK GELİR/GİDER RAPORU -->
+<div id="page-aylik-rapor" class="pg">
+
+  <!-- Parametre paneli -->
+  <div class="card mb16" style="padding:16px 20px">
+    <div style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap">
+      <div>
+        <label class="fi-lbl">Rapor Ayı</label>
+        <input type="month" class="fi" id="ar-ay" onchange="renderAylikRapor()" style="width:160px">
+      </div>
+      <div>
+        <label class="fi-lbl">Apartman</label>
+        <select class="fi" id="ar-apt" onchange="renderAylikRapor()" style="width:210px">
+          <option value="">Tüm Apartmanlar</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn bp" onclick="renderAylikRapor()">
+          <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Raporu Oluştur
+        </button>
+        <button class="btn bg" onclick="aylikRaporPdf()" id="ar-pdf-btn" style="display:none">
+          <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          PDF İndir
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rapor içeriği -->
+  <div id="ar-content">
+    <div style="text-align:center;padding:60px 20px;color:var(--tx-3)">
+      <svg viewBox="0 0 24 24" style="width:48px;height:48px;stroke:var(--tx-3);fill:none;stroke-width:1.5;margin-bottom:12px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <div style="font-size:14px;font-weight:600;margin-bottom:6px">Ay seçerek raporunuzu oluşturun</div>
+      <div style="font-size:12.5px">Gelir tahakkuku, tahsilat, gider faturaları, kasa bakiyesi ve devir bakiyelerini içeren profesyonel rapor</div>
     </div>
   </div>
 </div>
