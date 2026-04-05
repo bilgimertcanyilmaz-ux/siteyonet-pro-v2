@@ -9250,11 +9250,34 @@ function importData(e) {
   e.target.value = '';
 }
 
-function clearAllData() {
-  if (!confirm('TÜM VERİLER SİLİNECEK! Bu işlem geri alınamaz. Emin misiniz?')) return;
-  if (!confirm('Son onay: Gerçekten silmek istiyor musunuz?')) return;
+async function clearAllData() {
+  if (!confirm('TÜM VERİLER SİLİNECEK!\n\nApartmanlar, sakinler, tahsilatlar, gelir/gider, arızalar ve tüm diğer kayıtlar kalıcı olarak silinir.\n\nBu işlem geri ALINAMAZ. Emin misiniz?')) return;
+  if (!confirm('SON ONAY: Sistemi sıfırlamak istediğinizi onaylıyor musunuz?')) return;
+
+  // 1. State'i boşalt
+  S = { ...DEF_STATE };
+  makbuzNo = 5000;
+
+  // 2. Supabase'e boş state kaydet (Göksu/demo verilerinin üzerine yaz)
+  try {
+    if (_supabase && _currentUser) {
+      await _supabase.from('syp_data').upsert({
+        id: _currentUser.id,
+        user_id: _currentUser.id,
+        data: S,
+        updated_at: new Date().toISOString()
+      });
+    }
+  } catch(e) {
+    console.warn('Supabase sıfırlama hatası:', e.message);
+  }
+
+  // 3. localStorage temizle
   localStorage.removeItem('syp5');
-  location.reload();
+
+  // 4. Yeniden yükle
+  toast('✅ Tüm veriler silindi. Sistem yeniden başlatılıyor…', 'ok');
+  setTimeout(() => location.reload(), 1200);
 }
 
 // ===================================================
