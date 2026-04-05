@@ -896,6 +896,8 @@ function initTabs() {
     if (id==='mak-borc-makbuz') { try{renderBorcMakbuz();}catch(e){} }
     if (id==='mak-tahsilat-makbuz') { try{renderTahsilatMakbuz();}catch(e){} }
     if (id==='tah-banka') { try{renderBankDosyalar();}catch(e){} }
+    if (id==='fin-faturalar') { try{renderFinansFaturalar();}catch(e){} }
+    if (id==='fin-hizli-makbuz') { try{_hmAptDoldur();}catch(e){} }
  });
  });
  });
@@ -7877,9 +7879,272 @@ function renderFinans() {
       <td style="font-weight:700;color:${tutarClr};text-align:right;white-space:nowrap;font-size:13px">${pfx}₺${fmtMoney(toplam)}</td>
       <td style="font-size:11px;color:var(--tx-3)">${yontem}</td>
       <td>${durumBadge[durum]||durumBadge.bekliyor}</td>
-      <td><button class="act-btn rd" onclick="delFinans(${f.id})" title="Sil"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></td>
+      <td style="white-space:nowrap">
+        ${(!isG && (f.odemeDurum==='bekliyor'||f.odemeDurum==='gecikti')) ? `<button class="btn bp xs" style="margin-right:3px" onclick="openGiderOde(${f.id})" title="Öde">💳 Öde</button>` : ''}
+        ${(!isG && f.odemeDurum==='odendi') ? `<button class="btn bg xs" style="margin-right:3px" onclick="giderOdemeMakbuzPdf(${f.id})" title="Makbuz">🖨️</button>` : ''}
+        <button class="act-btn rd" onclick="delFinans(${f.id})" title="Sil"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+      </td>
     </tr>`;
   }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// FATURA TAKİBİ & ÖDEME MAKBUZU
+// ══════════════════════════════════════════════════════════════════════
+
+function renderFinansFaturalar() {
+  const aptEl = document.getElementById('ff-apt');
+  if (aptEl) {
+    const prev = aptEl.value;
+    aptEl.innerHTML = '<option value="">Tüm Apartmanlar</option>' +
+      (S.apartmanlar||[]).filter(a=>a.durum!=='pasif').map(a=>`<option value="${a.id}">${he(a.ad)}</option>`).join('');
+    if (prev) aptEl.value = prev;
+  }
+  const aptFilter   = document.getElementById('ff-apt')?.value   || '';
+  const durumFilter = document.getElementById('ff-durum')?.value || '';
+  const ayFilter    = document.getElementById('ff-ay')?.value    || '';
+
+  const ayEl = document.getElementById('ff-ay');
+  if (ayEl) {
+    const prev = ayEl.value;
+    const aylar = [...new Set((S.finansIslemler||[])
+      .filter(f=>f.tur==='gider'&&f.status!=='cancelled')
+      .map(f=>(f.tarih||'').slice(0,7)).filter(Boolean))].sort().reverse();
+    ayEl.innerHTML = '<option value="">Tüm Aylar</option>' +
+      aylar.map(m=>`<option value="${m}"${m===prev?' selected':''}>${m}</option>`).join('');
+  }
+
+  const bug = today();
+  const efD = f => {
+    const d = f.odemeDurum||'bekliyor';
+    return (d==='bekliyor'&&f.sonOdemeTarih&&f.sonOdemeTarih<bug) ? 'gecikti' : d;
+  };
+
+  let list = (S.finansIslemler||[]).filter(f => {
+    if (f.status==='cancelled'||f.tur!=='gider') return false;
+    if (aptFilter && f.aptId!=aptFilter) return false;
+    if (ayFilter  && !(f.tarih||'').startsWith(ayFilter)) return false;
+    if (durumFilter && efD(f)!==durumFilter) return false;
+    return true;
+  });
+
+  const order = { gecikti:0, bekliyor:1, odendi:2 };
+  list.sort((a,b)=>(order[efD(a)]??1)-(order[efD(b)]??1)||(b.tarih||'').localeCompare(a.tarih||''));
+
+  const allG = (S.finansIslemler||[]).filter(f=>f.tur==='gider'&&f.status!=='cancelled');
+  const topToplam   = allG.reduce((s,f)=>s+(f.toplamTutar||f.tutar||0),0);
+  const topOdendi   = allG.filter(f=>efD(f)==='odendi').reduce((s,f)=>s+(f.toplamTutar||f.tutar||0),0);
+  const topBekliyor = allG.filter(f=>efD(f)==='bekliyor').reduce((s,f)=>s+(f.toplamTutar||f.tutar||0),0);
+  const topGecikti  = allG.filter(f=>efD(f)==='gecikti').reduce((s,f)=>s+(f.toplamTutar||f.tutar||0),0);
+  const statsEl = document.getElementById('ff-stats');
+  if (statsEl) statsEl.innerHTML = `
+    <div class="fin-card" style="background:var(--s2)"><div style="font-size:10.5px;font-weight:600;color:var(--tx-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Toplam Fatura</div><div class="fin-val">₺${fmtMoney(topToplam)}</div></div>
+    <div class="fin-card" style="background:#f0fdf4"><div style="font-size:10.5px;font-weight:600;color:#15803d;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Ödendi</div><div class="fin-val" style="color:var(--ok)">₺${fmtMoney(topOdendi)}</div></div>
+    <div class="fin-card" style="background:#fffbeb"><div style="font-size:10.5px;font-weight:600;color:#92400e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Bekliyor</div><div class="fin-val" style="color:#d97706">₺${fmtMoney(topBekliyor)}</div></div>
+    <div class="fin-card" style="background:#fef2f2"><div style="font-size:10.5px;font-weight:600;color:#b91c1c;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Gecikti</div><div class="fin-val" style="color:var(--err)">₺${fmtMoney(topGecikti)}</div></div>
+  `;
+
+  const tbody = document.getElementById('ff-tbody');
+  const empty = document.getElementById('ff-empty');
+  if (!tbody) return;
+  if (!list.length) { tbody.innerHTML=''; if(empty) empty.style.display=''; return; }
+  if (empty) empty.style.display='none';
+
+  tbody.innerHTML = list.map(f => {
+    const d = efD(f);
+    const toplam      = f.toplamTutar||f.tutar||0;
+    const tarihStr    = f.tarih         ? new Date(f.tarih+'T00:00').toLocaleDateString('tr-TR') : '—';
+    const sonOdemeStr = f.sonOdemeTarih ? new Date(f.sonOdemeTarih+'T00:00').toLocaleDateString('tr-TR') : '—';
+
+    let durumBadge, rowBg='';
+    if (d==='odendi') {
+      durumBadge = `<span class="b b-gr" style="font-size:10px">✅ Ödendi</span>${f.odemeTarih?`<div style="font-size:10px;color:var(--tx-3);margin-top:2px">${new Date(f.odemeTarih+'T00:00').toLocaleDateString('tr-TR')}</div>`:''}`;
+    } else if (d==='gecikti') {
+      const gun = f.sonOdemeTarih ? Math.ceil((new Date(bug)-new Date(f.sonOdemeTarih))/864e5) : 0;
+      durumBadge = `<span class="b b-rd" style="font-size:10px">🔴 ${gun>0?gun+' gün gecikti':'Gecikti'}</span>`;
+      rowBg = 'background:rgba(220,38,38,.03)';
+    } else {
+      const gun = f.sonOdemeTarih ? Math.ceil((new Date(f.sonOdemeTarih)-new Date(bug))/864e5) : null;
+      durumBadge = `<span class="b b-am" style="font-size:10px">⏳ ${gun!==null?(gun<=0?'Bugün vadeli':gun+' gün kaldı'):'Bekliyor'}</span>`;
+    }
+
+    const islemler = d!=='odendi'
+      ? `<button class="btn bp xs" onclick="openGiderOde(${f.id})">💳 Öde</button>
+         <button class="act-btn rd" onclick="delFinans(${f.id})" title="İptal"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>`
+      : `<button class="btn bg xs" onclick="giderOdemeMakbuzPdf(${f.id})">🖨️ Makbuz</button>
+         <button class="act-btn rd" onclick="delFinans(${f.id})" title="İptal"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>`;
+
+    return `<tr style="${rowBg}">
+      <td style="font-size:11.5px;color:var(--tx-3);font-family:monospace">${he(f.faturaNo||f.belge||'—')}</td>
+      <td style="font-size:12px;white-space:nowrap">${tarihStr}</td>
+      <td style="font-size:12px;white-space:nowrap;color:${f.sonOdemeTarih&&f.sonOdemeTarih<bug&&d!=='odendi'?'var(--err)':'inherit'}">${sonOdemeStr}</td>
+      <td style="font-size:12px">${he(f.kat||'—')}</td>
+      <td style="font-size:12px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${he(f.tedarikci||'—')}</td>
+      <td style="font-size:12px">${he(f.aptAd||'—')}</td>
+      <td style="font-weight:700;color:var(--err);text-align:right;white-space:nowrap">₺${fmtMoney(toplam)}</td>
+      <td>${durumBadge}</td>
+      <td><div style="display:flex;gap:4px;align-items:center">${islemler}</div></td>
+    </tr>`;
+  }).join('');
+}
+
+function openGiderOde(id) {
+  const f = (S.finansIslemler||[]).find(x=>x.id==id);
+  if (!f) return;
+  document.getElementById('go-fatura-id').value = id;
+  document.getElementById('go-tarih').value      = today();
+  document.getElementById('go-yontem').value     = f.odemeYontemi||'Nakit';
+  document.getElementById('go-not').value        = '';
+
+  const hesapEl = document.getElementById('go-hesap');
+  if (hesapEl) hesapEl.innerHTML = '<option value="">— Hesap seçilmedi —</option>' +
+    (S.accounts||[]).filter(h=>h.durum!=='silindi').map(h=>`<option value="${h.id}">${he(h.ad)}</option>`).join('');
+
+  const ozet = document.getElementById('go-ozet');
+  if (ozet) ozet.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:12.5px;margin-bottom:10px">
+      <div><span style="color:var(--tx-3)">Fatura No:</span> <strong>${he(f.faturaNo||f.belge||'—')}</strong></div>
+      <div><span style="color:var(--tx-3)">Kategori:</span> <strong>${he(f.kat||'—')}</strong></div>
+      <div><span style="color:var(--tx-3)">Tedarikçi:</span> <strong>${he(f.tedarikci||'—')}</strong></div>
+      <div><span style="color:var(--tx-3)">Son Ödeme:</span> <strong>${f.sonOdemeTarih||'—'}</strong></div>
+    </div>
+    <div style="padding-top:10px;border-top:1px solid var(--bd);font-size:17px;font-weight:800;color:var(--err)">
+      Ödenecek: ₺${fmtMoney(f.toplamTutar||f.tutar||0)}
+      ${f.kdvOran?`<span style="font-size:11px;font-weight:400;color:var(--tx-3);margin-left:6px">(KDV %${f.kdvOran} dahil)</span>`:''}
+    </div>`;
+
+  document.getElementById('mod-gider-odeme').classList.add('open');
+}
+
+function saveGiderOde() {
+  if (!_guardCheck()) return;
+  const id = document.getElementById('go-fatura-id').value;
+  const f  = (S.finansIslemler||[]).find(x=>x.id==id);
+  if (!f) { toast('Fatura bulunamadı.','err'); return; }
+  const odemeTarih = document.getElementById('go-tarih').value;
+  const yontem     = document.getElementById('go-yontem').value;
+  const hesapId    = document.getElementById('go-hesap').value;
+  const not        = document.getElementById('go-not').value.trim();
+  if (!odemeTarih) { toast('Ödeme tarihi girin.','err'); return; }
+
+  f.odemeDurum = 'odendi'; f.odemeTarih = odemeTarih; f.odemeYontemi = yontem;
+  if (not) f.odemNot = not;
+
+  if (hesapId) {
+    if (!S.kasaHareketler) S.kasaHareketler = [];
+    const h = (S.accounts||[]).find(a=>a.id==hesapId);
+    S.kasaHareketler.push({ id:Date.now(), hesapId:+hesapId, hesapAd:h?.ad||'', tarih:odemeTarih,
+      tutar:f.toplamTutar||f.tutar||0, tur:'cikis',
+      aciklama:`${f.kat||'Gider'} — ${f.faturaNo||f.tedarikci||''}`,
+      kategori:f.kat||'Gider', aptId:f.aptId||null });
+  }
+
+  AuditService.log({ action:'GIDER_ODE', entityType:'finansIslemler', entityId:+id,
+    newValues:{ odemeDurum:'odendi', odemeTarih, yontem } });
+  save();
+  closeModal('mod-gider-odeme');
+  renderFinansFaturalar();
+  toast(`✅ Ödeme kaydedildi — ₺${fmtMoney(f.toplamTutar||f.tutar||0)}`, 'ok');
+  setTimeout(()=>giderOdemeMakbuzPdf(+id), 350);
+}
+
+function giderOdemeMakbuzPdf(id) {
+  const f = (S.finansIslemler||[]).find(x=>x.id==id);
+  if (!f) return;
+  const makbuzNo = 'GID-' + String(f.id).slice(-6);
+  const ay = S.ayarlar||{};
+  const firma = ay.firma||ay.sirket||ay.firmaAdi||'Yönetim Şirketi';
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Gider Ödeme Makbuzu</title>
+  <style>*{box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;margin:0;padding:28px;color:#1a1a1a;font-size:13px;max-width:600px}
+    .hd{display:flex;align-items:center;gap:14px;border-bottom:3px solid #1e3a5f;padding-bottom:14px;margin-bottom:20px}
+    .firm{font-size:17px;font-weight:800;color:#1e3a5f}.firm-sub{font-size:11px;color:#666;margin-top:3px}
+    .badge{background:#1e3a5f;color:#fff;padding:4px 12px;border-radius:6px;font-size:11px;font-weight:700}
+    .title-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px}
+    .title{font-size:20px;font-weight:800;color:#1e3a5f}.mno{font-size:12px;color:#666}
+    table{width:100%;border-collapse:collapse}
+    tr td{padding:8px 10px;border-bottom:1px solid #f0f0f0;vertical-align:top}
+    tr td:first-child{color:#555;width:160px;font-size:12px}tr td:last-child{font-weight:600}
+    .total-row td{background:#fef2f2;font-size:16px;font-weight:800;color:#dc2626;border-top:2px solid #fca5a5;border-bottom:2px solid #fca5a5}
+    .paid-row td{background:#f0fdf4;color:#16a34a;font-weight:700}
+    .footer{margin-top:24px;text-align:center;font-size:10.5px;color:#aaa}
+    @media print{body{padding:0}}</style></head><body>
+  <div class="hd">
+    <div style="width:44px;height:44px;background:#1e3a5f;border-radius:8px;display:flex;align-items:center;justify-content:center">
+      <svg viewBox="0 0 24 24" style="width:24px;height:24px;stroke:#fff;stroke-width:2;fill:none"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-4h6v4"/></svg>
+    </div>
+    <div style="flex:1"><div class="firm">${he(firma)}</div>
+      ${ay.adres?`<div class="firm-sub">${he(ay.adres)}</div>`:''}
+      ${ay.tel?`<div class="firm-sub">${he(ay.tel)}</div>`:''}
+    </div>
+    <div class="badge">GİDER ÖDEME MAKBUZU</div>
+  </div>
+  <div class="title-row">
+    <div class="title">Ödeme Makbuzu</div>
+    <div class="mno">Makbuz No: <strong>${makbuzNo}</strong></div>
+  </div>
+  <table>
+    ${f.faturaNo||f.belge?`<tr><td>Fatura / Belge No</td><td>${he(f.faturaNo||f.belge||'')}</td></tr>`:''}
+    <tr><td>Fatura Tarihi</td><td>${f.tarih||'—'}</td></tr>
+    ${f.sonOdemeTarih?`<tr><td>Son Ödeme Tarihi</td><td>${f.sonOdemeTarih}</td></tr>`:''}
+    <tr><td>Apartman</td><td>${he(f.aptAd||'—')}</td></tr>
+    <tr><td>Kategori</td><td>${he(f.kat||'—')}</td></tr>
+    ${f.tedarikci?`<tr><td>Tedarikçi / Cari</td><td>${he(f.tedarikci)}</td></tr>`:''}
+    ${f.aciklama?`<tr><td>Açıklama</td><td>${he(f.aciklama)}</td></tr>`:''}
+    ${f.kdvOran?`<tr><td>Net Tutar</td><td>₺${fmtMoney(f.tutar||0)}</td></tr><tr><td>KDV (%${f.kdvOran})</td><td>₺${fmtMoney(f.kdvTutar||0)}</td></tr>`:''}
+    <tr class="total-row"><td>ÖDENECEK TUTAR</td><td>₺${fmtMoney(f.toplamTutar||f.tutar||0)}</td></tr>
+    <tr class="paid-row"><td>Ödeme Yöntemi</td><td>${he(f.odemeYontemi||'—')}</td></tr>
+    <tr class="paid-row"><td>Ödeme Tarihi</td><td>${f.odemeTarih||'—'} ✓</td></tr>
+    ${f.odemNot?`<tr><td>Not</td><td>${he(f.odemNot)}</td></tr>`:''}
+  </table>
+  <div class="footer">SiteYönet Pro V3 · ${new Date().toLocaleDateString('tr-TR')}</div>
+  <script>window.onload=function(){window.print();}<\/script></body></html>`;
+
+  const w = window.open('','_blank','width=720,height=650');
+  if (w) { w.document.write(html); w.document.close(); }
+}
+
+function _hmAptDoldur() {
+  const el = document.getElementById('hm-apt');
+  if (!el) return;
+  el.innerHTML = '<option value="">— Seçin —</option>' +
+    (S.apartmanlar||[]).filter(a=>a.durum!=='pasif').map(a=>`<option value="${a.id}">${he(a.ad)}</option>`).join('');
+  const tarihEl = document.getElementById('hm-tarih');
+  if (tarihEl && !tarihEl.value) tarihEl.value = today();
+}
+
+function saveHizliMakbuz() {
+  if (!_guardCheck()) return;
+  const apt    = document.getElementById('hm-apt').value;
+  const kat    = document.getElementById('hm-kat').value;
+  const tarih  = document.getElementById('hm-tarih').value;
+  const tutar  = parseFloat(document.getElementById('hm-tutar').value)||0;
+  const yontem = document.getElementById('hm-yontem').value;
+  const ted    = document.getElementById('hm-tedarikci').value.trim();
+  const aciklama = document.getElementById('hm-aciklama').value.trim();
+
+  if (!apt)   { toast('Apartman seçin.','err'); return; }
+  if (!tarih) { toast('Tarih girin.','err'); return; }
+  if (tutar<=0) { toast('Geçerli tutar girin.','err'); return; }
+
+  const aptObj   = (S.apartmanlar||[]).find(a=>a.id==apt);
+  const makbuzNo = 'HM-' + String(Date.now()).slice(-6);
+  const rec = {
+    id:Date.now(), aptId:+apt, aptAd:aptObj?.ad||'',
+    tur:'gider', kat, tedarikci:ted, faturaNo:makbuzNo, tarih,
+    sonOdemeTarih:'', tutar, kdvOran:0, kdvTutar:0, toplamTutar:tutar,
+    odemeDurum:'odendi', odemeTarih:tarih, odemeYontemi:yontem,
+    aciklama, belge:makbuzNo, kaynak:'hizli_makbuz'
+  };
+
+  if (!S.finansIslemler) S.finansIslemler = [];
+  S.finansIslemler.unshift(rec);
+  AuditService.log({ action:'HIZLI_MAKBUZ_EKLE', entityType:'finansIslemler', newValues:{kat,tutar,aptId:+apt} });
+  save();
+  ['hm-apt','hm-tarih','hm-tutar','hm-tedarikci','hm-aciklama'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  _hmAptDoldur();
+  toast(`✅ Makbuz kaydedildi — ₺${fmtMoney(tutar)}`, 'ok');
+  setTimeout(()=>giderOdemeMakbuzPdf(rec.id), 350);
 }
 
 // ══════════════════════════════════════════════════════

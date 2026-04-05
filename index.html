@@ -335,9 +335,42 @@
 <div id="page-finans" class="pg">
   <div class="tabs">
     <div class="tab on" data-tab="fin-liste">İşlem Listesi</div>
+    <div class="tab" data-tab="fin-faturalar">Fatura Takibi</div>
     <div class="tab" data-tab="fin-gelir">+ Gelir Ekle</div>
-    <div class="tab" data-tab="fin-gider">+ Gider Ekle</div>
-    <div class="tab" data-tab="fin-rapor">Rapor</div>
+    <div class="tab" data-tab="fin-gider">+ Gider / Fatura Ekle</div>
+    <div class="tab" data-tab="fin-hizli-makbuz">Hızlı Ödeme Makbuzu</div>
+    <div class="tab" data-tab="fin-rapor">Aylık Rapor</div>
+  </div>
+
+  <!-- ── FATURA TAKİBİ ── -->
+  <div id="fin-faturalar" style="display:none">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px" id="ff-stats"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <select class="fi sm" id="ff-apt" onchange="renderFinansFaturalar()" style="width:180px"><option value="">Tüm Apartmanlar</option></select>
+        <select class="fi sm" id="ff-durum" onchange="renderFinansFaturalar()" style="width:160px">
+          <option value="">Tüm Durumlar</option>
+          <option value="bekliyor">⏳ Bekliyor</option>
+          <option value="gecikti">🔴 Gecikti</option>
+          <option value="odendi">✅ Ödendi</option>
+        </select>
+        <select class="fi sm" id="ff-ay" onchange="renderFinansFaturalar()" style="width:130px"><option value="">Tüm Aylar</option></select>
+      </div>
+      <button class="btn bp sm" onclick="goTab('fin-gider')">+ Fatura / Gider Ekle</button>
+    </div>
+    <div class="card">
+      <div class="tw"><table>
+        <thead><tr>
+          <th>Fatura No</th><th>Tarih</th><th>Son Ödeme</th><th>Kategori</th>
+          <th>Tedarikçi</th><th>Apartman</th><th style="text-align:right">Tutar (KDV Dahil)</th>
+          <th>Durum</th><th>İşlemler</th>
+        </tr></thead>
+        <tbody id="ff-tbody"></tbody>
+      </table></div>
+      <div id="ff-empty" style="display:none;text-align:center;padding:32px;color:var(--tx-3);font-size:13px">
+        Gider faturası bulunamadı. <button class="btn bp sm" style="margin-left:8px" onclick="goTab('fin-gider')">Fatura Ekle</button>
+      </div>
+    </div>
   </div>
 
   <!-- ── İŞLEM LİSTESİ ── -->
@@ -566,9 +599,108 @@
     </div>
   </div>
 
+  <!-- ── HIZLI ÖDEME MAKBUZU ── -->
+  <div id="fin-hizli-makbuz" style="display:none">
+    <div style="max-width:700px">
+      <div style="font-size:12.5px;color:var(--tx-3);margin-bottom:16px;padding:10px 14px;background:var(--s2);border-radius:8px;border-left:3px solid var(--brand)">
+        Fatura numarası olmadan, doğrudan ödeme yapılan giderler için hızlı makbuz oluşturur. Kayıt anında ödendi sayılır ve PDF makbuz oluşturulur.
+      </div>
+      <div class="card mb14">
+        <div class="card-t mb14">📋 Ödeme Bilgileri</div>
+        <div class="fg">
+          <div class="f2 fg">
+            <div class="fgp"><label class="lbl">Apartman <span style="color:var(--err)">*</span></label><select class="fs" id="hm-apt"><option value="">— Seçin —</option></select></div>
+            <div class="fgp"><label class="lbl">Gider Türü <span style="color:var(--err)">*</span></label>
+              <select class="fs" id="hm-kat">
+                <option value="Bakım-Onarım">🔧 Bakım / Onarım</option>
+                <option value="Elektrik">⚡ Elektrik</option>
+                <option value="Su">💧 Su</option>
+                <option value="Doğalgaz">🔥 Doğalgaz</option>
+                <option value="Maaş">👷 Maaş / Personel</option>
+                <option value="Temizlik">🧹 Temizlik</option>
+                <option value="Güvenlik">🛡️ Güvenlik</option>
+                <option value="Asansör">🛗 Asansör</option>
+                <option value="Malzeme">📦 Malzeme Alımı</option>
+                <option value="Diğer">📁 Diğer</option>
+              </select>
+            </div>
+          </div>
+          <div class="f2 fg">
+            <div class="fgp"><label class="lbl">Ödeme Tarihi <span style="color:var(--err)">*</span></label><input type="date" class="fi" id="hm-tarih"></div>
+            <div class="fgp"><label class="lbl">Tedarikçi / Ödenen Kişi</label><input class="fi" id="hm-tedarikci" placeholder="Firma veya kişi adı"></div>
+          </div>
+          <div class="f2 fg">
+            <div class="fgp"><label class="lbl">Tutar (₺) <span style="color:var(--err)">*</span></label><input type="number" class="fi" id="hm-tutar" placeholder="0.00" min="0.01" step="0.01"></div>
+            <div class="fgp"><label class="lbl">Ödeme Yöntemi</label>
+              <select class="fs" id="hm-yontem">
+                <option value="Nakit">💵 Nakit</option>
+                <option value="Banka Havalesi">🏦 Banka Havalesi</option>
+                <option value="EFT">EFT</option>
+                <option value="Kredi Kartı">💳 Kredi Kartı</option>
+              </select>
+            </div>
+          </div>
+          <div class="fgp"><label class="lbl">Açıklama / Not</label><textarea class="fta" rows="2" id="hm-aciklama" placeholder="Ödeme açıklaması…"></textarea></div>
+        </div>
+      </div>
+      <div class="fc g8">
+        <button class="btn bp" onclick="saveHizliMakbuz()">
+          <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1.1.4 2.2.7 3.2a2 2 0 0 1-.5 2.1l-1.3 1.2a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c1 .3 2.1.6 3.2.7A2 2 0 0 1 22 16.9z"/></svg>
+          Kaydet & Makbuz Oluştur
+        </button>
+        <button class="btn bg" onclick="goTab('fin-liste')">İptal</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── RAPOR ── -->
   <div id="fin-rapor" style="display:none">
     <div id="fin-rapor-content"></div>
+  </div>
+</div>
+
+<!-- GİDER ÖDEME MODALI -->
+<div class="ov" id="mod-gider-odeme">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-h">
+      <div class="modal-t">Fatura Öde &amp; Makbuz Oluştur</div>
+      <button class="modal-x" onclick="closeModal('mod-gider-odeme')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div style="padding:18px 20px;display:grid;gap:13px">
+      <input type="hidden" id="go-fatura-id">
+      <div id="go-ozet" style="padding:12px 14px;background:var(--s2);border-radius:8px;border:1px solid var(--bd)"></div>
+      <div>
+        <label class="fi-lbl">Ödeme Tarihi *</label>
+        <input type="date" class="fi" id="go-tarih">
+      </div>
+      <div class="f2 fg" style="margin:0">
+        <div>
+          <label class="fi-lbl">Ödeme Yöntemi</label>
+          <select class="fi" id="go-yontem">
+            <option value="Nakit">💵 Nakit</option>
+            <option value="Banka Havalesi">🏦 Banka Havalesi</option>
+            <option value="EFT">EFT</option>
+            <option value="Kredi Kartı">💳 Kredi Kartı</option>
+            <option value="Çek">📄 Çek</option>
+          </select>
+        </div>
+        <div>
+          <label class="fi-lbl">Ödenen Hesap (Kasa/Banka)</label>
+          <select class="fi" id="go-hesap"><option value="">— Seçilmedi —</option></select>
+        </div>
+      </div>
+      <div>
+        <label class="fi-lbl">Not</label>
+        <input class="fi" id="go-not" placeholder="Ödeme notu…">
+      </div>
+    </div>
+    <div class="modal-f">
+      <button class="btn bp" onclick="saveGiderOde()">
+        <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        Öde &amp; Makbuz Oluştur
+      </button>
+      <button class="btn bg" onclick="closeModal('mod-gider-odeme')">İptal</button>
+    </div>
   </div>
 </div>
 
