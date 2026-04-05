@@ -4484,6 +4484,16 @@ function renderTahsilat() {
   const s=(document.getElementById('tah-srch')?.value||'').toLowerCase();
   const fD=document.getElementById('tah-f-durum')?.value||'';
   const fR=document.getElementById('tah-f-risk')?.value||'';
+  const fKat=document.getElementById('tah-f-kat')?.value||'';
+
+  // Kategori select'i doldur
+  const katEl=document.getElementById('tah-f-kat');
+  if(katEl){
+    const sabitKatlar=['Aidat','Kira','Yakıt','Elektrik','Su','Doğalgaz','Asansör','Temizlik','Güvenlik','Sigorta','Diğer'];
+    const dinamikKatlar=[...new Set((S.aidatBorclandir||[]).filter(k=>k.aptId==aptId).flatMap(k=>(k.detaylar||[]).map(d=>d.kategori||'Aidat')).filter(Boolean))];
+    const tumKatlar=[...new Set([...sabitKatlar,...dinamikKatlar])].sort();
+    katEl.innerHTML='<option value="">Tüm Kategoriler</option>'+tumKatlar.map(k=>`<option value="${k}"${k===fKat?' selected':''}>${k}</option>`).join('');
+  }
 
   let list=S.sakinler.filter(x=>x.aptId==aptId);
   if(fD==='borclu')list=list.filter(x=>(x.borc||0)>0);
@@ -4497,6 +4507,14 @@ function renderTahsilat() {
       if(fR==='dusuk')return b>0&&b<=500;
       return true;
     });
+  }
+  if(fKat){
+    const katSakIds=new Set();
+    (S.aidatBorclandir||[]).filter(k=>k.aptId==aptId&&k.kategori===fKat)
+      .forEach(k=>(k.detaylar||[]).forEach(d=>katSakIds.add(d.sakId)));
+    (S.aidatBorclandir||[]).filter(k=>k.aptId==aptId)
+      .forEach(k=>(k.detaylar||[]).filter(d=>(d.kategori||'Aidat')===fKat).forEach(d=>katSakIds.add(d.sakId)));
+    if(katSakIds.size)list=list.filter(x=>katSakIds.has(x.id));
   }
 
   const topBorc=list.reduce((s,x)=>s+(x.borc||0),0);
@@ -8022,6 +8040,118 @@ function finFormTemizle() { gelirFormTemizle(); }
 
 /** @deprecated Soft cancel kullanılıyor */
 function delFinans(id) { softCancelFinans(id); }
+
+// ── BORÇ LİSTESİ PDF ─────────────────────────────────────────────────────────
+function borcListesiPDF() {
+  const aptId = selectedAptId;
+  if (!aptId) { toast('Apartman seçilmedi.', 'warn'); return; }
+  const apt = S.apartmanlar.find(a => a.id == aptId);
+
+  // Mevcut filtreleri oku
+  const s    = (document.getElementById('tah-srch')?.value || '').toLowerCase();
+  const fD   = document.getElementById('tah-f-durum')?.value || '';
+  const fR   = document.getElementById('tah-f-risk')?.value  || '';
+  const fKat = document.getElementById('tah-f-kat')?.value   || '';
+
+  let list = S.sakinler.filter(x => x.aptId == aptId);
+  if (fD === 'borclu') list = list.filter(x => (x.borc || 0) > 0);
+  if (fD === 'temiz')  list = list.filter(x => !(x.borc || 0));
+  if (s) list = list.filter(x => (x.ad + ' ' + (x.daire || '')).toLowerCase().includes(s));
+  if (fR) {
+    list = list.filter(x => {
+      const b = x.borc || 0;
+      if (fR === 'yuksek') return b > 3000;
+      if (fR === 'orta')   return b > 500 && b <= 3000;
+      if (fR === 'dusuk')  return b > 0 && b <= 500;
+      return true;
+    });
+  }
+  if (fKat) {
+    const katSakIds = new Set();
+    (S.aidatBorclandir || []).filter(k => k.aptId == aptId)
+      .forEach(k => (k.detaylar || []).filter(d => (d.kategori || 'Aidat') === fKat).forEach(d => katSakIds.add(d.sakId)));
+    if (katSakIds.size) list = list.filter(x => katSakIds.has(x.id));
+  }
+
+  // Borça göre büyükten küçüğe sırala
+  list = list.slice().sort((a, b) => (b.borc || 0) - (a.borc || 0));
+
+  const topBorc  = list.reduce((s, x) => s + (x.borc || 0), 0);
+  const borcluSy = list.filter(x => (x.borc || 0) > 0).length;
+  const temizSy  = list.length - borcluSy;
+  const topAidat = list.reduce((s, x) => s + (x.aidat || 0), 0);
+
+  const riskLbl  = b => b > 3000 ? 'Yüksek' : b > 500 ? 'Orta' : b > 0 ? 'Düşük' : '—';
+  const riskClr  = b => b > 3000 ? '#dc2626' : b > 500 ? '#d97706' : b > 0 ? '#16a34a' : '#9ca3af';
+  const sonOd    = sakId => {
+    const t = (S.tahsilatlar || []).filter(x => x.sakId == sakId && x.status !== 'cancelled')
+      .sort((a, b) => (b.tarih || '').localeCompare(a.tarih || '')).slice(0, 1)[0];
+    return t ? t.tarih : '—';
+  };
+
+  const filtreLbl = [];
+  if (fD === 'borclu')   filtreLbl.push('Borçlu sakinler');
+  if (fD === 'temiz')    filtreLbl.push('Borçsuz sakinler');
+  if (fR === 'yuksek')   filtreLbl.push('Yüksek risk (>₺3.000)');
+  if (fR === 'orta')     filtreLbl.push('Orta risk (₺500–₺3.000)');
+  if (fR === 'dusuk')    filtreLbl.push('Düşük risk (≤₺500)');
+  if (fKat)              filtreLbl.push('Kategori: ' + fKat);
+  if (s)                 filtreLbl.push('Arama: "' + s + '"');
+
+  let html = _pdfOpen('Borç Listesi', apt ? apt.ad : '');
+  html += `
+  <div class="stats">
+    <div class="stat"><div class="stat-v" style="color:#dc2626">₺${fmt(topBorc)}</div><div class="stat-l">Toplam Alacak</div></div>
+    <div class="stat"><div class="stat-v" style="color:#dc2626">${borcluSy}</div><div class="stat-l">Borçlu Sakin</div></div>
+    <div class="stat"><div class="stat-v" style="color:#16a34a">${temizSy}</div><div class="stat-l">Borçsuz Sakin</div></div>
+    <div class="stat"><div class="stat-v">${list.length}</div><div class="stat-l">Toplam Sakin</div></div>
+    <div class="stat"><div class="stat-v">₺${fmt(topAidat)}</div><div class="stat-l">Aylık Aidat Toplamı</div></div>
+  </div>
+  ${filtreLbl.length ? `<p style="font-size:11px;color:#6b7280;margin:0 0 14px;padding:7px 10px;background:#f9fafb;border-radius:6px;border:1px solid #e5e7eb">🔍 Filtre: ${filtreLbl.join(' &nbsp;·&nbsp; ')}</p>` : ''}
+  <table>
+    <thead>
+      <tr>
+        <th style="width:26px;text-align:center">#</th>
+        <th>Sakin Adı</th>
+        <th style="text-align:center">Daire</th>
+        <th style="text-align:center">Tip</th>
+        <th style="text-align:right">Aidat/Ay</th>
+        <th style="text-align:right">Toplam Borç</th>
+        <th style="text-align:center">Son Ödeme</th>
+        <th style="text-align:center">Risk</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${list.map((sk, i) => {
+        const borc = sk.borc || 0;
+        return `<tr${borc > 0 ? ' style="background:#fff5f5"' : ''}>
+          <td style="text-align:center;color:#9ca3af;font-size:10px">${i + 1}</td>
+          <td><strong>${he(sk.ad)}</strong><br><span style="font-size:10px;color:#9ca3af">${sk.tip === 'malik' ? 'Malik' : 'Kiracı'}</span></td>
+          <td style="text-align:center;font-weight:700">${he(sk.daire || '—')}</td>
+          <td style="text-align:center"><span style="padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;background:${sk.tip === 'malik' ? '#eff6ff' : '#fffbeb'};color:${sk.tip === 'malik' ? '#1d4ed8' : '#92400e'}">${sk.tip === 'malik' ? 'Malik' : 'Kiracı'}</span></td>
+          <td style="text-align:right">${sk.aidat ? '₺' + fmt(sk.aidat) : '—'}</td>
+          <td style="text-align:right;font-weight:700;font-size:13px;color:${borc > 0 ? '#dc2626' : '#16a34a'}">${borc > 0 ? '₺' + fmt(borc) : '₺0'}</td>
+          <td style="text-align:center;font-size:11px">${sonOd(sk.id)}</td>
+          <td style="text-align:center;font-weight:600;color:${riskClr(borc)}">${riskLbl(borc)}</td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+    <tfoot>
+      <tr style="background:#fef2f2;font-weight:800">
+        <td colspan="5" style="text-align:right;padding:10px 8px;font-size:12px;letter-spacing:.3px">TOPLAM ALACAK</td>
+        <td style="text-align:right;font-size:15px;color:#dc2626;padding:10px 8px">₺${fmt(topBorc)}</td>
+        <td colspan="2"></td>
+      </tr>
+    </tfoot>
+  </table>`;
+  html += _pdfClose();
+
+  const w = window.open('', '_blank');
+  if (!w) { toast('Popup engellendi — tarayıcı izni gerekli.', 'warn'); return; }
+  w.document.write(html);
+  w.document.close();
+  setTimeout(() => w.print(), 400);
+}
 
 /**
  * Gelir/Gider soft cancel — hard delete yok.

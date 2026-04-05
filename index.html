@@ -1464,9 +1464,11 @@
         <div class="srch" style="width:240px"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="tah-srch" placeholder="Sakin veya daire ara…" oninput="renderTahsilat()"></div>
         <select class="fi sm" id="tah-f-durum" onchange="renderTahsilat()" style="width:auto;padding:6px 10px"><option value="">Tüm Durumlar</option><option value="borclu">Borçlu</option><option value="temiz">Temiz</option></select>
         <select class="fi sm" id="tah-f-risk" onchange="renderTahsilat()" style="width:auto;padding:6px 10px"><option value="">Tüm Risk</option><option value="yuksek">Yüksek Risk</option><option value="orta">Orta Risk</option><option value="dusuk">Düşük Risk</option></select>
+        <select class="fi sm" id="tah-f-kat" onchange="renderTahsilat()" style="width:auto;padding:6px 10px"><option value="">Tüm Kategoriler</option></select>
       </div>
       <div class="fc g8">
         <button class="btn bg sm" onclick="topluAidatOlustur()">📅 Toplu Aidat Oluştur</button>
+        <button class="btn bg sm" onclick="borcListesiPDF()" title="PDF İndir / Yazdır"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none;vertical-align:middle;margin-right:4px"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>PDF / Yazdır</button>
         <button class="btn bp sm" onclick="genTahsilatRaporu()">🤖 AI Analiz</button>
       </div>
     </div>
