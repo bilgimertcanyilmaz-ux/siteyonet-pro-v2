@@ -1326,33 +1326,33 @@ const miniCard = (ico, n, lbl, page) => `<div class="card" style="text-align:cen
 
 
 // ── BLOK YÖNETİMİ ────────────────────────────────────────────
-var blokRows = [{ ad: 'A Blok', asansorSayisi: 1 }];
+let blokRows = [{ ad: 'A Blok', asansorSayisi: 1 }];
 
 function renderBlokEdit() {
-  var sayiEl = document.getElementById('apt-blok-sayi');
+  let sayiEl = document.getElementById('apt-blok-sayi');
   if (!sayiEl) return;
-  var sayi = Math.max(1, Math.min(20, parseInt(sayiEl.value)||1));
+  let sayi = Math.max(1, Math.min(20, parseInt(sayiEl.value)||1));
   // Mevcut değerleri önce oku
   for (var i = 0; i < blokRows.length; i++) {
-    var adEl = document.getElementById('blok-ad-' + i);
-    var asEl = document.getElementById('blok-asan-' + i);
+    let adEl = document.getElementById('blok-ad-' + i);
+    let asEl = document.getElementById('blok-asan-' + i);
     if (adEl) blokRows[i].ad = adEl.value.trim() || blokRows[i].ad;
     if (asEl) blokRows[i].asansorSayisi = parseInt(asEl.value)||0;
   }
   // Blok sayısını ayarla
-  var defaultNames = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T'];
+  let defaultNames = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T'];
   while (blokRows.length < sayi) {
     blokRows.push({ ad: defaultNames[blokRows.length] + ' Blok', asansorSayisi: 1 });
   }
   if (blokRows.length > sayi) blokRows = blokRows.slice(0, sayi);
 
-  var html = '<div style="display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:8px;">';
+  let html = '<div style="display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:8px;">';
   // Header row
   html += '<div style="font-size:10px;font-weight:700;color:var(--tx-3);text-transform:uppercase;letter-spacing:.8px;padding:0 2px;">Blok Adı</div>';
   html += '<div style="font-size:10px;font-weight:700;color:var(--tx-3);text-transform:uppercase;letter-spacing:.8px;padding:0 2px;">Daire Sayısı</div>';
   html += '<div style="font-size:10px;font-weight:700;color:var(--tx-3);text-transform:uppercase;letter-spacing:.8px;padding:0 2px;">Asansör Sayısı</div>';
   for (var j = 0; j < blokRows.length; j++) {
-    var b = blokRows[j];
+    let b = blokRows[j];
     html += '<input class="fi" id="blok-ad-' + j + '" value="' + (b.ad||'') + '" placeholder="A Blok" style="padding:8px 10px;font-size:13px;">';
     html += '<input type="number" class="fi" id="blok-daire-' + j + '" value="' + (b.daireSayisi||0) + '" min="0" max="999" placeholder="0" style="padding:8px;text-align:center;font-size:13px;font-weight:700;">';
     html += '<div style="display:flex;align-items:center;gap:6px;">'
@@ -1363,8 +1363,8 @@ function renderBlokEdit() {
   }
   html += '</div>';
   // Özet
-  var toplamAsan = blokRows.reduce(function(s, b) { return s + (parseInt(b.asansorSayisi)||0); }, 0);
-  var toplamDaire = blokRows.reduce(function(s, b) { return s + (parseInt(b.daireSayisi)||0); }, 0);
+  let toplamAsan = blokRows.reduce(function(s, b) { return s + (parseInt(b.asansorSayisi)||0); }, 0);
+  let toplamDaire = blokRows.reduce(function(s, b) { return s + (parseInt(b.daireSayisi)||0); }, 0);
   html += '<div class="info-box mt8" style="font-size:11.5px;">'
         + '<strong>' + blokRows.length + ' blok</strong>, toplam <strong>' + toplamDaire + ' daire</strong>, <strong>' + toplamAsan + ' asansör</strong>'
         + '</div>';
@@ -1372,30 +1372,30 @@ function renderBlokEdit() {
 }
 
 function adjBlokAsan(idx, delta) {
-  var el = document.getElementById('blok-asan-' + idx);
+  let el = document.getElementById('blok-asan-' + idx);
   if (!el) return;
-  var v = Math.max(0, Math.min(10, parseInt(el.value||'0') + delta));
+  let v = Math.max(0, Math.min(10, parseInt(el.value||'0') + delta));
   el.value = v;
   blokRows[idx].asansorSayisi = v;
   // Özeti güncelle
-  var toplamAsan = 0;
+  let toplamAsan = 0;
   for (var i = 0; i < blokRows.length; i++) {
-    var asEl = document.getElementById('blok-asan-' + i);
+    let asEl = document.getElementById('blok-asan-' + i);
     toplamAsan += asEl ? (parseInt(asEl.value)||0) : (blokRows[i].asansorSayisi||0);
   }
-  var infoBoxes = document.querySelectorAll('#blok-edit-list .info-box');
+  let infoBoxes = document.querySelectorAll('#blok-edit-list .info-box');
   if (infoBoxes.length) infoBoxes[0].innerHTML = '<strong>' + blokRows.length + ' blok</strong>, toplam <strong>' + toplamAsan + ' asansör</strong>';
 }
 
 // Asansör formunda apt seçince blok/asansör no dropdown'larını doldur
 function onAsanAptChange() {
-  var aptId = document.getElementById('asan-apt').value;
-  var blokSel = document.getElementById('asan-blok');
-  var noSel = document.getElementById('asan-no');
+  let aptId = document.getElementById('asan-apt').value;
+  let blokSel = document.getElementById('asan-blok');
+  let noSel = document.getElementById('asan-no');
   blokSel.innerHTML = '<option value="">— Blok Seçin —</option>';
   noSel.innerHTML = '<option value="">— Asansör Seçin —</option>';
   if (!aptId) return;
-  var apt = aptById(parseInt(aptId)||aptId);
+  let apt = aptById(parseInt(aptId)||aptId);
   if (!apt || !apt.bloklar || !apt.bloklar.length) {
     // Blok tanımlanmamış — serbest giriş aktif
     blokSel.innerHTML = '<option value="genel">Genel</option>';
@@ -1403,7 +1403,7 @@ function onAsanAptChange() {
     return;
   }
   apt.bloklar.forEach(function(b) {
-    var opt = document.createElement('option');
+    let opt = document.createElement('option');
     opt.value = b.ad;
     opt.textContent = b.ad + ' (' + (b.asansorSayisi||0) + ' asansör)';
     blokSel.appendChild(opt);
@@ -1416,15 +1416,15 @@ function onAsanAptChange() {
 }
 
 function fillAsansorNo(apt) {
-  var blokAd = document.getElementById('asan-blok').value;
-  var noSel = document.getElementById('asan-no');
+  let blokAd = document.getElementById('asan-blok').value;
+  let noSel = document.getElementById('asan-no');
   noSel.innerHTML = '<option value="">— Asansör Seçin —</option>';
   if (!blokAd || !apt || !apt.bloklar) return;
-  var blok = apt.bloklar.find(function(b) { return b.ad === blokAd; });
+  let blok = apt.bloklar.find(function(b) { return b.ad === blokAd; });
   if (!blok) return;
-  var sayi = parseInt(blok.asansorSayisi)||0;
+  let sayi = parseInt(blok.asansorSayisi)||0;
   for (var i = 1; i <= sayi; i++) {
-    var opt = document.createElement('option');
+    let opt = document.createElement('option');
     opt.value = i;
     opt.textContent = blokAd + ' – Asansör ' + i;
     noSel.appendChild(opt);
@@ -6263,7 +6263,7 @@ function renderRaporlar() {
   renderMiniChart('rap-gelir-gider','G/G',gelir,gider);
   renderMiniChart2Apt('rap-tahsilat',aptId);
   renderMiniChart3Apt('rap-ariza',aptId);
-  renderSakinProfil('rap-sakin-profil',aptSakin);
+  renderSakinProfilWidget('rap-sakin-profil',aptSakin);
   renderFinansRaporSayfa();
   renderTahsilatRaporSayfa(aptId,aptSakin);
   renderArizaRaporSayfa(aptId);
@@ -6286,7 +6286,7 @@ function renderKPIGrid(aptId,gelir,gider,tahsilat,aptSakin,acikAriza){
   </div>`).join('');
 }
 
-function renderSakinProfil(id,aptSakin){
+function renderSakinProfilWidget(id,aptSakin){
   const el=document.getElementById(id);if(!el)return;
   const malik=aptSakin.filter(x=>x.tip==='malik').length;
   const kiralik=aptSakin.filter(x=>x.tip==='kiralik').length;
@@ -9289,11 +9289,11 @@ const _origCallAI = callAI;
 
 // ── SIDEBAR TOGGLE ───────────────────────────────────────
 function toggleSidebar() {
-  var sb = document.getElementById('sb');
-  var overlay = document.getElementById('sb-overlay');
+  let sb = document.getElementById('sb');
+  let overlay = document.getElementById('sb-overlay');
   if (window.innerWidth <= 768) {
     // Mobil: drawer aç/kapat
-    var isOpen = sb.classList.contains('mobile-open');
+    let isOpen = sb.classList.contains('mobile-open');
     sb.classList.toggle('mobile-open', !isOpen);
     overlay.classList.toggle('show', !isOpen);
     document.body.style.overflow = !isOpen ? 'hidden' : '';
@@ -9305,8 +9305,8 @@ function toggleSidebar() {
 }
 function closeSidebarMobile() {
   if (window.innerWidth <= 768) {
-    var sb = document.getElementById('sb');
-    var overlay = document.getElementById('sb-overlay');
+    let sb = document.getElementById('sb');
+    let overlay = document.getElementById('sb-overlay');
     sb.classList.remove('mobile-open');
     overlay.classList.remove('show');
     document.body.style.overflow = '';
@@ -9315,19 +9315,19 @@ function closeSidebarMobile() {
 // Sayfa yüklenince kayıtlı durumu uygula
 (function(){
   if (localStorage.getItem('sb_collapsed') === '1') {
-    var sb = document.getElementById('sb');
+    let sb = document.getElementById('sb');
     if (sb) sb.classList.add('collapsed');
   }
-  var secState = JSON.parse(localStorage.getItem('sb_sec_state') || '{}');
+  let secState = JSON.parse(localStorage.getItem('sb_sec_state') || '{}');
   document.querySelectorAll('.sb-sec').forEach(function(s, i) {
     if (secState[i]) s.classList.add('sec-collapsed');
   });
 })();
 function toggleSbSec(lbl) {
   if (document.getElementById('sb').classList.contains('collapsed')) return;
-  var sec = lbl.closest('.sb-sec');
+  let sec = lbl.closest('.sb-sec');
   sec.classList.toggle('sec-collapsed');
-  var state = {};
+  let state = {};
   document.querySelectorAll('.sb-sec').forEach(function(s, i) {
     state[i] = s.classList.contains('sec-collapsed');
   });
@@ -9336,7 +9336,7 @@ function toggleSbSec(lbl) {
 // Close on ESC
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
-    var sb = document.getElementById('sb');
+    let sb = document.getElementById('sb');
     if (sb && sb.classList.contains('mobile-open')) toggleSidebar();
   }
 });
@@ -9863,163 +9863,6 @@ function loadDemoData() {
   toast('✅ Göksu Sitesi demo verisi yüklendi — 24 daire, 6 aylık kayıtlar hazır!', 'ok');
 }
 
-// ── ESKİ DEMO ARTIK KULLANILMIYOR (placeholder) ──
-function loadDemoData_OLD() {
-  const t = Date.now();
-  const apt1 = { id: t+1, ad:'Yıldız Sitesi A Blok', adres:'Bağcılar Cad. No:12', mahalle:'Bağcılar', ilce:'Bağcılar', il:'İstanbul', daireSayisi:24, katSayisi:6, yon:'Ahmet Yıldız', yonTel:'0532 111 22 33', iban:'TR12 0001 0002 0003 0004 0005 06', insaatYili:'2005', aidat:1200, hizmetBedeli:3500, asansor:'var', durum:'aktif', bloklar:[{ad:'A Blok',asansorSayisi:1}], daireler:[] };
-  const apt2 = { id: t+2, ad:'Güneş Residance', adres:'Atatürk Bul. No:45', mahalle:'Kadıköy', ilce:'Kadıköy', il:'İstanbul', daireSayisi:36, katSayisi:9, yon:'Fatma Demir', yonTel:'0533 222 33 44', iban:'TR34 0001 0002 0003 0004 0005 07', insaatYili:'2010', aidat:1800, hizmetBedeli:5200, asansor:'var', durum:'aktif', bloklar:[{ad:'B Blok',asansorSayisi:2}], daireler:[] };
-
-  const sakinler = [
-    {id:t+101,aptId:apt1.id,aptAd:apt1.ad,tip:'malik',ad:'Mehmet Kaya',tc:'12345678901',dogum:'1975-06-15',cinsiyet:'e',tel:'0532 100 11 22',email:'mkaya@email.com',daire:'3',kat:'1',giris:'2015-03-01',aidat:1200,borc:2400,arsa:125,tapu:'TR-1234',not:'Yönetim kurulu üyesi'},
-    {id:t+102,aptId:apt1.id,aptAd:apt1.ad,tip:'malik',ad:'Ayşe Çelik',tc:'23456789012',dogum:'1982-09-20',cinsiyet:'k',tel:'0533 200 22 33',email:'acelik@email.com',daire:'7',kat:'2',giris:'2018-07-15',aidat:1200,borc:0,arsa:110},
-    {id:t+103,aptId:apt1.id,aptAd:apt1.ad,tip:'kiralik',ad:'Hasan Şahin',tc:'34567890123',cinsiyet:'e',tel:'0544 300 33 44',daire:'12',kat:'3',giris:'2023-01-10',aidat:1200,borc:1200,kira:8500,depozito:17000,sozlasmeBas:'2023-01-10',sozlasmeBit:'2025-01-10',evSahibi:'Recep Aktaş',evSahibiTel:'0555 444 55 66'},
-    {id:t+104,aptId:apt1.id,aptAd:apt1.ad,tip:'malik',ad:'Zeynep Arslan',tc:'45678901234',cinsiyet:'k',tel:'0505 400 44 55',daire:'15',kat:'4',giris:'2019-05-20',aidat:1200,borc:0,arsa:130},
-    {id:t+105,aptId:apt2.id,aptAd:apt2.ad,tip:'malik',ad:'Ali Öztürk',tc:'56789012345',cinsiyet:'e',tel:'0532 500 55 66',email:'aozturk@email.com',daire:'5',kat:'2',giris:'2016-11-01',aidat:1800,borc:3600,arsa:145,tapu:'TR-5678'},
-    {id:t+106,aptId:apt2.id,aptAd:apt2.ad,tip:'malik',ad:'Fatma Yılmaz',tc:'67890123456',cinsiyet:'k',tel:'0533 600 66 77',daire:'18',kat:'5',giris:'2020-03-15',aidat:1800,borc:0,arsa:120},
-    {id:t+107,aptId:apt2.id,aptAd:apt2.ad,tip:'kiralik',ad:'Emre Doğan',tc:'78901234567',cinsiyet:'e',tel:'0544 700 77 88',daire:'22',kat:'6',giris:'2024-01-15',aidat:1800,borc:1800,kira:12000,depozito:24000,sozlasmeBas:'2024-01-15',sozlasmeBit:'2026-01-15',evSahibi:'Sema Koç',evSahibiTel:'0555 888 99 00'},
-  ];
-
-  const personel = [
-    {id:t+201,ad:'Süleyman Temiz',tc:'11122233344',gorev:'kapici',tel:'0532 900 01 02',email:'stemiz@email.com',aptId:apt1.id,aptAd:apt1.ad,maas:12000,bas:'2018-04-01',iban:'TR12 0001 0002 0003',durum:'aktif',not:'7/24 nöbet tutar'},
-    {id:t+202,ad:'Güler Aksoy',tc:'22233344455',gorev:'temizlik',tel:'0533 900 02 03',aptId:apt1.id,aptAd:apt1.ad,maas:9000,bas:'2020-09-01',durum:'aktif'},
-    {id:t+203,ad:'Murat Özkan',tc:'33344455566',gorev:'kapici',tel:'0544 900 03 04',aptId:apt2.id,aptAd:apt2.ad,maas:13500,bas:'2017-06-15',durum:'aktif',not:'Teknik konularda deneyimli'},
-    {id:t+204,ad:'Hülya Başaran',tc:'44455566677',gorev:'temizlik',tel:'0505 900 04 05',aptId:apt2.id,aptAd:apt2.ad,maas:9500,bas:'2021-02-01',durum:'aktif'},
-    {id:t+205,ad:'Kemal Tunç',tc:'55566677788',gorev:'bahce',tel:'0532 900 05 06',aptId:null,aptAd:'Genel',maas:10000,bas:'2019-07-01',durum:'aktif',not:'Her iki apartmana bakım yapar'},
-  ];
-
-  const gorevler = [
-    {id:t+301,baslik:'Çatı Onarımı',aptId:apt1.id,aptAd:apt1.ad,kat:'Çatı',atanan:'Süleyman Temiz',oncelik:'acil',bas:'2026-03-01',son:'2026-03-20',aciklama:'Çatı yalıtımı hasarlı, su sızıntısı var',durum:'devam',ilerleme:40},
-    {id:t+302,baslik:'Asansör Bakımı',aptId:apt1.id,aptAd:apt1.ad,kat:'Tüm Katlar',atanan:'Lift Teknik',oncelik:'yuksek',bas:'2026-03-10',son:'2026-03-15',aciklama:'6 aylık periyodik bakım',durum:'bekliyor',ilerleme:0},
-    {id:t+303,baslik:'Otopark Boya',aptId:apt1.id,aptAd:apt1.ad,kat:'-1',atanan:'Güler Aksoy',oncelik:'normal',bas:'2026-04-01',son:'2026-04-10',aciklama:'Otopark şerit boyaları yenileme',durum:'bekliyor',ilerleme:0},
-    {id:t+304,baslik:'Giriş Kapısı Tamiri',aptId:apt2.id,aptAd:apt2.ad,kat:'Giriş',atanan:'Murat Özkan',oncelik:'yuksek',bas:'2026-03-05',son:'2026-03-12',aciklama:'Otomatik kapı sistemi arızalı',durum:'tamamlandi',ilerleme:100},
-    {id:t+305,baslik:'Bahçe Düzenlemesi',aptId:apt2.id,aptAd:apt2.ad,kat:'Zemin',atanan:'Kemal Tunç',oncelik:'normal',bas:'2026-04-15',son:'2026-05-01',aciklama:'Bahçe yenileme ve çim ekimi',durum:'bekliyor',ilerleme:0},
-    {id:t+306,baslik:'Güvenlik Kamerası Kurulumu',aptId:apt2.id,aptAd:apt2.ad,kat:'Tüm Katlar',atanan:'Güvenlik A.Ş.',oncelik:'yuksek',bas:'2026-03-15',son:'2026-03-25',aciklama:'8 adet HD kamera kurulumu',durum:'devam',ilerleme:60},
-  ];
-
-  const denetimler = [
-    {id:t+401,aptId:apt1.id,aptAd:apt1.ad,tarih:'2026-01-15',denetci:'İbrahim Denet',temizlik:8,guvenlik:7,teknik:6,cevre:9,altyapi:7,puan:74,notlar:'Giriş holü temizliği iyi. Kalorifer tesisatında küçük sızıntı tespit edildi.',onlem:'Kalorifer tamiri acilen yaptırılacak.',sonraki:'2026-07-15'},
-    {id:t+402,aptId:apt1.id,aptAd:apt1.ad,tarih:'2025-07-10',denetci:'İbrahim Denet',temizlik:7,guvenlik:8,teknik:7,cevre:8,altyapi:8,puan:76,notlar:'Genel durum iyi. Merdiven aydınlatması yetersiz.',onlem:'LED armatür değişimi planlandı.',sonraki:'2026-01-10'},
-    {id:t+403,aptId:apt2.id,aptAd:apt2.ad,tarih:'2026-02-20',denetci:'Selma Kontrol',temizlik:9,guvenlik:9,teknik:8,cevre:9,altyapi:8,puan:86,notlar:'Mükemmel durum. Ortak alanlar çok temiz.',onlem:'Periyodik bakım takvimi güncellendi.',sonraki:'2026-08-20'},
-    {id:t+404,aptId:apt2.id,aptAd:apt2.ad,tarih:'2025-09-05',denetci:'Selma Kontrol',temizlik:8,guvenlik:7,teknik:9,cevre:8,altyapi:9,puan:82,notlar:'Teknik altyapı çok iyi. Güvenlik kamerası eksik.',onlem:'Kamera kurulumu planlandı.'},
-  ];
-
-  const asansorler = [
-    {id:t+501,aptId:apt1.id,aptAd:apt1.ad,blok:'A Blok',asansorNo:'ASN-001',firma:'Lift Teknik A.Ş.',etiketTarih:'2025-09-15',sonTarih:'2026-09-15',bolum:'Son bakımda kapı sensörü değiştirildi'},
-    {id:t+502,aptId:apt2.id,aptAd:apt2.ad,blok:'B Blok',asansorNo:'ASN-002',firma:'Otis Servis',etiketTarih:'2026-02-01',sonTarih:'2026-04-15',bolum:'Yaklaşan muayene tarihine dikkat'},
-    {id:t+503,aptId:apt2.id,aptAd:apt2.ad,blok:'B Blok',asansorNo:'ASN-003',firma:'Otis Servis',etiketTarih:'2025-12-10',sonTarih:'2026-03-05',bolum:'Muayene süresi yaklaşıyor'},
-  ];
-
-  const teklifler = [
-    {id:t+601,aptId:apt1.id,aptAd:apt1.ad,tarih:'2026-02-10',konu:'Çatı Su Yalıtımı',firma:'İzoBuild İnş.',tutar:85000,kdv:20,kdvli:102000,gecerli:'2026-03-10',aciklama:'10 yıl garantili poliüretan kaplama',durum:'onaylandi'},
-    {id:t+602,aptId:apt1.id,aptAd:apt1.ad,tarih:'2026-02-12',konu:'Çatı Su Yalıtımı',firma:'ÇatıPro Ltd.',tutar:92000,kdv:20,kdvli:110400,gecerli:'2026-03-12',aciklama:'8 yıl garantili bitümlü membran',durum:'reddedildi'},
-    {id:t+603,aptId:apt1.id,aptAd:apt1.ad,tarih:'2026-03-01',konu:'Asansör Modernizasyonu',firma:'Lift Teknik A.Ş.',tutar:45000,kdv:20,kdvli:54000,gecerli:'2026-04-01',aciklama:'Frekans konvertörü ve yeni kapı sistemi',durum:'bekliyor'},
-    {id:t+604,aptId:apt2.id,aptAd:apt2.ad,tarih:'2026-01-20',konu:'Güvenlik Kamerası',firma:'Güvenlik Sistemleri A.Ş.',tutar:38000,kdv:20,kdvli:45600,gecerli:'2026-02-20',aciklama:'8 adet 4MP kamera + NVR',durum:'onaylandi'},
-    {id:t+605,aptId:apt2.id,aptAd:apt2.ad,tarih:'2026-03-05',konu:'Bahçe Düzenlemesi',firma:'Yeşil Peyzaj',tutar:22000,kdv:10,kdvli:24200,gecerli:'2026-04-05',aciklama:'Çim, fidan ve sulama sistemi',durum:'bekliyor'},
-  ];
-
-  const kararlar = [
-    {id:t+701,aptId:apt1.id,aptAd:apt1.ad,tarih:'2026-01-10',no:'2026/001',tur:'olagan',katilim:18,oy:18,gundem:'Yönetici ibrası, bütçe onayı, aidat artışı',metin:`KARAR METNİ\n\nYıldız Sitesi A Blok Olağan Kat Malikleri Kurulu Toplantısı\nTarih: 10.01.2026 | Katılım: 18/24 kat maliki\n\n1. Yönetici Ahmet Yıldız oybirliğiyle ibra edildi.\n2. 2026 yılı işletme bütçesi ₺420.000 olarak onaylandı.\n3. Aylık aidat ₺1.200'e yükseltildi (oy çokluğu).`},
-    {id:t+702,aptId:apt2.id,aptAd:apt2.ad,tarih:'2026-02-05',no:'2026/001',tur:'olagan',katilim:28,oy:28,gundem:'Güvenlik kamerası kurulumu, asansör bakım sözleşmesi',metin:`KARAR METNİ\n\nGüneş Residance Olağan Kat Malikleri Kurulu Toplantısı\nTarih: 05.02.2026 | Katılım: 28/36 kat maliki\n\n1. Güvenlik kamerası kurulumu için Güvenlik A.Ş. ile sözleşme yapılmasına oybirliğiyle karar verildi.\n2. Otis Servis ile 3 yıllık asansör bakım sözleşmesi imzalandı.\n3. Aylık aidat ₺1.800 olarak belirlendi.`},
-  ];
-
-  const icralar = [
-    {id:t+801,aptId:apt1.id,aptAd:apt1.ad,borclu:'Hasan Şahin',daire:'12',avukat:'Av. Necip Doğru',avukatTel:'0532 800 11 22',dosyaNo:'2025/İCR-0892',icraDairesi:'Bağcılar 3. İcra Müdürlüğü',tutar:14400,faiz:720,sebepTur:'aidat_borc',sebep:'Aidat Borcu',aciklama:'12 aylık aidat birikimi',durum:'devam',tarih:'2025-12-15',notlar:'İcra takibi başlatıldı'},
-    {id:t+802,aptId:apt2.id,aptAd:apt2.ad,borclu:'Ali Öztürk',daire:'5',avukat:'Av. Zehra Kılıç',avukatTel:'0533 900 22 33',dosyaNo:'2026/İCR-0115',icraDairesi:'Kadıköy 1. İcra Müdürlüğü',tutar:21600,faiz:1080,sebepTur:'aidat_borc',sebep:'Aidat Borcu',aciklama:'12 aylık aidat + gecikme zammı',durum:'devam',tarih:'2026-01-20',notlar:'Ödeme emri tebliğ edildi'},
-  ];
-
-  const finansIslemler = [
-    {id:t+901,aptId:apt1.id,aptAd:apt1.ad,tarih:'2026-03-01',tur:'gelir',kat:'aidat',aciklama:'Mart 2026 aidat tahsilatı',tutar:21600,not:'18 daireden tahsilat'},
-    {id:t+902,aptId:apt1.id,aptAd:apt1.ad,tarih:'2026-02-28',tur:'gider',kat:'bakim',aciklama:'Asansör aylık bakım',tutar:3500,not:'Lift Teknik fatura'},
-    {id:t+903,aptId:apt1.id,aptAd:apt1.ad,tarih:'2026-02-25',tur:'gider',kat:'maas',aciklama:'Şubat maaş ödemeleri',tutar:21000,not:'Kapıcı + temizlik personeli'},
-    {id:t+904,aptId:apt1.id,aptAd:apt1.ad,tarih:'2026-02-10',tur:'gider',kat:'elektrik',aciklama:'Ortak alan elektrik faturası',tutar:4200,not:'Şubat 2026 dönemi'},
-    {id:t+905,aptId:apt2.id,aptAd:apt2.ad,tarih:'2026-03-01',tur:'gelir',kat:'aidat',aciklama:'Mart 2026 aidat tahsilatı',tutar:57600,not:'32 daireden tahsilat'},
-    {id:t+906,aptId:apt2.id,aptAd:apt2.ad,tarih:'2026-02-28',tur:'gider',kat:'bakim',aciklama:'Asansör aylık bakım (2 asansör)',tutar:7000,not:'Otis Servis fatura'},
-    {id:t+907,aptId:apt2.id,aptAd:apt2.ad,tarih:'2026-02-25',tur:'gider',kat:'maas',aciklama:'Şubat maaş ödemeleri',tutar:23000,not:'Kapıcı + temizlik personeli'},
-    {id:t+908,aptId:apt2.id,aptAd:apt2.ad,tarih:'2026-02-15',tur:'gider',kat:'elektrik',aciklama:'Ortak alan elektrik faturası',tutar:7800,not:'Şubat 2026 dönemi'},
-  ];
-
-  const duyurular = [
-    {id:t+1001,aptId:apt1.id,aptAd:apt1.ad,baslik:'Mart Ayı Aidat Ödemeleri',icerik:'Saygıdeğer Sakinlerimiz,\n\nMart 2026 dönemi aidat ödemelerinin en geç 10 Mart 2026 tarihine kadar yönetim hesabına yatırılması gerekmektedir. Gecikme halinde yasal faiz uygulanacaktır.\n\nYönetim Kurulu',tip:'aidat',tarih:'2026-03-01',bitis:'2026-03-31'},
-    {id:t+1002,aptId:apt1.id,aptAd:apt1.ad,baslik:'Çatı Onarım Çalışmaları',icerik:'10-20 Mart tarihleri arasında çatı onarım çalışması yapılacaktır. Çalışma saatleri 09:00-17:00 arasındadır. Gürültüden kaynaklanan rahatsızlık için özür dileriz.',tip:'bakim',tarih:'2026-03-08',bitis:'2026-03-20'},
-    {id:t+1003,aptId:apt2.id,aptAd:apt2.ad,baslik:'Güvenlik Kamerası Kurulumu',icerik:'15-20 Mart tarihleri arasında tüm katlara güvenlik kamerası kurulumu yapılacaktır. Teknisyenlerimizin kat koridorlarına erişmesi gerekebilecektir.',tip:'duyuru',tarih:'2026-03-12',bitis:'2026-03-25'},
-    {id:t+1004,aptId:apt2.id,aptAd:apt2.ad,baslik:'Su Kesintisi Bildirimi',icerik:'25 Mart 2026 Çarşamba günü 10:00-15:00 saatleri arasında tesisat bakımı nedeniyle su kesintisi yaşanacaktır. Su ihtiyaçlarınızı önceden karşılamanızı öneririz.',tip:'bakim',tarih:'2026-03-20',bitis:'2026-03-26'},
-  ];
-
-  const arizalar = [
-    {id:t+1101,aptId:apt1.id,aptAd:apt1.ad,baslik:'Zemin Kat Tuvalet Tıkanıklığı',aciklama:'Ortak tuvalet tıkanmış, pis koku var',kat:'Zemin',oncelik:'yuksek',durum:'acik',tarih:'2026-03-10',atanan:'Süleyman Temiz',no:'ARZ-1101'},
-    {id:t+1102,aptId:apt1.id,aptAd:apt1.ad,baslik:'4. Kat Merdiven Lambası',aciklama:'Floresan lamba yanmış, karanlık',kat:'4',oncelik:'normal',durum:'acik',tarih:'2026-03-08',atanan:'Süleyman Temiz',no:'ARZ-1102'},
-    {id:t+1103,aptId:apt1.id,aptAd:apt1.ad,baslik:'Kalorifer Pompa Arızası',aciklama:'Kalorifer ısınmıyor, pompa sesi geliyor',kat:'Bodrum',oncelik:'acil',durum:'kapandi',tarih:'2026-02-20',atanan:'Teknik Servis',kapanis:'2026-02-22',no:'ARZ-1103'},
-    {id:t+1104,aptId:apt2.id,aptAd:apt2.ad,baslik:'B Blok Asansör Ses',aciklama:'Asansör hareket ederken gıcırdıyor',kat:'Tüm Katlar',oncelik:'yuksek',durum:'acik',tarih:'2026-03-12',atanan:'Murat Özkan',no:'ARZ-1104'},
-    {id:t+1105,aptId:apt2.id,aptAd:apt2.ad,baslik:'Otopark Su Birikintisi',aciklama:'Yağmur sonrası otoparkta su birikti',kat:'-1',oncelik:'normal',durum:'acik',tarih:'2026-03-11',atanan:'Murat Özkan',no:'ARZ-1105'},
-  ];
-
-  const tahsilatlar = [
-    {id:t+1201,aptId:apt1.id,aptAd:apt1.ad,sakinId:t+101,sakinAd:'Mehmet Kaya',daire:'3',tutar:1200,tarih:'2026-03-05',tip:'aidat',donem:'Mart 2026',yontem:'havale',not:''},
-    {id:t+1202,aptId:apt1.id,aptAd:apt1.ad,sakinId:t+102,sakinAd:'Ayşe Çelik',daire:'7',tutar:1200,tarih:'2026-03-03',tip:'aidat',donem:'Mart 2026',yontem:'nakit',not:''},
-    {id:t+1203,aptId:apt1.id,aptAd:apt1.ad,sakinId:t+104,sakinAd:'Zeynep Arslan',daire:'15',tutar:2400,tarih:'2026-03-07',tip:'gecmis_borc',donem:'Şubat-Mart 2026',yontem:'havale',not:'2 aylık birikmiş borç'},
-    {id:t+1204,aptId:apt2.id,aptAd:apt2.ad,sakinId:t+106,sakinAd:'Fatma Yılmaz',daire:'18',tutar:1800,tarih:'2026-03-04',tip:'aidat',donem:'Mart 2026',yontem:'eft',not:''},
-  ];
-
-  const sigortalar = [
-    {id:t+1301,aptId:apt1.id,aptAd:apt1.ad,tur:'dask',sirket:'Allianz Sigorta',no:'DASK-2025-001234',bas:'2025-09-01',bit:'2026-09-01',prim:2800,acenta:'ABC Acentalık',acentaTel:'0212 111 22 33',not:'DASK + Konut paketi'},
-    {id:t+1302,aptId:apt1.id,aptAd:apt1.ad,tur:'yangin',sirket:'Mapfre Sigorta',no:'YNG-2025-005678',bas:'2025-10-15',bit:'2026-04-15',prim:1500,acenta:'DEF Sigorta',acentaTel:'0212 333 44 55',not:'30 gün içinde yenileme gerekli'},
-    {id:t+1303,aptId:apt2.id,aptAd:apt2.ad,tur:'dask',sirket:'Axa Sigorta',no:'DASK-2025-009876',bas:'2025-11-01',bit:'2026-11-01',prim:4200,acenta:'GHI Acentalık',acentaTel:'0216 555 66 77',not:'Poliçe yenilenmiş'},
-    {id:t+1304,aptId:apt2.id,aptAd:apt2.ad,tur:'asansor',sirket:'Generali Sigorta',no:'ASN-2025-003456',bas:'2025-08-20',bit:'2026-08-20',prim:3600,acenta:'GHI Acentalık',acentaTel:'0216 555 66 77',not:'2 asansör için birleşik poliçe'},
-  ];
-
-  const toplantılar = [
-    {id:t+1401,aptId:apt1.id,aptAd:apt1.ad,tur:'olagan',tarih:'2026-01-10',saat:'19:00',yer:'Apartman Toplantı Salonu',gundem:'Yönetici ibrası\nYıllık bütçe onayı\nAidat artışı görüşmesi',katilim:18,durum:'tamamlandi',notlar:'Tüm maddeler oybirliğiyle kabul edildi.'},
-    {id:t+1402,aptId:apt1.id,aptAd:apt1.ad,tur:'yonetim',tarih:'2026-03-20',saat:'20:00',yer:'Yönetim Ofisi',gundem:'Çatı onarımı sözleşmesi imzalama\nAsansör teklif değerlendirmesi',katilim:3,durum:'planli',notlar:''},
-    {id:t+1403,aptId:apt2.id,aptAd:apt2.ad,tur:'olagan',tarih:'2026-02-05',saat:'19:30',yer:'Site Toplantı Odası',gundem:'Güvenlik kamerası kurulum kararı\nAsansör bakım sözleşmesi\nAidat belirleme',katilim:28,durum:'tamamlandi',notlar:'Güvenlik A.Ş. ile sözleşme imzalandı.'},
-    {id:t+1404,aptId:apt2.id,aptAd:apt2.ad,tur:'olaganustu',tarih:'2026-04-10',saat:'19:00',yer:'Site Toplantı Odası',gundem:'Acil kazan dairesi onarımı\nMasraf paylaşımı',katilim:0,durum:'planli',notlar:''},
-  ];
-
-  const faturalar = [
-    {id:t+1501,aptId:apt1.id,aptAd:apt1.ad,tur:'elektrik',firma:'İstanbul Elektrik',donem:'Mart 2026',tarih:'2026-03-10',son:'2026-03-25',tutar:4200,durum:'bekliyor',no:'ELEC-2026-0310',not:'Ortak alan elektriği'},
-    {id:t+1502,aptId:apt1.id,aptAd:apt1.ad,tur:'dogalgaz',firma:'İGDAŞ',donem:'Şubat 2026',tarih:'2026-03-02',son:'2026-03-17',tutar:8900,durum:'odendi',no:'IGDAS-2026-0302',not:'Kalorifer doğalgazı'},
-    {id:t+1503,aptId:apt1.id,aptAd:apt1.ad,tur:'su',firma:'İSKİ',donem:'Şubat 2026',tarih:'2026-03-05',son:'2026-03-20',tutar:1850,durum:'odendi',no:'ISKI-2026-0305',not:'Ortak su'},
-    {id:t+1504,aptId:apt1.id,aptAd:apt1.ad,tur:'asansor',firma:'Lift Teknik A.Ş.',donem:'Mart 2026',tarih:'2026-03-01',son:'2026-03-15',tutar:3500,durum:'bekliyor',no:'LIFT-2026-0301',not:'Aylık bakım sözleşmesi'},
-    {id:t+1505,aptId:apt2.id,aptAd:apt2.ad,tur:'elektrik',firma:'İstanbul Elektrik',donem:'Mart 2026',tarih:'2026-03-10',son:'2026-03-25',tutar:7800,durum:'bekliyor',no:'ELEC-2026-0311',not:'Ortak alan + aydınlatma'},
-    {id:t+1506,aptId:apt2.id,aptAd:apt2.ad,tur:'dogalgaz',firma:'İGDAŞ',donem:'Şubat 2026',tarih:'2026-03-02',son:'2026-03-17',tutar:14200,durum:'odendi',no:'IGDAS-2026-0303',not:'Merkezi ısıtma sistemi'},
-    {id:t+1507,aptId:apt2.id,aptAd:apt2.ad,tur:'guvenlik',firma:'Güvenlik Sistemleri A.Ş.',donem:'Mart 2026',tarih:'2026-03-01',son:'2026-03-15',tutar:5500,durum:'bekliyor',no:'GVN-2026-0301',not:'Kamera sistemi bakımı'},
-    {id:t+1508,aptId:apt2.id,aptAd:apt2.ad,tur:'internet',firma:'Turkcell Superonline',donem:'Mart 2026',tarih:'2026-03-05',son:'2026-03-20',tutar:850,durum:'gecikti',no:'TCSO-2026-0305',not:'Site internet altyapısı'},
-  ];
-
-  const isletmeProjeler = [
-    {id:t+1601,aptId:apt1.id,aptAd:apt1.ad,donem:'Mart 2026',dag:'esit',toplam:21000,giderler:[{kalem:'Personel Maaşları',tutar:21000}],dagitim:[],tarih:today()},
-    {id:t+1602,aptId:apt2.id,aptAd:apt2.ad,donem:'Mart 2026',dag:'esit',toplam:36100,giderler:[{kalem:'Personel Maaşları',tutar:22500},{kalem:'Asansör Bakımı',tutar:7000},{kalem:'Güvenlik Hizm.',tutar:5500},{kalem:'İnternet',tutar:1100}],dagitim:[],tarih:today()},
-  ];
-
-  // State'e yükle
-  S.apartmanlar = [apt1, apt2];
-  S.sakinler = sakinler;
-  S.personel = personel;
-  S.gorevler = gorevler;
-  S.denetimler = denetimler;
-  S.asansorler = asansorler;
-  S.teklifler = teklifler;
-  S.kararlar = kararlar;
-  S.icralar = icralar;
-  S.finansIslemler = finansIslemler;
-  S.duyurular = duyurular;
-  S.arizalar = arizalar;
-  S.tahsilatlar = tahsilatlar;
-  S.sigortalar = sigortalar;
-  S.toplantılar = toplantılar;
-  S.faturalar = faturalar;
-  S.isletmeProjeler = isletmeProjeler;
-  if (!S.ayarlar || !S.ayarlar.firma) {
-    S.ayarlar = { firma:'Metropol Site Yönetim A.Ş.', yonetici:'Recep Tuncer', unvan:'Genel Müdür', tel:'0212 500 60 70', mail:'info@metropolsite.com', adres:'Bağcılar Cad. No:12, İstanbul' };
-  }
-
-  save();
-  syncDropdowns();
-  selectedAptId = apt1.id;
-  refreshUI();
-  goPage('dashboard');
-  toast('✅ Demo veriler başarıyla yüklendi! Tüm modüller hazır.', 'ok');
-}
-
 // ── APARTMAN DETAY SAYFASI ──────────────────
 function goAptDetay(aptId) {
   const a = S.apartmanlar.find(x => x.id === +aptId);
@@ -10041,7 +9884,7 @@ function renderAptDetay(a) {
   const acikAriza = arizalar.filter(function(ar) { return ar.durum === 'acik'; }).length;
   const acikGorev = gorevler.filter(function(g) { return g.durum !== 'tamamlandi'; }).length;
 
-  var html = '';
+  let html = '';
   // Hero
   html += '<div class="apt-hero">' +
     '<div class="apt-hero-ico"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-4h6v4M9 11h1m5 0h-1M9 15h1m5 0h-1"/></svg></div>' +
@@ -10087,8 +9930,8 @@ function renderAptDetay(a) {
   if (sakinler.length) {
     html += '<div class="apt-resident-grid">';
     sakinler.sort(function(a, b) { return (parseInt(a.daire) || 0) - (parseInt(b.daire) || 0); }).forEach(function(sk) {
-      var init = (sk.ad || ' ').split(' ').map(function(w) { return w[0] || ''; }).join('').slice(0, 2).toUpperCase();
-      var borc = sk.borc || 0;
+      let init = (sk.ad || ' ').split(' ').map(function(w) { return w[0] || ''; }).join('').slice(0, 2).toUpperCase();
+      let borc = sk.borc || 0;
       html += '<div class="apt-resident-mini" onclick="goDaireDetay(' + sk.id + ')">' +
         '<div class="apt-res-av ' + sk.tip + '">' + init + '</div>' +
         '<div style="flex:1;min-width:0">' +
@@ -14241,7 +14084,7 @@ function migrateLegacyDataToLedger() {
   S._ledgerMigrated = true;
   if (count > 0) {
     save();
-    console.log(`[Migration] ${count} legacy kayıt ledger'a aktarıldı.`);
+    console.warn(`[Migration] ${count} legacy kayıt ledger'a aktarıldı.`);
   }
 }
 
