@@ -173,7 +173,6 @@
   <div class="sb-sec">
     <div class="sb-sec-lbl" onclick="toggleSbSec(this)">Belgeler &amp; Kayıtlar<svg class="sb-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
     <div class="ni" data-p="tanimlama" data-role="yonetici" data-tip="Evrak Kategorisi"><div class="nico"><svg viewBox="0 0 24 24"><line x1="3" y1="7" x2="21" y2="7"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="17" x2="21" y2="17"/><circle cx="8" cy="7" r="2.5"/><circle cx="16" cy="12" r="2.5"/><circle cx="10" cy="17" r="2.5"/></svg></div>Evrak Kategorisi</div>
-    <div class="ni" data-p="fatura" data-role="yonetici" data-tip="Fatura Yönetimi"><div class="nico"><svg viewBox="0 0 24 24"><path d="M4 4v17l3-2 3 2 3-2 3 2 3-2V4a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="12" y2="13"/></svg></div>Fatura Yönetimi<span class="nbadge am" id="bdg-fat" style="display:none">0</span></div>
     <div class="ni" data-p="sigorta" data-role="yonetici" data-tip="Sigorta Takibi"><div class="nico"><svg viewBox="0 0 24 24"><path d="M12 2L4 5.5v6.5c0 5.5 3.5 10.3 8 12 4.5-1.7 8-6.5 8-12V5.5L12 2z"/><circle cx="12" cy="10" r="2.5"/><path d="M8 18c0-2.2 1.8-4 4-4s4 1.8 4 4"/></svg></div>Sigorta Takibi<span class="nbadge rd" id="bdg-sig" style="display:none">!</span></div>
   </div>
   <div class="sb-sec">
@@ -388,8 +387,20 @@
       </div>
       <button class="btn bg sm" onclick="_pdfFinans()"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> PDF</button>
     </div>
+    <!-- Toplu İşlem Çubuğu -->
+    <div id="fin-bulk-bar" style="display:none;align-items:center;gap:8px;background:var(--s2);border:1.5px solid var(--border);border-radius:10px;padding:8px 14px;margin-bottom:10px">
+      <span style="font-size:12.5px;font-weight:600;color:var(--tx-2)" id="fin-sel-count">0 kayıt seçildi</span>
+      <div style="flex:1"></div>
+      <button class="btn bp xs" onclick="finBulkOde()">💳 Toplu Öde</button>
+      <button class="btn bg xs" onclick="finBulkPdf()">🖨️ PDF</button>
+      <button class="btn brd xs" onclick="finBulkDelete()">🗑️ Sil</button>
+      <button class="btn sm" style="border:1px solid var(--border);background:var(--s1)" onclick="_finSelected.clear();renderFinans()">✕ İptal</button>
+    </div>
     <div class="card"><div class="tw"><table>
-      <thead><tr><th>Tarih</th><th>Apartman</th><th>Tür</th><th>Kategori</th><th>Kişi / Tedarikçi</th><th>Belge No</th><th style="text-align:right">Net Tutar</th><th style="text-align:right">Toplam (KDV)</th><th>Yöntem</th><th>Durum</th><th>İşlem</th></tr></thead>
+      <thead><tr>
+        <th style="width:32px;padding:6px 8px"><input type="checkbox" id="fin-chk-all" onchange="finSelAll(this.checked)" title="Tümünü seç" style="cursor:pointer"></th>
+        <th>Tarih</th><th>Apartman</th><th>Tür</th><th>Kategori</th><th>Kişi / Tedarikçi</th><th>Belge No</th><th style="text-align:right">Net Tutar</th><th style="text-align:right">Toplam (KDV)</th><th>Yöntem</th><th>Durum</th><th>İşlem</th>
+      </tr></thead>
       <tbody id="fin-tbody"></tbody>
     </table></div></div>
   </div>
@@ -455,6 +466,7 @@
                 <button class="btn bg sm" onclick="finGenMakbuzNo('fg-belge')" style="white-space:nowrap;flex-shrink:0">🔄 Otomatik</button>
               </div>
             </div>
+            <div class="fgp"><label class="lbl">Kasa / Hesap <span style="color:var(--err)">*</span></label><select class="fs" id="fg-kasa"><option value="">— Kasa Seçin —</option></select></div>
           </div>
         </div>
       </div>
@@ -1472,7 +1484,8 @@
         <div class="fc g8">
           <span class="t3" style="font-size:12px" id="tah-secili-info">0 sakin seçildi</span>
           <input type="date" class="fi sm" id="tah-secili-tarih" style="width:140px">
-          <select class="fi sm" id="tah-secili-yontem" style="width:130px"><option value="nakit">Nakit</option><option value="banka">Banka</option><option value="eft">EFT</option></select>
+          <select class="fi sm" id="tah-secili-yontem" style="width:120px"><option value="nakit">Nakit</option><option value="banka">Banka</option><option value="eft">EFT</option></select>
+          <select class="fi sm" id="tah-secili-kasa" style="width:150px"><option value="">— Kasa Seçin * —</option></select>
         </div>
         <button class="btn bp sm" onclick="saveSeciliOdeme()">✅ Seçilileri Tahsil Et</button>
       </div>
@@ -1495,6 +1508,9 @@
           <select class="fs" id="tah-t-yontem" onchange="setTopluYontem()">
             <option value="nakit">Nakit</option><option value="banka">Banka Havalesi</option><option value="eft">EFT</option><option value="kredi">Kredi Kartı</option>
           </select>
+        </div>
+        <div class="fgp"><label class="lbl">Kasa / Hesap <span style="color:var(--err)">*</span></label>
+          <select class="fs" id="tah-t-kasa"><option value="">— Kasa Seçin —</option></select>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:40px 140px 80px 100px 120px 110px 40px;gap:6px;padding:0 6px 6px;font-size:11px;font-weight:700;color:var(--tx-3)">
@@ -1589,6 +1605,17 @@
           <button class="btn bg sm" onclick="bankHepsiniEslesir()">🔍 Tümünü Eşleştir</button>
         </div>
       </div>
+      <!-- Kasa Seçimi Paneli -->
+      <div id="bank-kasa-panel" style="display:none;margin-bottom:12px;padding:10px 14px;background:rgba(37,99,235,.04);border:1.5px solid rgba(37,99,235,.18);border-radius:8px">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <label style="font-size:12px;font-weight:600;color:var(--tx-2);white-space:nowrap">🏦 Tüm Hareketler için Kasa:</label>
+          <select id="bank-global-kasa" class="fi" style="min-width:220px;font-size:12px" onchange="window._bankKasaId=this.value">
+            <option value="">— Kasa seçilmedi (opsiyonel) —</option>
+          </select>
+          <span style="font-size:11px;color:var(--tx-3)">Seçilen kasa onaylanan tüm hareketlere uygulanır</span>
+        </div>
+      </div>
+
       <!-- Tablo başlık -->
       <div style="display:grid;grid-template-columns:90px 1fr 108px 160px 78px 76px;gap:7px;padding:7px 14px;background:var(--bg);border-radius:7px;border:1px solid var(--bd);margin-bottom:4px">
         <div style="font-size:11px;font-weight:600;color:var(--tx-3)">Tarih</div>
@@ -2113,84 +2140,6 @@
 </div>
 
 <!-- FATURA YÖNETİMİ -->
-<div id="page-fatura" class="pg">
-  <div class="tabs">
-    <div class="tab on" data-tab="fat-liste">Fatura Listesi</div>
-    <div class="tab" data-tab="fat-yeni">Yeni Fatura</div>
-    <div class="tab" data-tab="fat-ozet">Özet & Analiz</div>
-  </div>
-  <div id="fat-liste">
-    <div class="fbc mb12">
-      <div class="fc g8" style="flex-wrap:wrap">
-        <div class="srch" style="width:230px"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="fat-srch" placeholder="Hizmet veya firma ara…" oninput="renderFatura()"></div>
-        <select class="fi sm" id="fat-f-apt" onchange="renderFatura()" style="width:auto;padding:6px 10px"><option value="">Tüm Apartmanlar</option></select>
-        <select class="fi sm" id="fat-f-tur" onchange="renderFatura()" style="width:auto;padding:6px 10px">
-          <option value="">Tüm Hizmetler</option>
-          <option value="elektrik">Elektrik</option>
-          <option value="dogalgaz">Doğalgaz</option>
-          <option value="su">Su</option>
-          <option value="temizlik">Temizlik</option>
-          <option value="guvenlik">Güvenlik</option>
-          <option value="asansor">Asansör Bakım</option>
-          <option value="diger">Diğer</option>
-        </select>
-        <select class="fi sm" id="fat-f-durum" onchange="renderFatura()" style="width:auto;padding:6px 10px">
-          <option value="">Tüm Durumlar</option>
-          <option value="bekliyor">Ödeme Bekliyor</option>
-          <option value="odendi">Ödendi</option>
-          <option value="gecikti">Gecikti</option>
-        </select>
-      </div>
-      <div id="fat-stats-mini" class="fc g8"></div>
-    </div>
-    <div class="card"><div class="tw"><table>
-      <thead><tr><th>Apartman</th><th>Hizmet</th><th>Firma</th><th>Dönem</th><th>Tutar (₺)</th><th>Son Ödeme</th><th>Durum</th><th>İşlem</th></tr></thead>
-      <tbody id="fat-tbody"></tbody>
-    </table></div></div>
-  </div>
-  <div id="fat-yeni" style="display:none">
-    <div class="card">
-      <div class="card-t mb16">📄 Yeni Fatura Kaydı</div>
-      <div class="f3 fg">
-        <div class="fgp"><label class="lbl">Apartman *</label><select class="fs" id="fat-apt"><option value="">— Seçin —</option></select></div>
-        <div class="fgp"><label class="lbl">Hizmet Türü *</label>
-          <select class="fs" id="fat-tur">
-            <option value="elektrik">⚡ Elektrik</option>
-            <option value="dogalgaz">🔥 Doğalgaz</option>
-            <option value="su">💧 Su</option>
-            <option value="temizlik">🧹 Temizlik Hizmeti</option>
-            <option value="guvenlik">🔒 Güvenlik / Kapıcı</option>
-            <option value="asansor">🔼 Asansör Bakım</option>
-            <option value="bahce">🌿 Bahçe Bakım</option>
-            <option value="internet">🌐 İnternet / Uydu</option>
-            <option value="diger">📦 Diğer</option>
-          </select>
-        </div>
-        <div class="fgp"><label class="lbl">Hizmet Firması</label><input class="fi" id="fat-firma" placeholder="Firma adı"></div>
-        <div class="fgp"><label class="lbl">Dönem</label><input class="fi" id="fat-donem" placeholder="Örn: Mart 2026"></div>
-        <div class="fgp"><label class="lbl">Fatura Tarihi *</label><input type="date" class="fi" id="fat-tarih"></div>
-        <div class="fgp"><label class="lbl">Son Ödeme Tarihi</label><input type="date" class="fi" id="fat-son"></div>
-        <div class="fgp"><label class="lbl">Tutar (₺) *</label><input type="number" class="fi" id="fat-tutar" placeholder="0" step="0.01"></div>
-        <div class="fgp"><label class="lbl">Durum</label>
-          <select class="fs" id="fat-durum">
-            <option value="bekliyor">Ödeme Bekliyor</option>
-            <option value="odendi">Ödendi</option>
-            <option value="gecikti">Gecikti</option>
-          </select>
-        </div>
-        <div class="fgp"><label class="lbl">Fatura No</label><input class="fi" id="fat-no" placeholder="Fatura numarası"></div>
-        <div class="fgp" style="grid-column:1/-1"><label class="lbl">Not</label><textarea class="fta" id="fat-not" rows="2" placeholder="Ek notlar..."></textarea></div>
-      </div>
-      <div class="fc g8 mt12">
-        <button class="btn bp" onclick="saveFatura()">💾 Kaydet</button>
-        <button class="btn bg" onclick="goTab('fat-liste')">İptal</button>
-      </div>
-    </div>
-  </div>
-  <div id="fat-ozet" style="display:none">
-    <div id="fat-ozet-content"></div>
-  </div>
-</div>
 
 <!-- APARTMAN DETAY -->
 <div id="page-apt-detay" class="pg">
@@ -2808,6 +2757,7 @@
         <div class="fgp"><label class="lbl">Tutar (₺) *</label><input type="number" class="fi" id="ho-tutar" placeholder="0" min="0"></div>
         <div class="fgp"><label class="lbl">Ödeme Yöntemi</label><select class="fs" id="ho-yontem"><option value="nakit">Nakit</option><option value="havale">Havale/EFT</option><option value="kredi">Kredi Kartı</option><option value="diger">Diğer</option></select></div>
       </div>
+      <div class="fgp"><label class="lbl">Kasa / Hesap <span style="color:var(--err)">*</span></label><select class="fs" id="ho-kasa"><option value="">— Kasa Seçin —</option></select></div>
       <div class="fgp"><label class="lbl">Açıklama / Not</label><input class="fi" id="ho-not" placeholder="Opsiyonel not..."></div>
       <div class="fgp">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">

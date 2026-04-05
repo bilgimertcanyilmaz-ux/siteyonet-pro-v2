@@ -667,7 +667,6 @@ function refreshUI() {
     else if (ap === 'raporlar') renderRaporlar();
     else if (ap === 'sigorta') renderSigorta();
     else if (ap === 'toplanti') renderToplanti();
-    else if (ap === 'fatura') renderFatura();
   } catch(e) {}
   try { syncDropdowns(); } catch(e) {}
   // Apt ctx topbar her save'de güncelle
@@ -770,7 +769,7 @@ window.addEventListener('popstate', function(e) {
 //
 // NAVIGATION
 //
-const PAGE_TITLES = { dashboard:'Anasayfa', apartmanlar:'Apartmanlar', karar:'Karar Metni Oluşturucu', isletme:'İşletme Projesi', 'isl-detay':'İşletme Projesi Detay', denetim:'Denetim Raporları', 'den-detay':'Denetim Raporu Detay', asansor:'Asansör Etiket Kontrolü', 'asan-detay':'Asansör Detay', teklifler:'Teklifler', gorevler:'Görev Yönetimi', icra:'İcra Listesi', finans:'Gelir / Gider Takibi', ayarlar:'Ayarlar', sakinler:'Sakin Yönetimi', personel:'Personel Yönetimi', duyurular:'Duyuru & İletişim', ariza:'Arıza & Bakım Yönetimi', tahsilat:'Tahsilat & Borç Takibi', raporlar:'Raporlar & Analitik', 'ai-asistan':'AI Yönetim Asistanı', sigorta:'Sigorta Takibi', toplanti:'Toplantı Yönetimi', fatura:'Fatura & Hizmet Yönetimi', superadmin:'Süper Admin Paneli', 'apt-detay':'Apartman Detay', 'daire-detay':'Daire Detay', 'finansal-durum':'Finansal Durum', 'sakin-cari':'Kişilere Göre Finansal Durum', 'tanimlama':'Evrak Kategorisi', 'proje':'Proje & Tadilat Takibi', 'iletisim':'İletişim Merkezi', 'toplu-borc':'Toplu Borçlandırma', 'sms-sablonlar':'SMS / WhatsApp Şablonları',
+const PAGE_TITLES = { dashboard:'Anasayfa', apartmanlar:'Apartmanlar', karar:'Karar Metni Oluşturucu', isletme:'İşletme Projesi', 'isl-detay':'İşletme Projesi Detay', denetim:'Denetim Raporları', 'den-detay':'Denetim Raporu Detay', asansor:'Asansör Etiket Kontrolü', 'asan-detay':'Asansör Detay', teklifler:'Teklifler', gorevler:'Görev Yönetimi', icra:'İcra Listesi', finans:'Gelir / Gider Takibi', ayarlar:'Ayarlar', sakinler:'Sakin Yönetimi', personel:'Personel Yönetimi', duyurular:'Duyuru & İletişim', ariza:'Arıza & Bakım Yönetimi', tahsilat:'Tahsilat & Borç Takibi', raporlar:'Raporlar & Analitik', 'ai-asistan':'AI Yönetim Asistanı', sigorta:'Sigorta Takibi', toplanti:'Toplantı Yönetimi', superadmin:'Süper Admin Paneli', 'apt-detay':'Apartman Detay', 'daire-detay':'Daire Detay', 'finansal-durum':'Finansal Durum', 'sakin-cari':'Kişilere Göre Finansal Durum', 'tanimlama':'Evrak Kategorisi', 'proje':'Proje & Tadilat Takibi', 'iletisim':'İletişim Merkezi', 'toplu-borc':'Toplu Borçlandırma', 'sms-sablonlar':'SMS / WhatsApp Şablonları',
 'sakin-profil':'Sakin Profili', 'davet-yonetim':'Sakin Davetleri', 'davet-bekleyen':'Onay Bekleyenler', 'davet-kayit':'Sisteme Kayıt', 'makbuzlar':'Makbuzlar', 'devir-bakiye':'Devir Bakiye Girişi', 'kasa':'Kasa & Banka', 'aylik-rapor':'Aylık Gelir/Gider Raporu' };
 
 function goPage(p) {
@@ -798,7 +797,6 @@ function goPage(p) {
  icra: '<button class="btn bp" onclick="goTab(\'icra-yeni\')"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Yeni Dosya</button>',
  sigorta: '<button class="btn bp" onclick="goTab(\'sig-yeni\')"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Yeni Poliçe</button>',
  toplanti: '<button class="btn bp" onclick="goTab(\'top-yeni\')"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Yeni Toplantı</button>',
- fatura: '<button class="btn bp" onclick="goTab(\'fat-yeni\')"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Yeni Fatura</button>',
  'apt-detay': '<button class="btn bg" onclick="navBack()"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none"><polyline points="15 18 9 12 15 6"/></svg> Geri</button>',
  'daire-detay': '<button class="btn bg" onclick="navBack()"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none"><polyline points="15 18 9 12 15 6"/></svg> Geri</button>',
  proje: '<button class="btn bp" onclick="openProjeModal()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Yeni Proje</button>',
@@ -857,7 +855,6 @@ function goPage(p) {
   if (p==='ai-asistan') { initAiAsistan(); }
   if (p==='sigorta') { renderSigorta(); }
   if (p==='toplanti') { renderToplanti(); }
-  if (p==='fatura') { renderFatura(); }
   if (p==='superadmin') { renderSuperAdmin(); }
   // Global site bar her sayfa geçişinde güncelle
   updateGlobalSiteBar();
@@ -892,13 +889,12 @@ function initTabs() {
     if (id==='sig-liste') { try{renderSigorta();}catch(e){} }
     if (id==='top-liste') { try{renderToplanti();}catch(e){} }
     if (id==='top-takvim') { try{renderTopTakvim();}catch(e){} }
-    if (id==='fat-liste') { try{renderFatura();}catch(e){} }
-    if (id==='fat-ozet') { try{renderFaturaOzet();}catch(e){} }
     if (id==='mak-borc-makbuz') { try{renderBorcMakbuz();}catch(e){} }
     if (id==='mak-tahsilat-makbuz') { try{renderTahsilatMakbuz();}catch(e){} }
     if (id==='tah-banka') { try{renderBankDosyalar();}catch(e){} }
     if (id==='fin-faturalar') { try{renderFinansFaturalar();}catch(e){} }
     if (id==='fin-hizli-makbuz') { try{_hmAptDoldur();}catch(e){} }
+    if (id==='fin-gelir') { try{_fillKasaSelect('fg-kasa');}catch(e){} }
  });
  });
  });
@@ -1014,7 +1010,6 @@ function renderDashboard() {
     { l:'Arıza Bildir',   i:'<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>', fn:"goPage('ariza');goTab('arz-yeni')",      bg:'#fff7ed', cl:'#ea580c' },
     { l:'Tahsilat',       i:'<rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>',                              fn:"goPage('tahsilat')",                       bg:'#fef9c3', cl:'#ca8a04' },
     { l:'Duyuru Yaz',     i:'<path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"/>',                             fn:"goPage('duyurular');goTab('duy-yeni')",    bg:'#fdf4ff', cl:'#9333ea' },
-    { l:'Fatura Ekle',    i:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/>',                fn:"goPage('fatura');goTab('fat-yeni')",       bg:'#f0fdf4', cl:'#16a34a' },
   ].map(q=>`<div class="ds-qa-item" onclick="${q.fn}"><div class="ds-qa-ico" style="background:${q.bg};color:${q.cl}"><svg viewBox="0 0 24 24">${q.i}</svg></div><span class="ds-qa-lbl">${q.l}</span></div>`).join('');
 
   // ── KPI CARDS ──────────────────────────────────────
@@ -4448,6 +4443,34 @@ Türkiye piyasa fiyatlarına göre tahmin yap. Kısa ve net tablo formatında ya
 // ══════════════════════════════════════════════════
 let makbuzNo = 5000;
 
+// Kasa hesaplarını belirtilen select element(ler)ine doldur
+function _fillKasaSelect(...ids) {
+  const hesaplar = S.accounts || [];
+  const opts = '<option value="">— Kasa seçilmedi —</option>' +
+    hesaplar.map(h => `<option value="${h.id}">${he(h.ad)} (${h.tip === 'banka' ? 'Banka' : 'Nakit'})</option>`).join('');
+  ids.forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = opts; });
+}
+
+// Tahsilat girişi sırasında kasaya otomatik giriş hareketi ekle
+function _kasaGirisEkle(hesapId, tutar, aciklama, tarih) {
+  if (!hesapId || !tutar) return;
+  const h = (S.accounts || []).find(a => a.id == hesapId);
+  if (!h) return;
+  if (!S.kasaHareketler) S.kasaHareketler = [];
+  S.kasaHareketler.push({
+    id: Date.now() + Math.random(),
+    hesapId: +hesapId,
+    hesapAd: h.ad || '',
+    tarih: tarih || today(),
+    tutar: +tutar,
+    tur: 'giris',
+    aciklama: aciklama || 'Tahsilat',
+    kategori: 'Tahsilat',
+    aptId: h.aptId || null,
+    kaynak: 'tahsilat'
+  });
+}
+
 function renderTahsilat() {
   const bannerId='tah-apt-banner',contentId='tah-content';
   if(!aptCtxCheck('tahsilat',bannerId,contentId,'tahsilat ve borç'))return;
@@ -4487,6 +4510,9 @@ function renderTahsilat() {
     <div class="sc"><div class="sc-ico ic-gr"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg></div><div class="sc-lbl">Toplam Tahsilat</div><div class="sc-val v-gr">₺${fmt(tahsilat)}</div><div class="sc-sub">Bu apartman</div><div class="sc-bar bar-gr"></div></div>
     <div class="sc"><div class="sc-ico ic-bl"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div class="sc-lbl">Sakin</div><div class="sc-val v-bl">${list.length}</div><div class="sc-sub">${list.length-borclu} temiz</div><div class="sc-bar bar-bl"></div></div>
     <div class="sc"><div class="sc-ico ic-am"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div class="sc-lbl">Tahsilat Oranı</div><div class="sc-val v-am">${list.length?Math.round(((list.length-borclu)/list.length)*100):100}%</div><div class="sc-sub">Bu dönem</div><div class="sc-bar bar-am"></div></div>`;
+
+  // Kasa selectlerini doldur
+  _fillKasaSelect('tah-secili-kasa', 'tah-t-kasa');
 
   // Toplu tahsilat sayfasını doldur
   renderTopluTahsilat(aptId);
@@ -4538,6 +4564,8 @@ function saveSeciliOdeme(){
   if(!checked.length){toast('Sakin seçilmedi.','err');return;}
   const tarih=document.getElementById('tah-secili-tarih')?.value||today();
   const yontem=document.getElementById('tah-secili-yontem')?.value||'nakit';
+  const kasaId=document.getElementById('tah-secili-kasa')?.value||'';
+  if(!kasaId){toast('Kasa / Hesap seçin.','err');return;}
   const aptId=selectedAptId;
   const now=new Date();
   const donemStr=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
@@ -4551,9 +4579,11 @@ function saveSeciliOdeme(){
     S.tahsilatlar.push({
       id:Date.now()+ok,no:'M-'+makbuzNo,sakId:sk.id,sakAd:sk.ad,
       aptId:+aptId,aptAd:apt?apt.ad:(sk.aptAd||''),daire:sk.daire,
-      tip:'aidat',donem:donemStr,tutar:sk.aidat||0,tarih,yontem,not:'Toplu tahsilat'
+      tip:'aidat',donem:donemStr,tutar:sk.aidat||0,tarih,yontem,not:'Toplu tahsilat',
+      kasaId:kasaId||null
     });
     if((sk.borc||0)>0)sk.borc=Math.max(0,(sk.borc||0)-(sk.aidat||0));
+    if(kasaId) _kasaGirisEkle(kasaId, sk.aidat||0, `${sk.ad} — ${donemStr} toplu tahsilat`, tarih);
     ok++;
   });
   if(ok){save();refreshCariIfOpen();if(typeof renderTahsilat==='function')try{renderTahsilat();}catch(e){}}
@@ -4658,6 +4688,8 @@ function saveTopluOdeme(){
   const apt=S.apartmanlar.find(a=>a.id==aptId);
   const donem=document.getElementById('tah-t-donem')?.value||'';
   const tarih=document.getElementById('tah-t-tarih')?.value||today();
+  const kasaId=document.getElementById('tah-t-kasa')?.value||'';
+  if(!kasaId){toast('Kasa / Hesap seçin.','err');return;}
   if(!makbuzNo)makbuzNo=5000;
   let ok=0;
   document.querySelectorAll('.toplu-tutar').forEach(inp=>{
@@ -4669,9 +4701,10 @@ function saveTopluOdeme(){
     S.tahsilatlar.push({
       id:Date.now()+ok,no:'M-'+makbuzNo,sakId,sakAd:sk.ad,
       aptId:+aptId,aptAd:apt?apt.ad:'',daire:sk.daire,
-      tip:'aidat',donem,tutar,tarih,yontem,not:''
+      tip:'aidat',donem,tutar,tarih,yontem,not:'',kasaId:kasaId||null
     });
     if((sk.borc||0)>0)sk.borc=Math.max(0,(sk.borc||0)-tutar);
+    if(kasaId) _kasaGirisEkle(kasaId, tutar, `${sk.ad} — ${donem||tarih} tahsilat`, tarih);
     inp.value='';ok++;
   });
   if(ok){save();calcTopluToplam();refreshCariIfOpen();}
@@ -4701,7 +4734,7 @@ function parseBankFile(file){
     const reader=new FileReader();
     reader.onload=(e)=>{
       try{
-        const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+        const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
         const ws=wb.Sheets[wb.SheetNames[0]];
         const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
         _bankProcessRows(rows,file);
@@ -4719,6 +4752,43 @@ function parseBankFile(file){
   }
 }
 
+// Çeşitli tarih formatlarını YYYY-MM-DD'ye çevirir
+function _parseBankTarih(val){
+  if(!val&&val!==0)return'';
+  // XLSX numeric serial (Excel tarih serisi)
+  if(typeof val==='number'){
+    // Excel epoch: 1 Ocak 1900 = 1 (29 Şubat 1900 hatası için 25569 ofset)
+    const d=new Date(Math.round((val-25569)*86400*1000));
+    if(!isNaN(d))return d.toISOString().slice(0,10);
+    return'';
+  }
+  // JS Date nesnesi (XLSX cellDates:true ile)
+  if(val instanceof Date){
+    if(!isNaN(val))return val.toISOString().slice(0,10);
+    return'';
+  }
+  const s=String(val).trim();
+  if(!s)return'';
+  // Zaten YYYY-MM-DD
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
+  // DD.MM.YYYY veya DD/MM/YYYY veya DD-MM-YYYY
+  const m1=s.match(/^(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{4})$/);
+  if(m1){
+    const [,g,ay,yil]=m1;
+    return`${yil}-${ay.padStart(2,'0')}-${g.padStart(2,'0')}`;
+  }
+  // YYYY/MM/DD veya YYYY.MM.DD
+  const m2=s.match(/^(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})$/);
+  if(m2){
+    const [,yil,ay,g]=m2;
+    return`${yil}-${ay.padStart(2,'0')}-${g.padStart(2,'0')}`;
+  }
+  // Son çare: native Date parse
+  const d=new Date(s);
+  if(!isNaN(d))return d.toISOString().slice(0,10);
+  return s; // parse edilemedi, olduğu gibi döndür
+}
+
 function _bankProcessRows(rows,file){
   bankRows=[];
   // Header satırını atla
@@ -4729,7 +4799,7 @@ function _bankProcessRows(rows,file){
   }
   rows.slice(start).forEach((parts,i)=>{
     if(!parts||parts.length<2)return;
-    const tarih=String(parts[0]||'').trim();
+    const tarih=_parseBankTarih(parts[0]);
     const aciklama=String(parts[1]||'').trim();
     // Tutar: 3. sütun öncelikli, sonra diğerleri
     let tutar=0;
@@ -4812,11 +4882,15 @@ function bankSatirOnayla(id){
     const sk=S.sakinler.find(x=>x.id==r.eslesme.id);
     if(sk&&sk.borc>0)sk.borc=Math.max(0,(sk.borc||0)-r.tutar);
   }
+  const ekAciklama=r.ekAciklama||'';
   S.finansIslemler=S.finansIslemler||[];
   S.finansIslemler.push({id:uid+1,aptId:+aptId,aptAd:apt?.ad||'',
     tarih:r.tarih,tur:r.tutar>0?'gelir':'gider',
     kat:r.tutar>0?'aidat':(r.giderKat||'Diğer').toLowerCase(),
-    tutar:Math.abs(r.tutar),aciklama:r.aciklama,belge:'Banka'});
+    tutar:Math.abs(r.tutar),aciklama:ekAciklama||r.aciklama,belge:'Banka',
+    kasaId:window._bankKasaId||null});
+  const kasaId=window._bankKasaId||'';
+  if(kasaId)_kasaGirisEkle(kasaId,Math.abs(r.tutar),ekAciklama||r.aciklama,r.tarih);
   const dosya=(S.bankDosyalar||[]).find(d=>d.id===window._currentBankDosyaId);
   if(dosya){dosya.onaylanan=(dosya.onaylanan||0)+1;dosya.satirlar=bankRows.map(rr=>({...rr,eslesme:rr.eslesme?rr.eslesme.id:null}));}
   save();renderBankRows();
@@ -4882,15 +4956,19 @@ function bankOnayliKaydet(){
   const onaylananlar=bankRows.filter(r=>r.durum==='onaylandi');
   if(!onaylananlar.length){toast('Onaylanan hareket yok.','warn');return;}
   if(!makbuzNo)makbuzNo=5000;
+  const kasaId=window._bankKasaId||'';
   let ok=0;
   onaylananlar.forEach(r=>{
     makbuzNo++;
+    const ekAciklama=r.ekAciklama||'';
+    const aciklama=ekAciklama||r.aciklama;
     // Tahsilata ekle
     if(r.eslesme&&r.tutar>0){
       S.tahsilatlar.push({
         id:Date.now()+ok,no:'B-'+makbuzNo,sakId:r.eslesme.id,sakAd:r.eslesme.ad,
         aptId:+aptId,aptAd:apt?apt.ad:'',daire:r.eslesme.daire,
-        tip:'banka',donem:'',tutar:Math.abs(r.tutar),tarih:r.tarih,yontem:'banka',not:r.aciklama
+        tip:'banka',donem:'',tutar:Math.abs(r.tutar),tarih:r.tarih,yontem:'banka',
+        not:aciklama,kasaId:kasaId||null
       });
       if(r.eslesme.borc>0)r.eslesme.borc=Math.max(0,r.eslesme.borc-Math.abs(r.tutar));
     }
@@ -4899,8 +4977,10 @@ function bankOnayliKaydet(){
       id:Date.now()+ok+100,aptId:+aptId,aptAd:apt?apt.ad:'',
       tarih:r.tarih,tur:r.tutar>0?'gelir':'gider',
       kat:r.tutar>0?'aidat':'diger',
-      tutar:Math.abs(r.tutar),aciklama:r.aciklama,belge:'Banka'
+      tutar:Math.abs(r.tutar),aciklama:aciklama,belge:'Banka',kasaId:kasaId||null
     });
+    // Kasa hareketi
+    if(kasaId)_kasaGirisEkle(kasaId,Math.abs(r.tutar),aciklama,r.tarih);
     ok++;
   });
   bankRows=bankRows.filter(r=>r.durum!=='onaylandi');
@@ -4918,6 +4998,19 @@ function renderBankRows(){
   const bekleyen=bankRows.filter(r=>r.durum!=='onaylandi').length;
   const onaylanan=bankRows.filter(r=>r.durum==='onaylandi').length;
   if(ozet)ozet.innerHTML=`<span style="font-size:12px;color:var(--tx-3)">${bankRows.length} hareket</span>&nbsp;&nbsp;<span style="color:#16a34a;font-size:12px;font-weight:600">↑ ₺${fmt(gelir)}</span>&nbsp;&nbsp;<span style="color:var(--err);font-size:12px;font-weight:600">↓ ₺${fmt(gider)}</span>&nbsp;&nbsp;${bekleyen?`<span class="b b-gy" style="font-size:10.5px">${bekleyen} bekliyor</span>`:''}${onaylanan?`&nbsp;<span class="b b-gr" style="font-size:10.5px">${onaylanan} onaylı</span>`:''}`;
+  // Kasa panelini göster/gizle ve doldur
+  const kasaPanel=document.getElementById('bank-kasa-panel');
+  if(kasaPanel){
+    kasaPanel.style.display=bankRows.length?'':'none';
+    const kasaSel=document.getElementById('bank-global-kasa');
+    if(kasaSel){
+      const curVal=window._bankKasaId||'';
+      const hesaplar=S.accounts||[];
+      kasaSel.innerHTML='<option value="">— Kasa seçilmedi (opsiyonel) —</option>'+
+        hesaplar.map(h=>`<option value="${h.id}"${String(h.id)===String(curVal)?' selected':''}>${he(h.ad)} (${h.tip==='banka'?'Banka':'Nakit'})</option>`).join('');
+      kasaSel.onchange=function(){window._bankKasaId=this.value;};
+    }
+  }
   if(!bankRows.length){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--tx-3);font-size:13px">📂 Henüz banka hareketi yüklenmedi. Excel/CSV yükleyin veya manuel ekleyin.</div>';return;}
   const giderKatlar=['Bakım','Temizlik','Elektrik','Su','Doğalgaz','Asansör','Sigorta','Personel','Vergi','Malzeme','Diğer'];
 
@@ -4966,13 +5059,21 @@ function renderBankRows(){
     const onaylaBtn=`<button onclick="bankSatirOnayla(${r.id})" title="${canApprove?'Onayla ve işle':(isGelir?'Önce sakin seçin':'Önce gider türü seçin')}" style="background:${canApprove?'#dcfce7':'#f3f4f6'};color:${canApprove?'#16a34a':'#9ca3af'};border:1.5px solid ${canApprove?'#86efac':'#e5e7eb'};padding:5px 11px;border-radius:6px;font-size:13px;font-weight:700;cursor:${canApprove?'pointer':'default'};line-height:1;white-space:nowrap">✓</button>`;
     const silBtn=`<button onclick="bankSatirReddet(${r.id})" title="Sil" style="background:#fee2e2;color:#dc2626;border:1.5px solid #fca5a5;padding:5px 8px;border-radius:6px;font-size:12px;cursor:pointer;line-height:1">✕</button>`;
 
-    return `<div style="display:grid;grid-template-columns:90px 1fr 108px 160px 78px 76px;gap:7px;align-items:center;padding:9px 14px;border-bottom:1px solid var(--bd);border-left:3px solid transparent">
-      <div style="font-size:11px;color:var(--tx-3);white-space:nowrap">${r.tarih||'—'}</div>
-      <div style="font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--tx-1)" title="${r.aciklama}">${r.aciklama}</div>
-      <div style="font-weight:700;color:${tutarClr};font-size:13px;text-align:right;white-space:nowrap">${r.tutar>0?'+':''}₺${fmt(Math.abs(r.tutar))}</div>
-      ${eslCol}
-      ${tipSec}
-      <div style="display:flex;gap:4px;justify-content:flex-end;align-items:center">${onaylaBtn}${silBtn}</div>
+    return `<div style="border-bottom:1px solid var(--bd);border-left:3px solid transparent">
+      <div style="display:grid;grid-template-columns:90px 1fr 108px 160px 78px 76px;gap:7px;align-items:center;padding:9px 14px 5px 14px">
+        <div style="font-size:11px;color:var(--tx-3);white-space:nowrap">${r.tarih||'—'}</div>
+        <div style="font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--tx-1)" title="${r.aciklama}">${r.aciklama}</div>
+        <div style="font-weight:700;color:${tutarClr};font-size:13px;text-align:right;white-space:nowrap">${r.tutar>0?'+':''}₺${fmt(Math.abs(r.tutar))}</div>
+        ${eslCol}
+        ${tipSec}
+        <div style="display:flex;gap:4px;justify-content:flex-end;align-items:center">${onaylaBtn}${silBtn}</div>
+      </div>
+      <div style="padding:0 14px 8px 14px">
+        <input type="text" placeholder="Ek açıklama (opsiyonel)…" value="${he(r.ekAciklama||'')}"
+          oninput="const rr=bankRows.find(x=>x.id===${r.id});if(rr)rr.ekAciklama=this.value"
+          style="width:100%;box-sizing:border-box;font-size:11px;padding:4px 9px;border:1px solid var(--bd);border-radius:6px;background:var(--bg);color:var(--tx-2);outline:none"
+          onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='var(--bd)'">
+      </div>
     </div>`;
   }).join('');
 }
@@ -5067,14 +5168,14 @@ function loadSakinForOdeme() {
 
 function hizliOdeme(sakId) {
   const sk=S.sakinler.find(x=>x.id===sakId); if(!sk) return;
-  goTab('tah-odeme');
-  setTimeout(()=>{
-    const aptEl=document.getElementById('tah-o-apt');
-    if(aptEl){ aptEl.innerHTML='<option value="">— Seçin —</option>'+S.apartmanlar.map(a=>`<option value="${a.id}">${a.ad}</option>`).join(''); aptEl.value=sk.aptId; loadSakinForOdeme(); }
-    setTimeout(()=>{ const sEl=document.getElementById('tah-o-sakin'); if(sEl) sEl.value=sk.id; },100);
-    const tEl=document.getElementById('tah-o-tarih'); if(tEl) tEl.value=today();
-    const tuEl=document.getElementById('tah-o-tutar'); if(tuEl) tuEl.value=sk.aidat||'';
-  },50);
+  _fillKasaSelect('ho-kasa');
+  openModal('mod-hizli-odeme');
+  document.getElementById('ho-sak-id').value = sakId;
+  document.getElementById('ho-sak-ad').value = sk.ad + (sk.daire ? ' — Daire ' + sk.daire : '');
+  document.getElementById('ho-tarih').value = today();
+  const tuEl = document.getElementById('ho-tutar'); if (tuEl) tuEl.value = sk.aidat || '';
+  const donemEl = document.getElementById('ho-donem');
+  if (donemEl) { const n=new Date(); donemEl.value = n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0'); }
 }
 
 function borcGuncelle(sakId) {
@@ -5440,6 +5541,13 @@ function editTahsilatMakbuz(id) {
             <label style="font-size:11px;font-weight:600;color:var(--tx-3);display:block;margin-bottom:4px">Not</label>
             <input id="te-not" type="text" class="fs" style="width:100%;font-size:13px" value="${o.not||''}" placeholder="İsteğe bağlı not">
           </div>
+          <div style="grid-column:1/-1">
+            <label style="font-size:11px;font-weight:600;color:var(--tx-3);display:block;margin-bottom:4px">Kasa / Hesap <span style="font-weight:400">(opsiyonel)</span></label>
+            <select id="te-kasa" class="fs" style="width:100%;font-size:13px">
+              <option value="">— Kasa seçilmedi —</option>
+              ${(S.accounts||[]).map(h=>`<option value="${h.id}"${String(o.kasaId)===String(h.id)?' selected':''}>${he(h.ad)} (${h.tip==='banka'?'Banka':'Nakit'})</option>`).join('')}
+            </select>
+          </div>
         </div>
       </div>
     </div>`;
@@ -5458,6 +5566,9 @@ function saveTahsilatEdit() {
   o.donem  = document.getElementById('te-donem')?.value  || o.donem;
   o.yontem = document.getElementById('te-yontem')?.value || o.yontem;
   o.not    = document.getElementById('te-not')?.value    ?? o.not;
+  const teKasaId = document.getElementById('te-kasa')?.value || '';
+  if (!teKasaId) { toast('Kasa / Hesap seçin.', 'err'); return; }
+  o.kasaId = teKasaId || null;
   // Sakin borcunu güncelle (tutar farkı)
   const sk = S.sakinler.find(x=>x.id==o.sakId||x.id==o.sakid);
   if (sk) sk.borc = Math.max(0,(sk.borc||0) + eskiTutar - o.tutar);
@@ -6326,7 +6437,22 @@ function copyRapor(){
   if(out)navigator.clipboard?.writeText(out.textContent).then(()=>toast('Rapor kopyalandı.','ok'));
 }
 
-function exportFinansRapor(){toast('Excel indirme hazırlanıyor…','ok');}
+function exportFinansRapor(){
+  const aptId=selectedAptId;
+  const yil=document.getElementById('rap-f-yil')?.value||new Date().getFullYear().toString();
+  const ay=document.getElementById('rap-f-ay')?.value||'';
+  let list=(S.finansIslemler||[]).filter(f=>f.aptId==aptId);
+  if(yil)list=list.filter(f=>f.tarih?.startsWith(yil));
+  if(ay)list=list.filter(f=>f.tarih?.slice(5,7)===ay.padStart(2,'0'));
+  if(!list.length){toast('Dışa aktarılacak kayıt yok.','warn');return;}
+  list=list.slice().sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||''));
+  const header='Tarih,Tür,Kategori,Açıklama,Tutar,Ödeme Durumu,Firma,Fatura No\n';
+  const rows=list.map(f=>`${f.tarih||''},${f.tur||''},${f.kat||''},${(f.aciklama||'').replace(/,/g,' ')},${f.tutar||0},${f.odemeDurum||''},${(f.firma||'').replace(/,/g,' ')},${f.faturaNo||''}`).join('\n');
+  const blob=new Blob(['\uFEFF'+header+rows],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`finans_rapor_${yil}${ay?'_'+ay:''}.csv`;a.click();
+  toast('CSV indirildi.','ok');
+}
 function exportTahsilatRapor(){toast('Tahsilat raporu hazırlanıyor…','ok');}
 function exportOdemeGecmis(){
   const aptId=selectedAptId;
@@ -7136,34 +7262,139 @@ function _pdfToplanti() {
   return html + _pdfClose();
 }
 
-// — PDF: Fatura
-function _pdfFatura() {
-  const list = S.faturalar||[];
-  const bek=list.filter(f=>f.durum==='bekliyor').length;
-  const topTutar=list.filter(f=>f.durum==='bekliyor').reduce((s,f)=>s+(f.tutar||0),0);
-  const odendi=list.filter(f=>f.durum==='odendi').reduce((s,f)=>s+(f.tutar||0),0);
-  let html = _pdfOpen('Fatura Yönetimi', `Toplam: ${list.length} fatura`);
-  html+=`<div class="stats">
-    <div class="stat"><div class="stat-n">${list.length}</div><div class="stat-l">Toplam</div></div>
-    <div class="stat"><div class="stat-n" style="color:#d97706">${bek}</div><div class="stat-l">Bekleyen</div></div>
-    <div class="stat"><div class="stat-n" style="color:#dc2626">${list.filter(f=>f.durum==='gecikti').length}</div><div class="stat-l">Gecikmiş</div></div>
-    <div class="stat"><div class="stat-n" style="color:#059669">${_fmtTL(odendi)}</div><div class="stat-l">Ödenen Toplam</div></div>
+
+// — Yeni Sayfa PDF Yardımcıları ──────────────────────────────────────────────
+function _pdfMakbuzlar() {
+  const aptId = selectedAptId;
+  let list = (S.tahsilatlar||[]).filter(o=>o.status!=='cancelled');
+  if(aptId) list = list.filter(o=>o.aptId==aptId);
+  list = list.slice().sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||''));
+  const topTutar = list.reduce((s,o)=>s+(o.tutar||0),0);
+  let html = _pdfOpen('Tahsilat Makbuzları', `Toplam ${list.length} kayıt`);
+  html += `<div class="stats">
+    <div class="stat"><div class="stat-n">${list.length}</div><div class="stat-l">Makbuz</div></div>
+    <div class="stat"><div class="stat-n" style="color:#16a34a">${_fmtTL(topTutar)}</div><div class="stat-l">Toplam Tahsilat</div></div>
   </div>`;
-  if(topTutar>0) html+=`<div class="info-box">Bekleyen Ödemeler Toplamı: <strong>${_fmtTL(topTutar)}</strong></div>`;
-  html+=`<table><thead><tr><th>Apartman</th><th>Tür</th><th>Firma</th><th>Fatura No</th><th>Dönem</th><th>Tutar</th><th>Fatura Tarihi</th><th>Son Ödeme</th><th>Durum</th></tr></thead><tbody>`;
-  list.slice().sort((a,b)=>new Date(b.tarih||b.kayitTarih)-new Date(a.tarih||a.kayitTarih)).forEach(f=>{
-    const dCls=f.durum==='odendi'?'gr':f.durum==='gecikti'?'rd':'am'; const dTxt=f.durum==='odendi'?'Ödendi':f.durum==='gecikti'?'Gecikti':'Bekliyor';
-    html+=`<tr><td><strong>${f.aptAd||'—'}</strong></td><td>${f.tur||'—'}</td><td>${f.firma||'—'}</td><td>${f.no||'—'}</td><td>${f.donem||'—'}</td><td><strong>${_fmtTL(f.tutar)}</strong></td><td>${_fmtDate(f.tarih)}</td><td>${_fmtDate(f.son)}</td><td>${_badge(dTxt,dCls)}</td></tr>`;
+  html += `<table><thead><tr><th>Makbuz No</th><th>Sakin</th><th>Daire</th><th>Dönem</th><th>Tip</th><th>Yöntem</th><th>Tutar</th><th>Tarih</th></tr></thead><tbody>`;
+  list.forEach(o=>{
+    html += `<tr><td>${o.no||'—'}</td><td>${he(o.sakAd||'')}</td><td>${he(String(o.daire||''))}</td><td>${o.donem||'—'}</td><td>${o.tip||'—'}</td><td>${o.yontem||'—'}</td><td style="color:#16a34a;font-weight:700">${_fmtTL(o.tutar)}</td><td>${_fmtDate(o.tarih)}</td></tr>`;
   });
-  if(!list.length) html+=`<tr><td colspan="9" style="text-align:center;color:#9ca3af">Kayıt yok</td></tr>`;
+  if(!list.length) html+=`<tr><td colspan="8" style="text-align:center;color:#9ca3af">Kayıt yok</td></tr>`;
   html+=`</tbody></table>`;
   return html + _pdfClose();
+}
+
+function _pdfKasa() {
+  const hesaplar = (S.accounts||[]);
+  const hareketler = (S.kasaHareketler||[]);
+  const kasaBakiye = id => {
+    const h = hesaplar.find(a=>a.id===id)||{};
+    const giris = hareketler.filter(k=>k.hesapId===id&&k.tur==='giris').reduce((s,k)=>s+(k.tutar||0),0);
+    const cikis = hareketler.filter(k=>k.hesapId===id&&k.tur==='cikis').reduce((s,k)=>s+(k.tutar||0),0);
+    return (h.acilisBakiye||0)+giris-cikis;
+  };
+  let html = _pdfOpen('Kasa & Banka', `${hesaplar.length} hesap`);
+  if(!hesaplar.length){ html+=`<p style="color:#9ca3af;padding:20px">Hesap kaydı yok.</p>`; return html+_pdfClose(); }
+  html+=`<table><thead><tr><th>Hesap</th><th>Tür</th><th>Açılış Bakiyesi</th><th>Güncel Bakiye</th></tr></thead><tbody>`;
+  hesaplar.forEach(h=>{
+    const bak=kasaBakiye(h.id);
+    html+=`<tr><td><strong>${he(h.ad||'')}</strong></td><td>${h.tip==='banka'?'Banka':'Nakit Kasa'}</td><td>${_fmtTL(h.acilisBakiye||0)}</td><td style="font-weight:700;color:${bak>=0?'#16a34a':'#dc2626'}">${_fmtTL(bak)}</td></tr>`;
+  });
+  html+=`</tbody></table>`;
+  html+=`<h2>Kasa Hareketleri</h2>`;
+  html+=`<table><thead><tr><th>Hesap</th><th>Tür</th><th>Açıklama</th><th>Kategori</th><th>Tutar</th><th>Tarih</th></tr></thead><tbody>`;
+  const srtH=hareketler.slice().sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||''));
+  srtH.forEach(k=>{
+    const h=hesaplar.find(a=>a.id===k.hesapId)||{};
+    html+=`<tr><td>${he(h.ad||'—')}</td><td>${_badge(k.tur==='giris'?'Giriş':'Çıkış',k.tur==='giris'?'gr':'rd')}</td><td>${he(k.aciklama||'')}</td><td>${k.kat||'—'}</td><td style="font-weight:700;color:${k.tur==='giris'?'#16a34a':'#dc2626'}">${k.tur==='giris'?'+':'−'}${_fmtTL(k.tutar)}</td><td>${_fmtDate(k.tarih)}</td></tr>`;
+  });
+  if(!srtH.length) html+=`<tr><td colspan="6" style="text-align:center;color:#9ca3af">Hareket yok</td></tr>`;
+  html+=`</tbody></table>`;
+  return html+_pdfClose();
+}
+
+function _pdfDevirBakiye() {
+  const aptId = document.getElementById('db-apt')?.value||'';
+  const apt = aptId?(S.apartmanlar||[]).find(a=>a.id==aptId):null;
+  const sakinler = (S.sakinler||[]).filter(s=>aptId?s.aptId==aptId:true);
+  // Devir kayıtlarını bul
+  const devirBorcMap={},devirAlacakMap={};
+  (S.aidatBorclandir||[]).forEach(kayit=>{
+    if(kayit.kategori==='Devir'){
+      (kayit.detaylar||[]).forEach(d=>{
+        if(d.sakId) devirBorcMap[d.sakId]=(devirBorcMap[d.sakId]||0)+(d.tutar||0);
+      });
+    }
+  });
+  (S.tahsilatlar||[]).filter(t=>t.tip==='devir-alacak').forEach(t=>{
+    if(t.sakId) devirAlacakMap[t.sakId]=(devirAlacakMap[t.sakId]||0)+(t.tutar||0);
+  });
+
+  let html=_pdfOpen('Devir Bakiye Girişi',apt?`Apartman: ${apt.ad}`:'Tüm Apartmanlar');
+  html+=`<table><thead><tr><th>Daire</th><th>Sakin</th><th>Devir Borç</th><th>Devir Alacak</th><th>Net</th></tr></thead><tbody>`;
+  let topBorc=0,topAlacak=0;
+  sakinler.forEach(sk=>{
+    const b=devirBorcMap[sk.id]||0;
+    const a=devirAlacakMap[sk.id]||0;
+    const net=a-b;
+    topBorc+=b;topAlacak+=a;
+    html+=`<tr><td>${he(String(sk.daire||''))}</td><td>${he(sk.ad||'')}</td><td style="color:#dc2626">${_fmtTL(b)}</td><td style="color:#16a34a">${_fmtTL(a)}</td><td style="font-weight:700;color:${net>=0?'#16a34a':'#dc2626'}">${_fmtTL(net)}</td></tr>`;
+  });
+  if(!sakinler.length) html+=`<tr><td colspan="5" style="text-align:center;color:#9ca3af">Kayıt yok</td></tr>`;
+  html+=`</tbody></table>`;
+  html+=`<div class="info-box">Toplam Devir Borç: <strong>${_fmtTL(topBorc)}</strong> | Toplam Devir Alacak: <strong>${_fmtTL(topAlacak)}</strong> | Net: <strong>${_fmtTL(topAlacak-topBorc)}</strong></div>`;
+  return html+_pdfClose();
+}
+
+function _pdfTopluBorc() {
+  const gecmis=(S.aidatBorclandir||[]).filter(k=>k.kategori!=='Devir').slice().sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||''));
+  let html=_pdfOpen('Toplu Borç Yükleme Geçmişi',`${gecmis.length} kayıt`);
+  html+=`<table><thead><tr><th>Tarih</th><th>Dönem</th><th>Apartman</th><th>Açıklama</th><th>Sakin Sayısı</th><th>Toplam Tutar</th></tr></thead><tbody>`;
+  gecmis.forEach(k=>{
+    const apt=(S.apartmanlar||[]).find(a=>a.id==k.aptId);
+    const topTutar=(k.detaylar||[]).reduce((s,d)=>s+(d.tutar||0),0);
+    html+=`<tr><td>${_fmtDate(k.tarih)}</td><td>${k.donem||'—'}</td><td>${he(apt?.ad||'—')}</td><td>${he(k.aciklama||'')}</td><td>${(k.detaylar||[]).length}</td><td style="font-weight:700">${_fmtTL(topTutar)}</td></tr>`;
+  });
+  if(!gecmis.length) html+=`<tr><td colspan="6" style="text-align:center;color:#9ca3af">Kayıt yok</td></tr>`;
+  html+=`</tbody></table>`;
+  return html+_pdfClose();
+}
+
+function _pdfFinansalDurum() {
+  const sakinler=(S.sakinler||[]).map(sk=>{
+    const borc=sk.borc||0;
+    const toplamOdeme=(S.tahsilatlar||[]).filter(t=>t.sakId==sk.id).reduce((s,t)=>s+(t.tutar||0),0);
+    const icrada=(S.icralar||[]).some(i=>i.sakId==sk.id);
+    const apt=(S.apartmanlar||[]).find(a=>a.id==sk.aptId);
+    const durumStr=icrada?'icra':borc<=0?'temiz':'borclu';
+    return {...sk,toplamBorc:borc,toplamOdeme,durumStr,aptAd:apt?.ad||''};
+  }).sort((a,b)=>b.toplamBorc-a.toplamBorc);
+
+  const topBorc=sakinler.reduce((s,sk)=>s+sk.toplamBorc,0);
+  const borclu=sakinler.filter(sk=>sk.toplamBorc>0).length;
+  let html=_pdfOpen('Finansal Durum Raporu',`${sakinler.length} sakin`);
+  html+=`<div class="stats">
+    <div class="stat"><div class="stat-n" style="color:#dc2626">${_fmtTL(topBorc)}</div><div class="stat-l">Toplam Borç</div></div>
+    <div class="stat"><div class="stat-n" style="color:#7c3aed">${borclu} / ${sakinler.length}</div><div class="stat-l">Borçlu Sakin</div></div>
+  </div>`;
+  html+=`<table><thead><tr><th>Sakin</th><th>Daire</th><th>Apartman</th><th>Toplam Borç</th><th>Toplam Ödeme</th><th>Durum</th></tr></thead><tbody>`;
+  sakinler.forEach(sk=>{
+    const dCls=sk.durumStr==='temiz'?'gr':sk.durumStr==='icra'?'pu':'rd';
+    const dTxt={temiz:'Temiz',borclu:'Borçlu',icra:'İcra'}[sk.durumStr]||sk.durumStr;
+    html+=`<tr><td><strong>${he(sk.ad||'')}</strong></td><td>${he(String(sk.daire||''))}</td><td>${he(sk.aptAd)}</td><td style="color:#dc2626;font-weight:700">${_fmtTL(sk.toplamBorc)}</td><td style="color:#16a34a;font-weight:700">${_fmtTL(sk.toplamOdeme)}</td><td>${_badge(dTxt,dCls)}</td></tr>`;
+  });
+  if(!sakinler.length) html+=`<tr><td colspan="6" style="text-align:center;color:#9ca3af">Kayıt yok</td></tr>`;
+  html+=`</tbody></table>`;
+  return html+_pdfClose();
 }
 
 // — Ana Router
 function downloadPDF(tip) {
   const noSupport = ['ayarlar','ai-asistan'];
   if (noSupport.includes(tip)) { toast('Bu sayfa için PDF çıktısı desteklenmez.', 'warn'); return; }
+
+  // aylik-rapor: kendi PDF butonu kullanılır
+  if (tip === 'aylik-rapor') { if(typeof aylikRaporPdf==='function') aylikRaporPdf(); else toast('Önce bir rapor oluşturun.','warn'); return; }
 
   const _pdfMap = () => ({
     dashboard:_pdfDashboard, apartmanlar:_pdfApartmanlar, sakinler:_pdfSakinler,
@@ -7172,7 +7403,9 @@ function downloadPDF(tip) {
     'isl-detay':_pdfIslDetay, 'den-detay':_pdfDenDetay, 'asan-detay':_pdfAsanDetay,
     karar:_pdfKararlar, icra:_pdfIcra, finans:_pdfFinans,
     duyurular:_pdfDuyurular, ariza:_pdfAriza, tahsilat:_pdfTahsilat,
-    raporlar:_pdfRaporlar, sigorta:_pdfSigorta, toplanti:_pdfToplanti, fatura:_pdfFatura
+    raporlar:_pdfRaporlar, sigorta:_pdfSigorta, toplanti:_pdfToplanti,
+    makbuzlar:_pdfMakbuzlar, kasa:_pdfKasa, 'devir-bakiye':_pdfDevirBakiye,
+    'toplu-borc':_pdfTopluBorc, 'finansal-durum':_pdfFinansalDurum
   });
 
   // html2pdf.js yüklü değilse eski popup yöntemine fallback
@@ -7556,7 +7789,7 @@ function finGelirTekrarChange() {
 }
 function gelirFormTemizle() {
   ['fg-daire','fg-sakin','fg-kdv-tutar','fg-toplam','fg-belge','fg-aciklama','fg-bitis'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-  ['fg-apt','fg-kat','fg-kdv','fg-yontem','fg-tekrar'].forEach(id=>{const e=document.getElementById(id);if(e)e.selectedIndex=0;});
+  ['fg-apt','fg-kat','fg-kdv','fg-yontem','fg-tekrar','fg-kasa'].forEach(id=>{const e=document.getElementById(id);if(e)e.selectedIndex=0;});
   const t=document.getElementById('fg-tarih');if(t)t.value=today();
   const d=document.getElementById('fg-donem');if(d)d.value=today().substring(0,7);
   const tu=document.getElementById('fg-tutar');if(tu)tu.value='';
@@ -7569,9 +7802,11 @@ function saveGelir() {
   const tarih = document.getElementById('fg-tarih').value;
   const kat = document.getElementById('fg-kat').value;
   const tutar = parseFloat(document.getElementById('fg-tutar').value);
+  const kasaId = document.getElementById('fg-kasa')?.value || '';
   if (!apt) { toast('Apartman seçin.','err'); return; }
   if (!tarih) { toast('Tarih girin.','err'); return; }
   if (!tutar || tutar <= 0) { toast('Geçerli bir tutar girin.','err'); return; }
+  if (!kasaId) { toast('Kasa / Hesap seçin.','err'); return; }
   const aptObj = S.apartmanlar.find(a=>a.id==apt);
   const kdvOran = parseFloat(document.getElementById('fg-kdv').value)||0;
   const kdvTutar = +(tutar * kdvOran / 100).toFixed(2);
@@ -7589,10 +7824,11 @@ function saveGelir() {
     tekrar: document.getElementById('fg-tekrar').value,
     tekrarBitis: document.getElementById('fg-bitis').value,
     evrak: evrakInput.files[0] ? evrakInput.files[0].name : '',
-    odemeDurum: 'odendi', kaynak: 'manuel'
+    odemeDurum: 'odendi', kaynak: 'manuel', kasaId: kasaId || null
   };
   S.finansIslemler = S.finansIslemler||[];
   S.finansIslemler.unshift(rec);
+  if (kasaId) _kasaGirisEkle(kasaId, rec.toplamTutar, `${kat} — ${rec.aciklama||rec.donem||tarih}`, tarih);
   save();
   toast('✓ Gelir kaydedildi: ' + kat + ' — ₺' + fmt(rec.toplamTutar),'ok');
   gelirFormTemizle();
@@ -7809,6 +8045,80 @@ function softCancelFinans(id) {
   setTimeout(() => { if (typeof renderDashboard === 'function') renderDashboard(); }, 50);
 }
 
+let _finSelected = new Set();
+
+function finToggleSel(id) {
+  if (_finSelected.has(id)) _finSelected.delete(id); else _finSelected.add(id);
+  _renderFinBulkBar();
+}
+function finSelAll(checked) {
+  const rows = document.querySelectorAll('#fin-tbody [data-fin-id]');
+  rows.forEach(cb => {
+    const id = +cb.dataset.finId;
+    if (checked) _finSelected.add(id); else _finSelected.delete(id);
+    cb.checked = checked;
+  });
+  _renderFinBulkBar();
+}
+function _renderFinBulkBar() {
+  const bar = document.getElementById('fin-bulk-bar');
+  const cnt = document.getElementById('fin-sel-count');
+  if (!bar) return;
+  bar.style.display = _finSelected.size > 0 ? 'flex' : 'none';
+  if (cnt) cnt.textContent = _finSelected.size + ' kayıt seçildi';
+  const allChk = document.getElementById('fin-chk-all');
+  const total = document.querySelectorAll('#fin-tbody [data-fin-id]').length;
+  if (allChk) allChk.indeterminate = _finSelected.size > 0 && _finSelected.size < total;
+}
+function finBulkDelete() {
+  if (!_finSelected.size) return;
+  if (!confirm(_finSelected.size + ' kaydı silmek istediğinize emin misiniz?')) return;
+  _finSelected.forEach(id => {
+    const idx = (S.finansIslemler||[]).findIndex(f=>f.id===id);
+    if (idx>=0) { S.finansIslemler[idx].status='cancelled'; AuditService.log('sil','finansIslem',S.finansIslemler[idx]); }
+  });
+  _finSelected.clear();
+  save(); renderFinans(); toast('Seçili kayıtlar silindi.','ok');
+}
+function finBulkOde() {
+  if (!_finSelected.size) return;
+  const giderler = [..._finSelected].filter(id=>{
+    const f=(S.finansIslemler||[]).find(x=>x.id===id);
+    return f && f.tur==='gider' && f.odemeDurum!=='odendi';
+  });
+  if (!giderler.length) { toast('Seçili kayıtlar arasında ödenecek gider yok.','warn'); return; }
+  if (!confirm(giderler.length + ' gider kaydını ödendi olarak işaretlemek istiyor musunuz?')) return;
+  giderler.forEach(id => {
+    const f=(S.finansIslemler||[]).find(x=>x.id===id);
+    if (f) { f.odemeDurum='odendi'; f.odemeTarih=today(); AuditService.log('guncelle','finansIslem',null,f); }
+  });
+  _finSelected.clear();
+  save(); renderFinans(); toast(giderler.length+' gider ödendi olarak işaretlendi.','ok');
+}
+function finBulkPdf() {
+  if (!_finSelected.size) return;
+  const ids = _finSelected;
+  let list = (S.finansIslemler||[]).filter(f=>ids.has(f.id)&&f.status!=='cancelled');
+  if (!list.length) return;
+  list.sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||''));
+  let html = _pdfOpen('Seçili Gelir / Gider Kayıtları', list.length + ' kayıt');
+  html += `<table><thead><tr><th>Tarih</th><th>Apartman</th><th>Tür</th><th>Kategori</th><th>Açıklama</th><th style="text-align:right">Tutar</th><th>Durum</th></tr></thead><tbody>`;
+  list.forEach(f=>{
+    const isG=f.tur==='gelir';
+    const durum=isG?'Ödendi':(f.odemeDurum==='odendi'?'Ödendi':f.odemeDurum==='gecikti'?'Gecikti':'Bekliyor');
+    const dCls=isG||f.odemeDurum==='odendi'?'gr':f.odemeDurum==='gecikti'?'rd':'am';
+    html+=`<tr><td>${_fmtDate(f.tarih)}</td><td>${he(f.aptAd||'')}</td><td>${_badge(isG?'Gelir':'Gider',isG?'gr':'rd')}</td><td>${he(f.kat||'')}</td><td>${he(f.aciklama||'')}</td><td style="text-align:right;font-weight:700;color:${isG?'#16a34a':'#dc2626'}">${isG?'+':'−'}${_fmtTL(f.toplamTutar||f.tutar||0)}</td><td>${_badge(durum,dCls)}</td></tr>`;
+  });
+  html+=`</tbody></table>`;
+  const topGelir=list.filter(f=>f.tur==='gelir').reduce((s,f)=>s+(f.toplamTutar||f.tutar||0),0);
+  const topGider=list.filter(f=>f.tur==='gider').reduce((s,f)=>s+(f.toplamTutar||f.tutar||0),0);
+  html+=`<div class="info-box">Toplam Gelir: <strong>${_fmtTL(topGelir)}</strong> | Toplam Gider: <strong>${_fmtTL(topGider)}</strong> | Net: <strong>${_fmtTL(topGelir-topGider)}</strong></div>`;
+  html+=_pdfClose();
+  const w=window.open('','_blank','width=1050,height=760');
+  if(!w){toast('Popup engelleyici açık!','warn');return;}
+  w.document.write(html);w.document.close();w.focus();setTimeout(()=>w.print(),700);
+}
+
 function renderFinans() {
   const s   = (document.getElementById('fin-srch')||{}).value||'';
   const fa  = (document.getElementById('fin-f-apt')||{}).value||'';
@@ -7853,7 +8163,10 @@ function renderFinans() {
   `;
 
   const tbody = document.getElementById('fin-tbody'); if (!tbody) return;
-  if (!list.length) { tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:32px;color:var(--tx-3)">Kayıt bulunamadı</td></tr>`; return; }
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:32px;color:var(--tx-3)">Kayıt bulunamadı</td></tr>`;
+    _renderFinBulkBar(); return;
+  }
 
   const durumBadge = { odendi:'<span class="b b-gr" style="font-size:10px">✅ Ödendi</span>', bekliyor:'<span class="b b-am" style="font-size:10px">⏳ Bekliyor</span>', gecikti:'<span class="b b-rd" style="font-size:10px">🔴 Gecikti</span>' };
   tbody.innerHTML = list.map(f=>{
@@ -7869,7 +8182,9 @@ function renderFinans() {
     const yontem = f.odemeYontemi||'—';
     const tarihStr = f.tarih ? new Date(f.tarih+'T00:00').toLocaleDateString('tr-TR') : '—';
     const kdvInfo = f.kdvOran ? `<span title="KDV %${f.kdvOran}" style="font-size:10px;color:var(--tx-3);margin-left:3px">+%${f.kdvOran}</span>` : '';
-    return `<tr>
+    const isSel = _finSelected.has(f.id);
+    return `<tr style="${isSel?'background:var(--s2)':''}">
+      <td style="padding:6px 8px;width:32px"><input type="checkbox" data-fin-id="${f.id}" ${isSel?'checked':''} onchange="finToggleSel(${f.id})" style="cursor:pointer"></td>
       <td style="white-space:nowrap;font-size:12px">${tarihStr}</td>
       <td style="font-size:12px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${he(f.aptAd||'—')}</td>
       <td>${turBadge}</td>
@@ -7880,13 +8195,14 @@ function renderFinans() {
       <td style="font-weight:700;color:${tutarClr};text-align:right;white-space:nowrap;font-size:13px">${pfx}₺${fmtMoney(toplam)}</td>
       <td style="font-size:11px;color:var(--tx-3)">${yontem}</td>
       <td>${durumBadge[durum]||durumBadge.bekliyor}</td>
-      <td style="white-space:nowrap">
-        ${(!isG && (f.odemeDurum==='bekliyor'||f.odemeDurum==='gecikti')) ? `<button class="btn bp xs" style="margin-right:3px" onclick="openGiderOde(${f.id})" title="Öde">💳 Öde</button>` : ''}
-        ${(!isG && f.odemeDurum==='odendi') ? `<button class="btn bg xs" style="margin-right:3px" onclick="giderOdemeMakbuzPdf(${f.id})" title="Makbuz">🖨️</button>` : ''}
+      <td style="white-space:nowrap;text-align:center">
+        ${(!isG && (f.odemeDurum==='bekliyor'||f.odemeDurum==='gecikti')) ? `<button class="act-btn" style="color:#2563eb;border-color:#bfdbfe" onclick="openGiderOde(${f.id})" title="Ödeme Yap"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></button>` : ''}
+        ${(!isG && f.odemeDurum==='odendi') ? `<button class="act-btn" style="color:#059669;border-color:#a7f3d0" onclick="giderOdemeMakbuzPdf(${f.id})" title="Makbuz Yazdır"><svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>` : ''}
         <button class="act-btn rd" onclick="delFinans(${f.id})" title="Sil"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
       </td>
     </tr>`;
   }).join('');
+  _renderFinBulkBar();
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -8330,7 +8646,89 @@ function updateFdBulkBar(){
 }
 function fdBulkSMS(){if(!_fdSelected.size)return;toast(`📱 ${_fdSelected.size} sakine SMS bildirimi gönderildi.`,'ok');}
 function fdBulkExcel(){toast('📊 Excel dışa aktarma hazırlanıyor…','ok');}
-function fdBulkPDF(){toast('📄 Hesap ekstreleri hazırlanıyor…','ok');}
+function fdBulkPDF(){
+  const ids = _fdSelected.size>0 ? _fdSelected : new Set((S.sakinler||[]).map(s=>s.id));
+  if(!ids.size){toast('Sakin bulunamadı.','warn');return;}
+
+  // Sakin verilerini zenginleştir (renderFinansalDurum ile aynı mantık)
+  const sakinler=(S.sakinler||[]).filter(sk=>ids.has(sk.id)).map(sk=>{
+    const borc=sk.borc||0;
+    const odemeler=(S.tahsilatlar||[]).filter(t=>t.sakId==sk.id||t.sakinId==sk.id)
+      .slice().sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||''));
+    const toplamOdeme=odemeler.reduce((s,t)=>s+(t.tutar||0),0);
+    const borcKayitlari=[];
+    (S.aidatBorclandir||[]).forEach(kayit=>{
+      (kayit.detaylar||[]).forEach(d=>{
+        if(d.sakId==sk.id) borcKayitlari.push({...d,donem:kayit.donem,sonOdeme:kayit.sonOdeme});
+      });
+    });
+    const icrada=(S.icralar||[]).some(i=>i.sakId==sk.id);
+    const gecikmeGun=borc>0&&borcKayitlari.length?
+      Math.max(0,...borcKayitlari.filter(b=>b.sonOdeme).map(b=>Math.floor((new Date()-new Date(b.sonOdeme))/86400000))):0;
+    const durumStr=icrada?'icra':borc<=0?'temiz':gecikmeGun>30?'gecikti':'borclu';
+    const apt=(S.apartmanlar||[]).find(a=>a.id==sk.aptId);
+    return {...sk,toplamBorc:borc,toplamOdeme,odemeler,borcKayitlari,gecikmeGun,durumStr,aptAd:apt?.ad||''};
+  });
+
+  const durumRenk={temiz:'#059669',borclu:'#d97706',gecikti:'#dc2626',icra:'#7c3aed'};
+  const durumEtiket={temiz:'Temiz',borclu:'Borçlu',gecikti:'Gecikti',icra:'İcra'};
+
+  let html=_pdfOpen('Hesap Ekstresi','Finansal Durum Raporu');
+  sakinler.forEach((sk,i)=>{
+    const renk=durumRenk[sk.durumStr]||'#6b7280';
+    const etiket=durumEtiket[sk.durumStr]||sk.durumStr;
+    html+=`<div style="page-break-inside:avoid;border:1.5px solid #e4e8ef;border-radius:10px;padding:14px 16px;margin-bottom:18px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e4e8ef;padding-bottom:10px;margin-bottom:10px">
+        <div>
+          <strong style="font-size:14px">${he(sk.ad||'')}</strong>
+          <span style="margin-left:10px;color:#6b7280;font-size:11px">Daire: ${he(String(sk.daire||'—'))} | ${he(sk.aptAd)}</span>
+        </div>
+        <span style="background:${renk}1a;color:${renk};border:1px solid ${renk}44;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">${etiket}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px">
+        <div style="background:#fef2f2;border-radius:7px;padding:8px 12px;text-align:center">
+          <div style="font-size:18px;font-weight:800;color:#dc2626">₺${fmt(sk.toplamBorc)}</div>
+          <div style="font-size:10px;color:#6b7280">Toplam Borç</div>
+        </div>
+        <div style="background:#f0fdf4;border-radius:7px;padding:8px 12px;text-align:center">
+          <div style="font-size:18px;font-weight:800;color:#16a34a">₺${fmt(sk.toplamOdeme)}</div>
+          <div style="font-size:10px;color:#6b7280">Toplam Ödeme</div>
+        </div>
+        <div style="background:#eff6ff;border-radius:7px;padding:8px 12px;text-align:center">
+          <div style="font-size:18px;font-weight:800;color:#1a56db">${sk.gecikmeGun>0?sk.gecikmeGun+' gün':'—'}</div>
+          <div style="font-size:10px;color:#6b7280">Gecikme</div>
+        </div>
+      </div>`;
+    // Borç kalemleri
+    if(sk.borcKayitlari.length){
+      html+=`<div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px">Borç Kalemleri</div>
+      <table style="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:8px">
+        <thead><tr style="background:#f3f4f6"><th style="padding:4px 8px;text-align:left">Dönem</th><th style="padding:4px 8px;text-align:left">Kalem</th><th style="padding:4px 8px;text-align:right">Tutar</th><th style="padding:4px 8px;text-align:left">Son Ödeme</th></tr></thead><tbody>`;
+      sk.borcKayitlari.forEach(b=>{
+        html+=`<tr><td style="padding:3px 8px;border-bottom:1px solid #e4e8ef">${b.donem||'—'}</td><td style="padding:3px 8px;border-bottom:1px solid #e4e8ef">${he(b.kalem||b.tur||'Aidat')}</td><td style="padding:3px 8px;border-bottom:1px solid #e4e8ef;text-align:right;font-weight:700">₺${fmt(b.tutar)}</td><td style="padding:3px 8px;border-bottom:1px solid #e4e8ef">${_fmtDate(b.sonOdeme)}</td></tr>`;
+      });
+      html+=`</tbody></table>`;
+    }
+    // Son ödemeler (en fazla 5)
+    if(sk.odemeler.length){
+      html+=`<div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px">Son Ödemeler</div>
+      <table style="width:100%;border-collapse:collapse;font-size:11px">
+        <thead><tr style="background:#f3f4f6"><th style="padding:4px 8px;text-align:left">Makbuz No</th><th style="padding:4px 8px;text-align:left">Dönem</th><th style="padding:4px 8px;text-align:left">Yöntem</th><th style="padding:4px 8px;text-align:right">Tutar</th><th style="padding:4px 8px;text-align:left">Tarih</th></tr></thead><tbody>`;
+      sk.odemeler.slice(0,5).forEach(o=>{
+        html+=`<tr><td style="padding:3px 8px;border-bottom:1px solid #e4e8ef">${o.no||'—'}</td><td style="padding:3px 8px;border-bottom:1px solid #e4e8ef">${o.donem||'—'}</td><td style="padding:3px 8px;border-bottom:1px solid #e4e8ef">${o.yontem||'—'}</td><td style="padding:3px 8px;border-bottom:1px solid #e4e8ef;text-align:right;color:#16a34a;font-weight:700">+₺${fmt(o.tutar)}</td><td style="padding:3px 8px;border-bottom:1px solid #e4e8ef">${_fmtDate(o.tarih)}</td></tr>`;
+      });
+      html+=`</tbody></table>`;
+    }
+    html+=`</div>`;
+  });
+  html+=_pdfClose();
+
+  const w=window.open('','_blank','width=1050,height=760');
+  if(!w){toast('Popup engelleyici açık!','warn');return;}
+  w.document.write(html);w.document.close();w.focus();
+  setTimeout(()=>w.print(),700);
+  toast(`📄 ${sakinler.length} sakin için hesap ekstresi hazırlandı.`,'ok');
+}
 
 // ── FINANSAL DURUM DRAWER ──────────────────────────────
 function fdDrawerOpen(sakId){
@@ -8945,111 +9343,6 @@ async function genTopCantiAI() {
   } catch(e) { outEl.textContent = 'API bağlantı hatası.'; }
 }
 
-// ===================================================
-// FATURA YÖNETİMİ
-// ===================================================
-function saveFatura() {
-  const apt = aptById(document.getElementById('fat-apt').value);
-  if (!apt) { toast('Apartman seçin!', 'err'); return; }
-  const tarih = document.getElementById('fat-tarih').value;
-  const tutar = parseFloat(document.getElementById('fat-tutar').value);
-  if (!tarih || !tutar) { toast('Tarih ve tutar zorunlu!', 'err'); return; }
-  const rec = {
-    id: Date.now(), aptId: apt.id, aptAd: apt.ad,
-    tur: document.getElementById('fat-tur').value,
-    firma: document.getElementById('fat-firma').value,
-    donem: document.getElementById('fat-donem').value,
-    tarih, son: document.getElementById('fat-son').value,
-    tutar, durum: document.getElementById('fat-durum').value,
-    no: document.getElementById('fat-no').value,
-    not: document.getElementById('fat-not').value,
-    kayitTarih: today()
-  };
-  S.faturalar.push(rec); save(); toast('Fatura kaydedildi.', 'ok'); goTab('fat-liste');
-  ['fat-firma','fat-donem','fat-tarih','fat-son','fat-tutar','fat-no','fat-not'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-}
-
-function renderFatura() {
-  const s = (document.getElementById('fat-srch')?.value || '').toLowerCase();
-  const fa = document.getElementById('fat-f-apt')?.value || '';
-  const ft = document.getElementById('fat-f-tur')?.value || '';
-  const fd = document.getElementById('fat-f-durum')?.value || '';
-  let list = S.faturalar || [];
-  if (fa) list = list.filter(x => String(x.aptId) === String(fa));
-  if (ft) list = list.filter(x => x.tur === ft);
-  if (fd) list = list.filter(x => x.durum === fd);
-  if (s) list = list.filter(x => (x.aptAd + ' ' + (x.firma||'') + ' ' + (x.tur||'')).toLowerCase().includes(s));
-
-  const bek = (S.faturalar||[]).filter(x=>x.durum==='bekliyor').length;
-  const gec = (S.faturalar||[]).filter(x=>x.durum==='gecikti').length;
-  const topTutar = (S.faturalar||[]).filter(x=>x.durum==='bekliyor').reduce((s,x)=>s+x.tutar,0);
-  const miniEl = document.getElementById('fat-stats-mini');
-  if (miniEl) miniEl.innerHTML = `<span class="b b-am">${bek} Bekleyen</span><span class="b b-rd">${gec} Gecikmiş</span><span style="font-size:12px;font-weight:700;color:var(--err)">₺${fmt(topTutar)} ödenmemiş</span>`;
-
-  const turLbl = {elektrik:'⚡ Elektrik',dogalgaz:'🔥 Doğalgaz',su:'💧 Su',temizlik:'🧹 Temizlik',guvenlik:'🔒 Güvenlik',asansor:'🔼 Asansör',bahce:'🌿 Bahçe',internet:'🌐 İnternet',diger:'📦 Diğer'};
-  const durLbl = {bekliyor:'Bekliyor',odendi:'Ödendi',gecikti:'Gecikti'};
-  const durCls = {bekliyor:'b-am',odendi:'b-gr',gecikti:'b-rd'};
-  const tb = document.getElementById('fat-tbody'); if (!tb) return;
-  if (!list.length) { tb.innerHTML = `<tr><td colspan="8">${emp('📄','Fatura kaydı bulunamadı. "Yeni Fatura" ile ekleyin.')}</td></tr>`; return; }
-  tb.innerHTML = list.slice().sort((a,b)=>b.tarih.localeCompare(a.tarih)).map(x => `<tr>
-    <td>${x.aptAd}</td>
-    <td>${turLbl[x.tur]||x.tur}</td>
-    <td>${x.firma||'—'}</td>
-    <td>${x.donem||'—'}</td>
-    <td style="font-weight:700;color:${x.durum==='odendi'?'var(--ok)':'var(--err)'}">${x.tutar?'₺'+fmt(x.tutar):'—'}</td>
-    <td style="font-size:11.5px;color:${x.son&&dayDiff(x.son)<0&&x.durum!='odendi'?'var(--err)':'var(--tx-2)'}">${x.son||'—'}</td>
-    <td><span class="b ${durCls[x.durum]||'b-gy'}">${durLbl[x.durum]||x.durum}</span></td>
-    <td><div class="act">
-      ${x.durum!=='odendi'?`<button class="btn bgn xs" onclick="odeFatura(${x.id})" title="Ödendi olarak işaretle">✓ Ödendi</button>`:''}
-      <button class="act-btn rd" onclick="delFatura(${x.id})" title="Sil"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
-    </div></td>
-  </tr>`).join('');
-
-  // Özet
-  renderFaturaOzet();
-
-  const bdg = document.getElementById('bdg-fat');
-  if (bdg) { const n = bek + gec; bdg.textContent = n; bdg.style.display = n ? '' : 'none'; }
-}
-
-function renderFaturaOzet() {
-  const el = document.getElementById('fat-ozet-content'); if (!el) return;
-  const fins = S.faturalar || [];
-  const byTur = {};
-  fins.forEach(f => {
-    if (!byTur[f.tur]) byTur[f.tur] = {toplam:0,bek:0,od:0,sayi:0};
-    byTur[f.tur].toplam += f.tutar || 0;
-    byTur[f.tur].sayi++;
-    if (f.durum==='bekliyor'||f.durum==='gecikti') byTur[f.tur].bek += f.tutar;
-    if (f.durum==='odendi') byTur[f.tur].od += f.tutar;
-  });
-  const turLbl = {elektrik:'⚡ Elektrik',dogalgaz:'🔥 Doğalgaz',su:'💧 Su',temizlik:'🧹 Temizlik',guvenlik:'🔒 Güvenlik',asansor:'🔼 Asansör',bahce:'🌿 Bahçe',internet:'🌐 İnternet',diger:'📦 Diğer'};
-  el.innerHTML = `
-    <div class="g2 mb16">
-      <div class="card">
-        <div class="card-t mb12">Hizmet Türü Bazlı Özet</div>
-        <div class="tw"><table><thead><tr><th>Hizmet</th><th>Toplam (₺)</th><th>Ödenen (₺)</th><th>Bekleyen (₺)</th><th>Kayıt</th></tr></thead>
-        <tbody>${Object.entries(byTur).sort((a,b)=>b[1].toplam-a[1].toplam).map(([k,v])=>`<tr>
-          <td>${turLbl[k]||k}</td>
-          <td style="font-weight:700">₺${fmt(v.toplam)}</td>
-          <td style="color:var(--ok)">₺${fmt(v.od)}</td>
-          <td style="color:var(--err)">₺${fmt(v.bek)}</td>
-          <td>${v.sayi}</td>
-        </tr>`).join('')}
-        </tbody></table></div>
-      </div>
-      <div class="card">
-        <div class="card-t mb12">Apartman Bazlı Özet</div>
-        ${(()=>{const ba={}; fins.forEach(f=>{if(!ba[f.aptAd])ba[f.aptAd]={toplam:0,bek:0}; ba[f.aptAd].toplam+=f.tutar||0; if(f.durum!=='odendi')ba[f.aptAd].bek+=f.tutar||0;}); return Object.keys(ba).length?`<div class="tw"><table><thead><tr><th>Apartman</th><th>Toplam (₺)</th><th>Bekleyen (₺)</th></tr></thead><tbody>${Object.entries(ba).map(([n,v])=>`<tr><td>${n}</td><td style="font-weight:700">₺${fmt(v.toplam)}</td><td style="color:${v.bek>0?'var(--err)':'var(--ok)'}">₺${fmt(v.bek)}</td></tr>`).join('')}</tbody></table></div>`:emp('📊','Henüz kayıt yok');})()}
-      </div>
-    </div>`;
-}
-
-function odeFatura(id) {
-  const f = S.faturalar.find(x => x.id === id);
-  if (f) { f.durum = 'odendi'; save(); toast('Fatura ödendi olarak işaretlendi.', 'ok'); }
-}
-function delFatura(id) { if(!confirm('Silinsin mi?'))return; S.faturalar=S.faturalar.filter(x=>x.id!==id); save(); toast('Silindi.','warn'); }
 
 // ===================================================
 // DEMO VERİ YÜKLEYİCİ
@@ -10755,14 +11048,17 @@ function saveHizliOdeme() {
   const yontem = document.getElementById('ho-yontem').value;
   const not = document.getElementById('ho-not').value.trim();
   const borcDus = document.getElementById('ho-borc-dusu').checked;
+  const kasaId = document.getElementById('ho-kasa')?.value || '';
   if (tutar <= 0) { toast('Tutar giriniz!', 'err'); return; }
+  if (!kasaId) { toast('Kasa / Hesap seçin.', 'err'); return; }
   const sk = S.sakinler.find(s => s.id === sakId);
   if (!sk) return;
   if (!S.tahsilatlar) S.tahsilatlar = [];
   if (!makbuzNo) makbuzNo = 5000; makbuzNo++;
   const apt = S.apartmanlar.find(a => a.id == sk.aptId);
-  S.tahsilatlar.push({ id: Date.now(), no: 'M-'+makbuzNo, sakId, sakAd: sk.ad, aptId: sk.aptId, aptAd: apt ? apt.ad : (sk.aptAd||''), daire: sk.daire, tip: 'aidat', donem, tutar, tarih, yontem, not });
+  S.tahsilatlar.push({ id: Date.now(), no: 'M-'+makbuzNo, sakId, sakAd: sk.ad, aptId: sk.aptId, aptAd: apt ? apt.ad : (sk.aptAd||''), daire: sk.daire, tip: 'aidat', donem, tutar, tarih, yontem, not, kasaId: kasaId||null });
   if (borcDus && (sk.borc || 0) > 0) sk.borc = Math.max(0, (sk.borc || 0) - tutar);
+  if (kasaId) _kasaGirisEkle(kasaId, tutar, `${sk.ad} — ${donem||tarih} tahsilatı`, tarih);
   save();
   closeModal('mod-hizli-odeme');
   toast('Ödeme kaydedildi! ₺' + fmt(tutar), 'ok');
