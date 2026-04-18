@@ -1050,6 +1050,32 @@ function renderDashboard() {
   if (myRol === 'sakin') { renderSakinDashboard(); return; }
   if (myRol === 'personel') { renderPersonelDashboard(); return; }
 
+  // Boş state — hiç apartman yoksa, onboarding ekranı göster
+  if (!S.apartmanlar || S.apartmanlar.length === 0) {
+    const pg = root.parentElement;
+    if (pg) [...pg.children].forEach(c => { if (c !== root) c.style.display = 'none'; });
+    const tip = S.ayarlar?.hesapTipi || 'sirket';
+    const tipMeta = HESAP_TIPI_META[tip] || {};
+    root.innerHTML = `
+      <div class="card" style="padding:40px 32px;text-align:center;max-width:560px;margin:40px auto;border:1.5px dashed var(--border)">
+        <div style="font-size:48px;margin-bottom:12px">${tipMeta.ico || '🏢'}</div>
+        <div style="font-size:20px;font-weight:700;color:var(--tx);margin-bottom:6px;letter-spacing:-.3px">Hoş geldiniz!</div>
+        <div class="t-muted" style="font-size:13px;margin-bottom:24px;line-height:1.6">
+          Sisteme ilk kez giriyorsunuz. İlk apartmanınızı ekleyerek başlayın,
+          sakinleri tanımlayın ve yönetime geçin.
+        </div>
+        <button class="btn bp" onclick="openAptModal()" style="padding:10px 22px">
+          <svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-4h6v4"/><line x1="12" y1="1" x2="12" y2="5"/><line x1="9" y1="3" x2="15" y2="3"/></svg>
+          İlk Apartmanı Ekle
+        </button>
+        <div style="margin-top:24px;padding-top:18px;border-top:1px solid var(--border);font-size:12px;color:var(--tx-4)">
+          Sistemi denemek ister misiniz?
+          <button class="btn btl sm" onclick="loadDemoData()" style="margin-left:8px">Demo Veri Yükle</button>
+        </div>
+      </div>`;
+    return;
+  }
+
   const aktif = S.apartmanlar.filter(a=>a.durum==='aktif').length;
   const topDaire = S.apartmanlar.reduce((s,a)=>s+(a.daireSayisi||0),0);
   const acikGov = S.gorevler.filter(g=>g.durum!=='tamamlandi').length;
@@ -14065,9 +14091,9 @@ function selectRole(role) {
     if (S.ayarlar.hesapTipi !== 'sakin') S.ayarlar.hesapTipi = 'sakin';
   }
   applyRole(role);
-  if (!S.apartmanlar || S.apartmanlar.length === 0) {
-    const _orig = window.confirm; window.confirm = () => true; loadDemoData(); window.confirm = _orig;
-  } else { initApp(); }
+  // Boş hesap → initApp; kullanıcı boş bir sistemle başlayacak.
+  // Demo veri otomatik yüklenmez. İstenirse Ayarlar > "Demo veri yükle" butonuyla yüklenir.
+  initApp();
   if (role === 'superadmin') { goPage('superadmin'); return; }
   // Hash restore
   const raw = (window._initialHash || '').slice(1);
@@ -15998,9 +16024,8 @@ const _SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsIn
     document.getElementById('main').style.display = '';
     applyRole(savedRole);
     loadState();
-    if (!S.apartmanlar || S.apartmanlar.length === 0) {
-      const _orig = window.confirm; window.confirm = () => true; loadDemoData(); window.confirm = _orig;
-    } else { initApp(); }
+    // Demo veri otomatik yüklenmez — boş hesap ile devam
+    initApp();
     if (savedRole === 'superadmin') goPage('superadmin');
   } else {
     // Rol seçim ekranını göster
