@@ -1291,18 +1291,18 @@ function renderSakinDashboard() {
   // Finansal hesap
   const borc = (benimSakin && benimSakin.borc) || 0;
   const bakiye = -borc; // borç pozitifse bakiye negatif
-  const benimTahsilatlar = (S.tahsilatlar || []).filter(t => {
-    return t.aptId == apt.id && (t.daireNo === daireNo || t.daire === daireNo || (benimSakin && t.sakinId === benimSakin.id));
-  }).sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||''));
+  // Ledger-first: iptal edilmiş tahsilatlar hariç
+  const benimTahsilatlar = benimSakin
+    ? getSakinOdemeler(benimSakin.id, apt.id).slice().sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||''))
+    : (S.tahsilatlar || []).filter(t => t.status !== 'cancelled' && t.aptId == apt.id && (t.daireNo === daireNo || t.daire === daireNo))
+        .sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||''));
   const topOdeme = benimTahsilatlar.reduce((s,t)=>s+(+t.tutar||0), 0);
 
-  // Bu ay finans
-  const ayBas = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
-  const ayBit = new Date(now.getFullYear(), now.getMonth()+1, 0).toISOString().slice(0,10);
-  const ayGelir = (S.finansIslemler || []).filter(f => f.aptId == apt.id && f.tur === 'gelir' && f.tarih >= ayBas && f.tarih <= ayBit)
-    .reduce((s,f)=>s+(+f.tutar||0), 0);
-  const ayGider = (S.finansIslemler || []).filter(f => f.aptId == apt.id && f.tur === 'gider' && f.tarih >= ayBas && f.tarih <= ayBit)
-    .reduce((s,f)=>s+(+f.tutar||0), 0);
+  // Bu ay finans — ledger-first helper (iptal kayıtları hariç)
+  const _thisYear = now.getFullYear();
+  const _thisMonth = String(now.getMonth() + 1).padStart(2, '0');
+  const ayGelir = reportIncome({ siteId: apt.id, year: _thisYear, month: _thisMonth });
+  const ayGider = reportExpense({ siteId: apt.id, year: _thisYear, month: _thisMonth });
 
   const duyurular = (S.duyurular || []).filter(d => d.aptId == apt.id).sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||'')).slice(0, 3);
   const acikArizalar = (S.arizalar || []).filter(a => a.aptId == apt.id && a.durum === 'acik').length;
@@ -1499,30 +1499,10 @@ function renderCariHesabim() {
   }
 
   const borc = (benimSakin && benimSakin.borc) || 0;
-  const tahsilatlar = (S.tahsilatlar || []).filter(t => {
-    return t.aptId == apt.id && (t.daireNo === daireNo || t.daire === daireNo || (benimSakin && t.sakinId === benimSakin.id));
-  }).sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||''));
-  const topOdeme = tahsilatlar.reduce((s,t)=>s+(+t.tutar||0), 0);
-
-  // Borçlandırmalar (varsa)
-  const borcKayitlari = (S.aidatBorclandir || []).filter(b => {
-    return b.aptId == apt.id && (b.daireNo === daireNo || b.daire === daireNo || (benimSakin && b.sakinId === benimSakin.id));
-  }).sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||''));
-  const topBorclandirma = borcKayitlari.reduce((s,b)=>s+(+b.tutar||0), 0);
-
-  // Birleşik hareket listesi (ekstre)
-  const hareketler = [
-    ...borcKayitlari.map(b => ({ tip: 'borc', tarih: b.tarih, aciklama: b.aciklama || 'Borçlandırma', tutar: +b.tutar||0 })),
-    ...tahsilatlar.map(t => ({ tip: 'odeme', tarih: t.tarih, aciklama: t.aciklama || 'Ödeme', tutar: +t.tutar||0, yontem: t.yontem }))
-  ].sort((a,b)=>(a.tarih||'').localeCompare(b.tarih||''));
-
-  // Yürüyen bakiye
-  let yuruyenBakiye = 0;
-  const ekstreRows = hareketler.map(h => {
-    if (h.tip === 'borc') yuruyenBakiye += h.tutar;
-    else yuruyenBakiye -= h.tutar;
-    return { ...h, bakiye: yuruyenBakiye };
-  });
+  // Ledger-first ekstre: iptal edilmiş tahsilatları ve iptal detaylarını hariç tutar
+  const ekstreRows = benimSakin ? getSakinEkstre(benimSakin.id, apt.id) : [];
+  const topOdeme = ekstreRows.filter(r => r.tip === 'odeme').reduce((s,r) => s + r.tutar, 0);
+  const topBorclandirma = ekstreRows.filter(r => r.tip === 'borc').reduce((s,r) => s + r.tutar, 0);
 
   page.innerHTML = `
     <div class="card mb16" style="background:linear-gradient(135deg,var(--brand-10),var(--s1))">
@@ -9379,19 +9359,14 @@ function renderFinansalDurum() {
     if (_fdHarf && !(sk.ad||'').toUpperCase().startsWith(_fdHarf)) return null;
 
     const borc = sk.borc||0;
-    const odemeler = (S.tahsilatlar||[]).filter(t=>t.sakId==sk.id||t.sakinId==sk.id);
-    const toplamOdeme = odemeler.reduce((s,t)=>s+(t.tutar||0),0);
+    // İptal edilmiş tahsilatları DAHA İL ETMEZ (ledger-first helper)
+    const odemeler = getSakinOdemeler(sk.id, aptId || null);
+    const toplamOdeme = getSakinOdemeToplami(sk.id, aptId || null);
     const sortedOde = odemeler.slice().sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||''));
     const sonOdeme = sortedOde[0]?.tarih||null;
 
-    // Borç detayları
-    const borcKayitlari=[];
-    (S.aidatBorclandir||[]).forEach(kayit=>{
-      if(aptId && kayit.aptId!=aptId) return;
-      (kayit.detaylar||[]).forEach(d=>{
-        if(d.sakId==sk.id) borcKayitlari.push({...d,donem:kayit.donem,sonOdeme:kayit.sonOdeme,tarih:kayit.tarih});
-      });
-    });
+    // Borç detayları — iptal edilmiş detaylar hariç
+    const borcKayitlari = getSakinBorcKayitlari(sk.id, aptId || null);
 
     // Gecikme gün hesabı
     let gecikmeGun=0;
@@ -14927,6 +14902,81 @@ function reportCollection(opts) {
   if (opts.year)   tah = tah.filter(t => (t.tarih || '').slice(0, 4) === String(opts.year));
   if (opts.month)  tah = tah.filter(t => (t.tarih || '').slice(5, 7) === String(opts.month).padStart(2, '0'));
   return tah.reduce((s, t) => s + (+t.tutar || 0), 0);
+}
+
+/**
+ * Sakin bazında toplam ödeme — iptal kayıtları hariç.
+ * Ledger-first: collection entry'lerin credit toplamı.
+ * Fallback: S.tahsilatlar(status!=cancelled)
+ */
+function getSakinOdemeToplami(sakId, aptId) {
+  const ledgerVal = ledgerQuery({ siteId: aptId, personId: sakId, entryType: 'collection' })
+    .reduce((s, e) => s + (+e.credit || 0), 0);
+  if (ledgerVal > 0) return ledgerVal;
+  return (S.tahsilatlar || [])
+    .filter(t => t.status !== 'cancelled' && (t.sakId == sakId || t.sakinId == sakId) && (!aptId || t.aptId == aptId))
+    .reduce((s, t) => s + (+t.tutar || 0), 0);
+}
+
+/**
+ * Sakin bazında ödeme kayıtları (iptal hariç). Zaman sırasında.
+ */
+function getSakinOdemeler(sakId, aptId) {
+  return (S.tahsilatlar || [])
+    .filter(t => t.status !== 'cancelled' && (t.sakId == sakId || t.sakinId == sakId) && (!aptId || t.aptId == aptId))
+    .sort((a, b) => (a.tarih || '').localeCompare(b.tarih || ''));
+}
+
+/**
+ * Sakin bazında borçlandırma detayları (iptal edilmiş detaylar hariç).
+ * aidatBorclandir'ın detaylar array'inden toplar.
+ */
+function getSakinBorcKayitlari(sakId, aptId) {
+  const result = [];
+  (S.aidatBorclandir || []).forEach(kayit => {
+    if (aptId && kayit.aptId != aptId) return;
+    (kayit.detaylar || []).forEach(d => {
+      if (d.status === 'cancelled') return; // soft-cancelled atla
+      if (d.sakId != sakId) return;
+      result.push({
+        ...d,
+        donem: kayit.donem,
+        sonOdeme: kayit.sonOdeme,
+        kategori: d.kategori || kayit.kategori || 'Aidat',
+        tarih: d.tarih || kayit.tarih
+      });
+    });
+  });
+  return result.sort((a, b) => (a.tarih || '').localeCompare(b.tarih || ''));
+}
+
+/**
+ * Sakin cari ekstresi — birleşik hareket listesi (borç + ödeme),
+ * iptal kayıtları OTOMATİK hariç, kronolojik, yürüyen bakiye ile.
+ * Dönen format: [{tip, tarih, aciklama, tutar, bakiye, kategori?, yontem?}]
+ */
+function getSakinEkstre(sakId, aptId) {
+  const borclar = getSakinBorcKayitlari(sakId, aptId).map(b => ({
+    tip: 'borc',
+    tarih: b.tarih,
+    aciklama: b.aciklama || b.kategori || 'Borçlandırma',
+    kategori: b.kategori,
+    tutar: +b.tutar || 0
+  }));
+  const odemeler = getSakinOdemeler(sakId, aptId).map(t => ({
+    tip: 'odeme',
+    tarih: t.tarih,
+    aciklama: t.aciklama || t.not || 'Ödeme',
+    yontem: t.yontem,
+    tutar: +t.tutar || 0
+  }));
+  const hareketler = [...borclar, ...odemeler].sort((a, b) => (a.tarih || '').localeCompare(b.tarih || ''));
+  let bakiye = 0;
+  return hareketler.map(h => {
+    if (h.tip === 'borc') bakiye += h.tutar;
+    else bakiye -= h.tutar;
+    return { ...h, bakiye };
+  });
 }
 
 /**
