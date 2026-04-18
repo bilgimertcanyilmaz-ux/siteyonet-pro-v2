@@ -3771,6 +3771,25 @@ select.fs.xs, select.fi.xs {
 .c-ok    { color: var(--ok); }
 .c-err   { color: var(--err); }
 .c-warn  { color: var(--warn); }
+.c-tx    { color: var(--tx); }
+.c-tx-1  { color: var(--tx-1, var(--tx)); }
+.c-tx-2  { color: var(--tx-2); }
+.c-tx-3  { color: var(--tx-3); }
+.c-tx-4  { color: var(--tx-4); }
+
+/* HIZALAMA UTILITY'LER */
+.t-right  { text-align: right; }
+.t-left   { text-align: left; }
+.t-center { text-align: center; }
+
+/* YAYGIN KOMBO PATTERN'LAR */
+.u-meta     { font-size: 11px;   color: var(--tx-3); margin-top: 4px; }
+.u-meta-sm  { font-size: 12px;   color: var(--tx-3); margin-top: 2px; }
+.u-meta-xs  { font-size: 11.5px; color: var(--tx-3); margin-top: 2px; }
+.u-label    { font-size: 11px;   font-weight: 600; color: var(--tx-3); }
+.u-label-r  { font-size: 11px;   font-weight: 600; color: var(--tx-3); text-align: right; }
+.u-total    { font-weight: 700;  font-size: 13px; }
+.u-click    { cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 12px; }
 
 /* PAGE HEAD — sayfa tepesi birligi */
 .page-head {
