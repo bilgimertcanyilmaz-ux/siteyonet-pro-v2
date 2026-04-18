@@ -6816,12 +6816,13 @@ function renderRaporlar() {
     yilEl.innerHTML=yillar.map(y=>`<option value="${y}">${y}</option>`).join('');
   }
 
-  const gelir=S.finansIslemler.filter(f=>f.tur==='gelir'&&f.aptId==aptId).reduce((s,f)=>s+(f.tutar||0),0);
-  const gider=S.finansIslemler.filter(f=>f.tur==='gider'&&f.aptId==aptId).reduce((s,f)=>s+(f.tutar||0),0);
-  const aptSakin=S.sakinler.filter(x=>x.aptId==aptId);
-  const borclu=aptSakin.filter(x=>(x.borc||0)>0).length;
-  const acikAriza=S.arizalar.filter(x=>x.aptId==aptId&&x.durum==='acik').length;
-  const tahsilat=S.tahsilatlar.filter(x=>x.aptId==aptId).reduce((s,x)=>s+(x.tutar||0),0);
+  // Ledger-first: iptal kayıtlarını OTOMATİK filtreler. Ledger boşsa S array'lerine düşer.
+  const gelir = reportIncome({ siteId: aptId });
+  const gider = reportExpense({ siteId: aptId });
+  const tahsilat = reportCollection({ siteId: aptId });
+  const aptSakin = S.sakinler.filter(x => x.aptId == aptId);
+  const borclu = aptSakin.filter(x => (x.borc || 0) > 0).length;
+  const acikAriza = S.arizalar.filter(x => x.aptId == aptId && x.durum === 'acik').length;
 
   const stats=document.getElementById('rap-stats');
   if(stats) stats.innerHTML=`
@@ -6880,17 +6881,20 @@ function renderFinansRaporSayfa(){
   const aptId=selectedAptId;if(!aptId)return;
   const yil=document.getElementById('rap-f-yil')?.value||new Date().getFullYear().toString();
   const ay=document.getElementById('rap-f-ay')?.value||'';
-  let list=S.finansIslemler.filter(f=>f.aptId==aptId);
-  if(yil)list=list.filter(f=>f.tarih?.startsWith(yil));
-  if(ay)list=list.filter(f=>f.tarih?.slice(5,7)===ay.padStart(2,'0'));
+  // iptal kayıtları filtrele (.status !== 'cancelled')
+  let list = (S.finansIslemler || []).filter(f => f.status !== 'cancelled' && f.aptId == aptId);
+  if (yil) list = list.filter(f => f.tarih?.startsWith(yil));
+  if (ay)  list = list.filter(f => f.tarih?.slice(5,7) === ay.padStart(2,'0'));
 
-  const gelir=list.filter(f=>f.tur==='gelir').reduce((s,f)=>s+(f.tutar||0),0);
-  const gider=list.filter(f=>f.tur==='gider').reduce((s,f)=>s+(f.tutar||0),0);
+  // Ledger-first kategori dağılımı
+  const opts = { siteId: aptId, year: yil || undefined, month: ay || undefined };
+  const gelirKat = reportCategoryBreakdown(opts, ['income','collection']);
+  const giderKat = reportCategoryBreakdown(opts, ['expense']);
 
   const gelirEl=document.getElementById('rap-finans-gelir');
-  if(gelirEl) gelirEl.innerHTML=`<div style="padding:10px 0"><div style="font-size:11px;font-weight:700;color:var(--tx-3);margin-bottom:8px">GELİR KATEGORİLERİ</div>${renderKatDagilim(list.filter(f=>f.tur==='gelir'),'ok')}</div>`;
+  if(gelirEl) gelirEl.innerHTML=`<div style="padding:10px 0"><div style="font-size:11px;font-weight:700;color:var(--tx-3);margin-bottom:8px">GELİR KATEGORİLERİ</div>${_renderKatDagilimFromMap(gelirKat,'ok')}</div>`;
   const giderEl=document.getElementById('rap-finans-gider');
-  if(giderEl) giderEl.innerHTML=`<div style="padding:10px 0"><div style="font-size:11px;font-weight:700;color:var(--tx-3);margin-bottom:8px">GİDER KATEGORİLERİ</div>${renderKatDagilim(list.filter(f=>f.tur==='gider'),'err')}</div>`;
+  if(giderEl) giderEl.innerHTML=`<div style="padding:10px 0"><div style="font-size:11px;font-weight:700;color:var(--tx-3);margin-bottom:8px">GİDER KATEGORİLERİ</div>${_renderKatDagilimFromMap(giderKat,'err')}</div>`;
 
   const tb=document.getElementById('rap-finans-tbody');
   if(!tb)return;
@@ -6902,6 +6906,21 @@ function renderFinansRaporSayfa(){
     <td style="font-size:12px;max-width:200px">${f.aciklama||'—'}</td>
     <td style="font-weight:700;color:${f.tur==='gelir'?'var(--ok)':'var(--err)'}">${f.tur==='gelir'?'+':'−'}₺${fmt(f.tutar)}</td>
   </tr>`).join('');
+}
+
+/** Kategori haritasından dağılım HTML'i üret (ledger-first rapor için) */
+function _renderKatDagilimFromMap(map, renkVar) {
+  const entries = Object.entries(map);
+  if (!entries.length) return '<div class="t-muted t-sm" style="padding:10px 0">Bu dönemde kayıt yok.</div>';
+  const toplam = entries.reduce((s,[,v]) => s + v, 0) || 1;
+  return entries.sort((a,b)=>b[1]-a[1]).map(([k,v])=>`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px">
+      <div style="width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${he(k)}</div>
+      <div style="flex:1;background:var(--s2);border-radius:4px;height:8px">
+        <div style="background:var(--${renkVar});width:${Math.round((v/toplam)*100)}%;height:100%;border-radius:4px"></div>
+      </div>
+      <div style="width:80px;text-align:right;font-weight:700">₺${fmt(v)}</div>
+    </div>`).join('');
 }
 
 function renderKatDagilim(list,renkVar){
@@ -6921,9 +6940,10 @@ function renderKatDagilim(list,renkVar){
 function renderTahsilatRaporSayfa(aptId,aptSakin){
   const ozet=document.getElementById('rap-tah-ozet');
   if(ozet){
-    const borclu=aptSakin.filter(x=>(x.borc||0)>0).length;
-    const topBorc=aptSakin.reduce((s,x)=>s+(x.borc||0),0);
-    const topTahsilat=S.tahsilatlar.filter(x=>x.aptId==aptId).reduce((s,x)=>s+(x.tutar||0),0);
+    const borclu = aptSakin.filter(x => (x.borc || 0) > 0).length;
+    const topBorc = aptSakin.reduce((s, x) => s + (x.borc || 0), 0);
+    // Ledger-first: iptal edilen tahsilatları otomatik hariç tutar
+    const topTahsilat = reportCollection({ siteId: aptId });
     ozet.innerHTML=[
       {lbl:'Toplam Borç',val:'₺'+fmt(topBorc),cls:'rd'},
       {lbl:'Toplam Tahsilat',val:'₺'+fmt(topTahsilat),cls:'gr'},
@@ -14819,6 +14839,133 @@ const AuditService = {
     }
   }
 };
+
+// ═════════════════════════════════════════════════════════════════
+// LEDGER-FIRST RAPOR HELPER'LARI
+// Raporlar önce ledger'dan okur; ledger boşsa S array'lerine düşer.
+// Her helper cancelled/iptal kayıtları OTOMATİK filtreler.
+// ═════════════════════════════════════════════════════════════════
+
+/**
+ * Ledger entry'leri belirtilen filtrelere göre sıralar.
+ * @param {object} opts { siteId?, entryType?, personId?, year?, month?, dateFrom?, dateTo? }
+ */
+function ledgerQuery(opts = {}) {
+  const entries = (S.ledgerEntries || []).filter(e => e.status !== 'cancelled');
+  return entries.filter(e => {
+    if (opts.siteId != null && e.site_id != opts.siteId) return false;
+    if (opts.entryType && e.entry_type !== opts.entryType) return false;
+    if (opts.personId != null && e.person_id != opts.personId) return false;
+    if (opts.year && (e.date || '').slice(0, 4) !== String(opts.year)) return false;
+    if (opts.month && (e.date || '').slice(5, 7) !== String(opts.month).padStart(2, '0')) return false;
+    if (opts.dateFrom && e.date < opts.dateFrom) return false;
+    if (opts.dateTo && e.date > opts.dateTo) return false;
+    return true;
+  });
+}
+
+/**
+ * Toplam CREDIT — ledger'daki credit kolonunun toplamı.
+ * entryType verilirse sadece o türü (örn 'income' veya 'collection').
+ */
+function ledgerCreditSum(opts = {}) {
+  return ledgerQuery(opts).reduce((s, e) => s + (+e.credit || 0), 0);
+}
+
+/**
+ * Toplam DEBIT — ledger'daki debit kolonunun toplamı.
+ */
+function ledgerDebitSum(opts = {}) {
+  return ledgerQuery(opts).reduce((s, e) => s + (+e.debit || 0), 0);
+}
+
+/**
+ * Apartmanın TOPLAM GELİRİ (ledger-first, fallback: S.finansIslemler)
+ * İncludes: income + collection (tahsilat).
+ * Opts: { siteId, year?, month?, dateFrom?, dateTo? }
+ */
+function reportIncome(opts) {
+  const ledgerVal =
+    ledgerCreditSum({ ...opts, entryType: 'income' }) +
+    ledgerCreditSum({ ...opts, entryType: 'collection' });
+  if (ledgerVal > 0) return ledgerVal;
+  // Fallback: finansIslemler + tahsilatlar (iptal filtrelenmiş)
+  let fin = (S.finansIslemler || []).filter(f => f.status !== 'cancelled' && f.tur === 'gelir');
+  if (opts.siteId != null) fin = fin.filter(f => f.aptId == opts.siteId);
+  if (opts.year)   fin = fin.filter(f => (f.tarih || '').slice(0, 4) === String(opts.year));
+  if (opts.month)  fin = fin.filter(f => (f.tarih || '').slice(5, 7) === String(opts.month).padStart(2, '0'));
+  const finTotal = fin.reduce((s, f) => s + (+f.tutar || 0), 0);
+  let tah = (S.tahsilatlar || []).filter(t => t.status !== 'cancelled');
+  if (opts.siteId != null) tah = tah.filter(t => t.aptId == opts.siteId);
+  if (opts.year)   tah = tah.filter(t => (t.tarih || '').slice(0, 4) === String(opts.year));
+  if (opts.month)  tah = tah.filter(t => (t.tarih || '').slice(5, 7) === String(opts.month).padStart(2, '0'));
+  const tahTotal = tah.reduce((s, t) => s + (+t.tutar || 0), 0);
+  return finTotal + tahTotal;
+}
+
+/**
+ * Apartmanın TOPLAM GİDERİ (ledger-first, fallback: S.finansIslemler)
+ */
+function reportExpense(opts) {
+  const ledgerVal = ledgerDebitSum({ ...opts, entryType: 'expense' });
+  if (ledgerVal > 0) return ledgerVal;
+  let fin = (S.finansIslemler || []).filter(f => f.status !== 'cancelled' && f.tur === 'gider');
+  if (opts.siteId != null) fin = fin.filter(f => f.aptId == opts.siteId);
+  if (opts.year)   fin = fin.filter(f => (f.tarih || '').slice(0, 4) === String(opts.year));
+  if (opts.month)  fin = fin.filter(f => (f.tarih || '').slice(5, 7) === String(opts.month).padStart(2, '0'));
+  return fin.reduce((s, f) => s + (+f.tutar || 0), 0);
+}
+
+/**
+ * Sadece TAHSİLAT (site müşteri tahsilatları) — collection entry type
+ */
+function reportCollection(opts) {
+  const ledgerVal = ledgerCreditSum({ ...opts, entryType: 'collection' });
+  if (ledgerVal > 0) return ledgerVal;
+  let tah = (S.tahsilatlar || []).filter(t => t.status !== 'cancelled');
+  if (opts.siteId != null) tah = tah.filter(t => t.aptId == opts.siteId);
+  if (opts.year)   tah = tah.filter(t => (t.tarih || '').slice(0, 4) === String(opts.year));
+  if (opts.month)  tah = tah.filter(t => (t.tarih || '').slice(5, 7) === String(opts.month).padStart(2, '0'));
+  return tah.reduce((s, t) => s + (+t.tutar || 0), 0);
+}
+
+/**
+ * Bir apartman için kategori dağılımı — {kategori: toplam}
+ * entryTypes: ['income'] veya ['expense'] vb.
+ */
+function reportCategoryBreakdown(opts, entryTypes = ['income','collection']) {
+  const result = {};
+  entryTypes.forEach(type => {
+    ledgerQuery({ ...opts, entryType: type }).forEach(e => {
+      const kat = e.category || 'Diğer';
+      const tutar = (+e.credit || 0) + (+e.debit || 0);
+      result[kat] = (result[kat] || 0) + tutar;
+    });
+  });
+  // Ledger boşsa fallback — finansIslemler + tahsilatlar'dan türet
+  if (Object.keys(result).length === 0) {
+    const tur = entryTypes.includes('expense') ? 'gider' : 'gelir';
+    let fin = (S.finansIslemler || []).filter(f => f.status !== 'cancelled' && f.tur === tur);
+    if (opts.siteId != null) fin = fin.filter(f => f.aptId == opts.siteId);
+    if (opts.year)  fin = fin.filter(f => (f.tarih || '').slice(0, 4) === String(opts.year));
+    if (opts.month) fin = fin.filter(f => (f.tarih || '').slice(5, 7) === String(opts.month).padStart(2, '0'));
+    fin.forEach(f => {
+      const kat = f.kat || 'Diğer';
+      result[kat] = (result[kat] || 0) + (+f.tutar || 0);
+    });
+    if (entryTypes.includes('collection') || entryTypes.includes('income')) {
+      let tah = (S.tahsilatlar || []).filter(t => t.status !== 'cancelled');
+      if (opts.siteId != null) tah = tah.filter(t => t.aptId == opts.siteId);
+      if (opts.year)  tah = tah.filter(t => (t.tarih || '').slice(0, 4) === String(opts.year));
+      if (opts.month) tah = tah.filter(t => (t.tarih || '').slice(5, 7) === String(opts.month).padStart(2, '0'));
+      tah.forEach(t => {
+        const kat = t.tip === 'aidat' ? 'Aidat' : (t.tip || 'Tahsilat');
+        result[kat] = (result[kat] || 0) + (+t.tutar || 0);
+      });
+    }
+  }
+  return result;
+}
 
 // ─────────────────────────────────────────────────────────────────
 /**
