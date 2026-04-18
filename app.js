@@ -593,6 +593,11 @@ function switchGlobalSite(aptId) {
   selectedAptId = aptId ? +aptId : (S.apartmanlar.filter(a=>a.durum==='aktif')[0]?.id || null);
   updateGlobalSiteBar();
   syncAptFilters();
+  // Yeni apartmandaki rolüm farklı olabilir → menüleri + dashboard'u refresh
+  try {
+    const myRol = getMyAptRol();
+    if (typeof applyRole === 'function') applyRole(myRol);
+  } catch(e) {}
   const curPage = document.querySelector('.ni.on')?.dataset?.p;
   if (curPage) goPage(curPage);
 }
@@ -672,6 +677,27 @@ function loadState() {
   initTanimlar();
 }
 
+// Seçili apartmandaki rolümü döndürür (default: yonetici)
+function getMyAptRol() {
+  if (!selectedAptId || !S.apartmanlar) return 'yonetici';
+  const apt = S.apartmanlar.find(a => a.id == selectedAptId);
+  return (apt && apt.benimRolum) || 'yonetici';
+}
+
+// Seçili apartmanda benim daire numaram (sakin rolünde)
+function getMyAptDaireNo() {
+  if (!selectedAptId || !S.apartmanlar) return '';
+  const apt = S.apartmanlar.find(a => a.id == selectedAptId);
+  return (apt && apt.benimDaireNo) || '';
+}
+
+// Seçili apartmanda benim sakin kaydımı döndürür (yoksa null)
+function getMyAptSakin() {
+  const daireNo = getMyAptDaireNo();
+  if (!daireNo || !selectedAptId) return null;
+  return (S.sakinler || []).find(s => s.aptId == selectedAptId && (s.daireNo === daireNo || s.daire === daireNo)) || null;
+}
+
 // Hesap tipi etiketleri (UI)
 const HESAP_TIPI_META = {
   'bireysel': { ad: 'Bireysel Yönetici', ico: '👤', aciklama: 'Kendi apartmanınızı yönetiyorsunuz' },
@@ -731,6 +757,15 @@ function refreshUI() {
 // Helpers
 const today = () => new Date().toISOString().split('T')[0];
 const fmt = (n, d=0) => Number(n||0).toLocaleString('tr-TR', { minimumFractionDigits:d, maximumFractionDigits:d });
+// Global tarih formatı — YYYY-MM-DD veya ISO → TR kısa tarih. Boşsa "—".
+const fmtDate = iso => {
+  if (!iso) return '—';
+  try {
+    const d = new Date(typeof iso === 'string' && iso.length === 10 ? iso+'T00:00' : iso);
+    if (isNaN(d.getTime())) return iso;
+    return d.toLocaleDateString('tr-TR');
+  } catch(e) { return iso; }
+};
 const fmtMoney = (n) => Number(n||0).toLocaleString('tr-TR', { minimumFractionDigits:2, maximumFractionDigits:2 });
 const dayDiff = (ds, from=new Date()) => Math.floor((new Date(ds) - from) / 864e5);
 const aptById = id => S.apartmanlar.find(a => a.id === +id);
@@ -896,6 +931,7 @@ function goPage(p) {
   if (p==='ariza') { renderAriza(); }
   if (p==='tahsilat') { renderTahsilat(); }
   if (p==='makbuzlar') { try{renderTahsilatMakbuz();}catch(e){} }
+  if (p==='cari-hesabim') { try{renderCariHesabim();}catch(e){} }
   if (p==='devir-bakiye') { try{initDevirBakiye();}catch(e){} }
   if (p==='kasa') { try{initKasa();}catch(e){} }
   if (p==='aylik-rapor') { try{initAylikRapor();}catch(e){} }
@@ -1008,6 +1044,11 @@ function renderDashboard() {
       if (c !== root) c.remove();
     });
   }
+
+  // Kat sakini veya personel rolünde özel dashboard göster
+  const myRol = getMyAptRol();
+  if (myRol === 'sakin') { renderSakinDashboard(); return; }
+  if (myRol === 'personel') { renderPersonelDashboard(); return; }
 
   const aktif = S.apartmanlar.filter(a=>a.durum==='aktif').length;
   const topDaire = S.apartmanlar.reduce((s,a)=>s+(a.daireSayisi||0),0);
@@ -1202,6 +1243,332 @@ function renderDashboard() {
 
 function renderDashboardLegacy() {}
 
+// ═══════════════════════════════════════════════════════════
+// KAT SAKİNİ ÖZEL DASHBOARD
+// Sakin, seçili apartmanda dairesinin finansal durumunu, son
+// tahsilatlarını, apartmanın aylık gelir/gider özetini ve
+// duyuruları görür. Yönetimsel işlem yapamaz.
+// ═══════════════════════════════════════════════════════════
+function renderSakinDashboard() {
+  const root = document.getElementById('ds-root');
+  if (!root) return;
+  // Dashboard'un diğer statik kartlarını gizle — root içinde her şeyi üretiyoruz
+  const pg = root.parentElement;
+  if (pg) [...pg.children].forEach(c => { if (c !== root) c.style.display = 'none'; });
+
+  const apt = S.apartmanlar.find(a => a.id == selectedAptId);
+  const daireNo = getMyAptDaireNo();
+  const benimSakin = getMyAptSakin();
+  const now = new Date();
+  const saat = now.getHours();
+  const selamlama = saat < 12 ? 'Günaydın' : saat < 18 ? 'İyi günler' : 'İyi akşamlar';
+  const adim = S.ayarlar?.yonetici || 'Sakin';
+  const tarihStr = now.toLocaleDateString('tr-TR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  if (!apt) {
+    root.innerHTML = `<div class="card" style="text-align:center;padding:40px">
+      <div style="font-size:40px;margin-bottom:10px">🏠</div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:6px">Apartman seçilmemiş</div>
+      <div class="t3">Üstteki seçiciden bir apartman seçin.</div>
+    </div>`;
+    return;
+  }
+
+  if (!daireNo) {
+    root.innerHTML = `
+      <div class="ds-welcome">
+        <div><div class="dwel-t">${selamlama}, ${he(adim)} 👋</div><div class="dwel-s">${he(apt.ad)} · Kat Sakini</div></div>
+      </div>
+      <div class="card" style="text-align:center;padding:40px;border:1.5px dashed var(--am)">
+        <div style="font-size:40px;margin-bottom:10px">🔑</div>
+        <div style="font-size:16px;font-weight:700;margin-bottom:6px">Daire numaranız tanımlı değil</div>
+        <div class="t3" style="margin-bottom:14px">Finansal bilginizi görebilmek için apartmanınızda hangi daireyi temsil ettiğinizi belirtmelisiniz.</div>
+        <button class="btn bp" onclick="openAptModal(${apt.id})">Apartmanı Düzenle</button>
+      </div>`;
+    return;
+  }
+
+  // Finansal hesap
+  const borc = (benimSakin && benimSakin.borc) || 0;
+  const bakiye = -borc; // borç pozitifse bakiye negatif
+  const benimTahsilatlar = (S.tahsilatlar || []).filter(t => {
+    return t.aptId == apt.id && (t.daireNo === daireNo || t.daire === daireNo || (benimSakin && t.sakinId === benimSakin.id));
+  }).sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||''));
+  const topOdeme = benimTahsilatlar.reduce((s,t)=>s+(+t.tutar||0), 0);
+
+  // Bu ay finans
+  const ayBas = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
+  const ayBit = new Date(now.getFullYear(), now.getMonth()+1, 0).toISOString().slice(0,10);
+  const ayGelir = (S.finansIslemler || []).filter(f => f.aptId == apt.id && f.tur === 'gelir' && f.tarih >= ayBas && f.tarih <= ayBit)
+    .reduce((s,f)=>s+(+f.tutar||0), 0);
+  const ayGider = (S.finansIslemler || []).filter(f => f.aptId == apt.id && f.tur === 'gider' && f.tarih >= ayBas && f.tarih <= ayBit)
+    .reduce((s,f)=>s+(+f.tutar||0), 0);
+
+  const duyurular = (S.duyurular || []).filter(d => d.aptId == apt.id).sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||'')).slice(0, 3);
+  const acikArizalar = (S.arizalar || []).filter(a => a.aptId == apt.id && a.durum === 'acik').length;
+
+  const borcKart = borc > 0 ? `
+    <div class="card sakin-durum-kart" style="background:linear-gradient(135deg,#fef2f2,#fee2e2);border-color:#fecaca">
+      <div class="sdk-lbl">Güncel Borç</div>
+      <div class="sdk-val" style="color:#dc2626">₺${fmt(borc)}</div>
+      <div class="sdk-sub">Lütfen en kısa zamanda ödeme yapınız.</div>
+    </div>` : `
+    <div class="card sakin-durum-kart" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-color:#bbf7d0">
+      <div class="sdk-lbl">Güncel Durum</div>
+      <div class="sdk-val" style="color:#16a34a">Ödemeniz Güncel</div>
+      <div class="sdk-sub">Borcunuz bulunmamaktadır. ✓</div>
+    </div>`;
+
+  root.innerHTML = `
+    <div class="ds-welcome">
+      <div><div class="dwel-t">${selamlama}, ${he(adim)} 👋</div><div class="dwel-s">${he(apt.ad)} · Daire ${he(daireNo)} · Kat Sakini</div></div>
+      <div class="dwel-date">${tarihStr}</div>
+    </div>
+
+    <div class="sakin-kartlar mb16">
+      ${borcKart}
+      <div class="card sakin-durum-kart">
+        <div class="sdk-lbl">Toplam Ödemelerim</div>
+        <div class="sdk-val" style="color:var(--brand)">₺${fmt(topOdeme)}</div>
+        <div class="sdk-sub">${benimTahsilatlar.length} tahsilat kaydı</div>
+      </div>
+      <div class="card sakin-durum-kart">
+        <div class="sdk-lbl">Bu Ay Apartman</div>
+        <div class="sdk-val" style="color:${ayGelir-ayGider >= 0 ? 'var(--ok)' : 'var(--err)'}">${ayGelir-ayGider >= 0 ? '+' : ''}₺${fmt(ayGelir-ayGider)}</div>
+        <div class="sdk-sub">Gelir ₺${fmt(ayGelir)} · Gider ₺${fmt(ayGider)}</div>
+      </div>
+    </div>
+
+    <div class="g2 mb16">
+      <div class="card">
+        <div class="card-h"><div><div class="card-t">💳 Son Ödemelerim</div><div class="card-s">${benimTahsilatlar.length} kayıt</div></div>
+          <button class="btn bg sm" onclick="goPage('cari-hesabim')">Tümünü Gör <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+        </div>
+        ${benimTahsilatlar.length ? benimTahsilatlar.slice(0,5).map(t => `
+          <div class="sakin-row">
+            <div>
+              <div class="sr-t">${he(t.aciklama || 'Aidat ödemesi')}</div>
+              <div class="sr-s">${fmtDate(t.tarih)}${t.yontem ? ' · ' + he(t.yontem) : ''}</div>
+            </div>
+            <div class="sr-v">₺${fmt(+t.tutar||0)}</div>
+          </div>`).join('') : '<div class="t3" style="text-align:center;padding:20px">Henüz ödeme kaydınız yok.</div>'}
+      </div>
+
+      <div class="card">
+        <div class="card-h"><div><div class="card-t">📢 Son Duyurular</div><div class="card-s">${duyurular.length} duyuru</div></div>
+          <button class="btn bg sm" onclick="goPage('duyurular')">Tümü <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+        </div>
+        ${duyurular.length ? duyurular.map(d => `
+          <div class="sakin-row">
+            <div>
+              <div class="sr-t">${he(d.baslik || 'Duyuru')}</div>
+              <div class="sr-s">${fmtDate(d.tarih)}</div>
+            </div>
+          </div>`).join('') : '<div class="t3" style="text-align:center;padding:20px">Henüz duyuru yok.</div>'}
+      </div>
+    </div>
+
+    <div class="g2">
+      <div class="card">
+        <div class="card-h"><div><div class="card-t">📊 Aylık Gelir/Gider</div><div class="card-s">${apt.ad}</div></div>
+          <button class="btn bg sm" onclick="goPage('aylik-rapor')">Detay <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="padding:12px;background:var(--ok-bg);border-radius:8px">
+            <div class="t3" style="font-size:11px">Bu Ay Gelir</div>
+            <div style="font-size:18px;font-weight:700;color:var(--ok);margin-top:3px">₺${fmt(ayGelir)}</div>
+          </div>
+          <div style="padding:12px;background:var(--s2);border-radius:8px">
+            <div class="t3" style="font-size:11px">Bu Ay Gider</div>
+            <div style="font-size:18px;font-weight:700;color:var(--err);margin-top:3px">₺${fmt(ayGider)}</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h"><div><div class="card-t">🔧 Arıza Durumu</div><div class="card-s">Apartmanda ${acikArizalar} açık kayıt</div></div>
+          <button class="btn bg sm" onclick="goPage('ariza')">Arızalar <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+        </div>
+        <button class="btn bp" style="width:100%" onclick="goPage('ariza')">➕ Yeni Arıza Bildir</button>
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════
+// PERSONEL DASHBOARD — basit iş listesi
+// ═══════════════════════════════════════════════════════════
+function renderPersonelDashboard() {
+  const root = document.getElementById('ds-root');
+  if (!root) return;
+  const pg = root.parentElement;
+  if (pg) [...pg.children].forEach(c => { if (c !== root) c.style.display = 'none'; });
+
+  const apt = S.apartmanlar.find(a => a.id == selectedAptId);
+  const now = new Date();
+  const saat = now.getHours();
+  const selamlama = saat < 12 ? 'Günaydın' : saat < 18 ? 'İyi günler' : 'İyi akşamlar';
+  const adim = S.ayarlar?.yonetici || 'Personel';
+  const tarihStr = now.toLocaleDateString('tr-TR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  if (!apt) {
+    root.innerHTML = `<div class="card" style="text-align:center;padding:40px">
+      <div style="font-size:40px;margin-bottom:10px">🛠️</div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:6px">Apartman seçilmemiş</div>
+      <div class="t3">Üstteki seçiciden çalıştığınız apartmanı seçin.</div>
+    </div>`;
+    return;
+  }
+
+  const acikArizalar = (S.arizalar || []).filter(a => a.aptId == apt.id && a.durum === 'acik');
+  const devamGorevler = (S.gorevler || []).filter(g => g.aptId == apt.id && g.durum !== 'tamamlandi');
+  const duyurular = (S.duyurular || []).filter(d => d.aptId == apt.id).sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||'')).slice(0, 3);
+
+  root.innerHTML = `
+    <div class="ds-welcome">
+      <div><div class="dwel-t">${selamlama}, ${he(adim)} 👋</div><div class="dwel-s">${he(apt.ad)} · Personel</div></div>
+      <div class="dwel-date">${tarihStr}</div>
+    </div>
+
+    <div class="sakin-kartlar mb16">
+      <div class="card sakin-durum-kart">
+        <div class="sdk-lbl">Açık Arıza</div>
+        <div class="sdk-val" style="color:${acikArizalar.length ? '#dc2626' : 'var(--ok)'}">${acikArizalar.length}</div>
+        <div class="sdk-sub">${acikArizalar.length ? 'İşlem bekliyor' : 'Kayıt yok'}</div>
+      </div>
+      <div class="card sakin-durum-kart">
+        <div class="sdk-lbl">Bekleyen Görev</div>
+        <div class="sdk-val" style="color:var(--brand)">${devamGorevler.length}</div>
+        <div class="sdk-sub">Devam eden iş</div>
+      </div>
+    </div>
+
+    <div class="g2">
+      <div class="card">
+        <div class="card-h"><div><div class="card-t">🔧 Açık Arızalar</div><div class="card-s">${acikArizalar.length} kayıt</div></div>
+          <button class="btn bg sm" onclick="goPage('ariza')">Tümü <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+        </div>
+        ${acikArizalar.length ? acikArizalar.slice(0,5).map(a => `
+          <div class="sakin-row">
+            <div>
+              <div class="sr-t">${he(a.baslik || a.konu || 'Arıza')}</div>
+              <div class="sr-s">${fmtDate(a.tarih)}${a.kategori ? ' · ' + he(a.kategori) : ''}</div>
+            </div>
+          </div>`).join('') : '<div class="t3" style="text-align:center;padding:20px">Açık arıza yok.</div>'}
+      </div>
+      <div class="card">
+        <div class="card-h"><div><div class="card-t">📢 Duyurular</div><div class="card-s">Son ${duyurular.length} duyuru</div></div>
+          <button class="btn bg sm" onclick="goPage('duyurular')">Tümü <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+        </div>
+        ${duyurular.length ? duyurular.map(d => `
+          <div class="sakin-row">
+            <div>
+              <div class="sr-t">${he(d.baslik || 'Duyuru')}</div>
+              <div class="sr-s">${fmtDate(d.tarih)}</div>
+            </div>
+          </div>`).join('') : '<div class="t3" style="text-align:center;padding:20px">Duyuru yok.</div>'}
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════
+// CARİ HESABIM SAYFASI — kat sakininin kendi hesap ekstresi
+// ═══════════════════════════════════════════════════════════
+function renderCariHesabim() {
+  const page = document.getElementById('page-cari-hesabim');
+  if (!page) return;
+  const apt = S.apartmanlar.find(a => a.id == selectedAptId);
+  const daireNo = getMyAptDaireNo();
+  const benimSakin = getMyAptSakin();
+
+  if (!apt) {
+    page.innerHTML = `<div class="card" style="text-align:center;padding:40px">
+      <div style="font-size:40px;margin-bottom:10px">🏠</div>
+      <div style="font-size:16px;font-weight:700">Apartman seçilmemiş</div>
+    </div>`;
+    return;
+  }
+  if (!daireNo) {
+    page.innerHTML = `<div class="card" style="text-align:center;padding:40px;border:1.5px dashed var(--am)">
+      <div style="font-size:40px;margin-bottom:10px">🔑</div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:6px">Daire numaranız tanımlı değil</div>
+      <div class="t3" style="margin-bottom:14px">Cari hesabınızı görebilmek için apartman tanımında "Dairem" alanını doldurun.</div>
+      <button class="btn bp" onclick="openAptModal(${apt.id})">Apartmanı Düzenle</button>
+    </div>`;
+    return;
+  }
+
+  const borc = (benimSakin && benimSakin.borc) || 0;
+  const tahsilatlar = (S.tahsilatlar || []).filter(t => {
+    return t.aptId == apt.id && (t.daireNo === daireNo || t.daire === daireNo || (benimSakin && t.sakinId === benimSakin.id));
+  }).sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||''));
+  const topOdeme = tahsilatlar.reduce((s,t)=>s+(+t.tutar||0), 0);
+
+  // Borçlandırmalar (varsa)
+  const borcKayitlari = (S.aidatBorclandir || []).filter(b => {
+    return b.aptId == apt.id && (b.daireNo === daireNo || b.daire === daireNo || (benimSakin && b.sakinId === benimSakin.id));
+  }).sort((a,b)=>(b.tarih||'').localeCompare(a.tarih||''));
+  const topBorclandirma = borcKayitlari.reduce((s,b)=>s+(+b.tutar||0), 0);
+
+  // Birleşik hareket listesi (ekstre)
+  const hareketler = [
+    ...borcKayitlari.map(b => ({ tip: 'borc', tarih: b.tarih, aciklama: b.aciklama || 'Borçlandırma', tutar: +b.tutar||0 })),
+    ...tahsilatlar.map(t => ({ tip: 'odeme', tarih: t.tarih, aciklama: t.aciklama || 'Ödeme', tutar: +t.tutar||0, yontem: t.yontem }))
+  ].sort((a,b)=>(a.tarih||'').localeCompare(b.tarih||''));
+
+  // Yürüyen bakiye
+  let yuruyenBakiye = 0;
+  const ekstreRows = hareketler.map(h => {
+    if (h.tip === 'borc') yuruyenBakiye += h.tutar;
+    else yuruyenBakiye -= h.tutar;
+    return { ...h, bakiye: yuruyenBakiye };
+  });
+
+  page.innerHTML = `
+    <div class="card mb16" style="background:linear-gradient(135deg,var(--brand-10),var(--s1))">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+        <div>
+          <div style="font-size:12px;color:var(--tx-3)">Cari Hesap · ${he(apt.ad)} · Daire ${he(daireNo)}</div>
+          <div style="font-size:22px;font-weight:800;margin-top:4px">
+            ${borc > 0 ? `<span style="color:#dc2626">Borç: ₺${fmt(borc)}</span>` : `<span style="color:var(--ok)">✓ Ödemeniz Güncel</span>`}
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:auto auto;gap:14px;text-align:right">
+          <div>
+            <div style="font-size:11px;color:var(--tx-3)">Toplam Borçlandırma</div>
+            <div style="font-size:14px;font-weight:700;color:var(--tx)">₺${fmt(topBorclandirma)}</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--tx-3)">Toplam Ödeme</div>
+            <div style="font-size:14px;font-weight:700;color:var(--ok)">₺${fmt(topOdeme)}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><div><div class="card-t">📄 Hesap Ekstresi</div><div class="card-s">${ekstreRows.length} hareket</div></div></div>
+      ${ekstreRows.length ? `
+        <div class="tw">
+          <table>
+            <thead><tr><th>Tarih</th><th>Açıklama</th><th style="text-align:right">Borç</th><th style="text-align:right">Ödeme</th><th style="text-align:right">Bakiye</th></tr></thead>
+            <tbody>
+              ${ekstreRows.map(r => `
+                <tr>
+                  <td>${fmtDate(r.tarih)}</td>
+                  <td>${he(r.aciklama)}${r.yontem ? ` <span class="t3" style="font-size:11px">· ${he(r.yontem)}</span>` : ''}</td>
+                  <td style="text-align:right;color:${r.tip==='borc'?'#dc2626':'var(--tx-4)'}">${r.tip==='borc'?'₺'+fmt(r.tutar):''}</td>
+                  <td style="text-align:right;color:${r.tip==='odeme'?'var(--ok)':'var(--tx-4)'}">${r.tip==='odeme'?'₺'+fmt(r.tutar):''}</td>
+                  <td style="text-align:right;font-weight:700;color:${r.bakiye>0?'#dc2626':'var(--ok)'}">₺${fmt(Math.abs(r.bakiye))}${r.bakiye>0?' B':' A'}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      ` : '<div class="t3" style="text-align:center;padding:30px">Henüz hareket kaydı yok.</div>'}
+    </div>
+  `;
+}
+
 function calcHizmetBedeli() {
   const val = parseFloat(document.getElementById('apt-hizmet').value) || 0;
   const oz = document.getElementById('apt-hizmet-ozet');
@@ -1258,6 +1625,9 @@ function openAptModal(id = null) {
     document.getElementById('apt-asansor').value = a.asansor||'evet';
     const rolSel = document.getElementById('apt-rol');
     if (rolSel) rolSel.value = a.benimRolum || 'yonetici';
+    const dairemEl = document.getElementById('apt-dairem');
+    if (dairemEl) dairemEl.value = a.benimDaireNo || '';
+    if (typeof onAptRolChange === 'function') onAptRolChange();
     drRows = a.daireler ? [...a.daireler] : [];
     // Blok bilgilerini yükle
     blokRows = a.bloklar ? JSON.parse(JSON.stringify(a.bloklar)) : [];
@@ -1274,6 +1644,9 @@ function openAptModal(id = null) {
                    : 'yonetici';
       rolSel.value = defRol;
     }
+    const dairemEl = document.getElementById('apt-dairem');
+    if (dairemEl) dairemEl.value = '';
+    if (typeof onAptRolChange === 'function') onAptRolChange();
     blokRows = [{ ad: 'A Blok', asansorSayisi: 1 }];
     document.getElementById('apt-blok-sayi').value = 1;
     document.getElementById('apt-hizmet-ozet').style.display = 'none';
@@ -1324,7 +1697,9 @@ function saveApt() {
     bloklar: bloklar,
     daireler:drRows.filter(d=>d.no),
     // Formdan seçilen rol; yoksa default
-    benimRolum: (document.getElementById('apt-rol')?.value) || (mevcutApt && mevcutApt.benimRolum) || defaultRol
+    benimRolum: (document.getElementById('apt-rol')?.value) || (mevcutApt && mevcutApt.benimRolum) || defaultRol,
+    // Kat sakini veya personel rolü ise "dairem" bilgisi (bağımsız bölüm)
+    benimDaireNo: (document.getElementById('apt-dairem')?.value || '').trim() || (mevcutApt && mevcutApt.benimDaireNo) || ''
   };
   if (editId) { const i=S.apartmanlar.findIndex(a=>a.id===editId); if(i>=0) S.apartmanlar[i]=apt; }
   else S.apartmanlar.push(apt);
@@ -9234,6 +9609,14 @@ function saveSettings() {
   toast('Ayarlar kaydedildi.','ok');
 }
 
+// Apartman modalında rol değişince "Dairem" alanını göster/gizle
+function onAptRolChange() {
+  const rol = document.getElementById('apt-rol')?.value || 'yonetici';
+  const wrap = document.getElementById('apt-dairem-wrap');
+  if (!wrap) return;
+  wrap.style.display = (rol === 'sakin' || rol === 'personel') ? '' : 'none';
+}
+
 // Hesap tipini değiştir — UI'yi anında yansıtır
 function setHesapTipi(tip) {
   if (!['bireysel','sirket','sakin','personel'].includes(tip)) return;
@@ -13440,8 +13823,14 @@ function selectRole(role) {
   sessionStorage.setItem('syp_role', role);
   document.getElementById('role-screen')?.classList.add('hidden');
   document.getElementById('main').style.display = '';
-  applyRole(role);
   loadState();
+  // Rol seçiminden hesap tipini çıkar: "yonetici" → var olan tipi koru;
+  // "sakin" seçildiyse hesapTipi=sakin olarak ayarla.
+  if (role === 'sakin') {
+    S.ayarlar = S.ayarlar || {};
+    if (S.ayarlar.hesapTipi !== 'sakin') S.ayarlar.hesapTipi = 'sakin';
+  }
+  applyRole(role);
   if (!S.apartmanlar || S.apartmanlar.length === 0) {
     const _orig = window.confirm; window.confirm = () => true; loadDemoData(); window.confirm = _orig;
   } else { initApp(); }
@@ -13469,20 +13858,30 @@ function selectRole(role) {
 function applyRole(role) {
   // Hesap tipi (bireysel / sirket / sakin / personel) — default sirket
   const hesapTipi = (S.ayarlar && S.ayarlar.hesapTipi) || 'sirket';
+  // Seçili apartmandaki rolüm — rol filtrelemede baskın kaynak
+  const myAptRol = getMyAptRol ? getMyAptRol() : null;
+  const effectiveRole = (hesapTipi === 'sakin') ? 'sakin'
+                     : (hesapTipi === 'personel') ? 'personel'
+                     : (myAptRol && myAptRol !== 'yonetici') ? myAptRol
+                     : role;
 
-  // Sidebar menülerini role göre filtrele
+  // Sidebar menülerini effective role'e göre filtrele
   document.querySelectorAll('#sb .ni[data-role]').forEach(el => {
     const roles = el.getAttribute('data-role');
-    let visible = roles.includes(role);
+    let visible = roles.includes(effectiveRole) || roles.includes(role);
     // Hesap tipine göre ek kısıtlar:
     const page = el.getAttribute('data-p');
     // "Apartmanlar" menüsü yalnızca yönetim şirketi hesabında görünür
     if (page === 'apartmanlar' && hesapTipi !== 'sirket' && role !== 'superadmin') visible = false;
+    // Kat sakini/personel ise yönetimsel sayfaları gizle (data-role eşleşse bile)
+    if ((effectiveRole === 'sakin' || effectiveRole === 'personel') && role !== 'superadmin') {
+      if (roles && !roles.includes(effectiveRole)) visible = false;
+    }
     el.style.display = visible ? '' : 'none';
   });
-  // Dashboard'daki "Apartman Hizmet Bedelleri" kartı — sadece yönetim şirketinde
+  // Dashboard'daki "Apartman Hizmet Bedelleri" kartı — sadece yönetim şirketinde ve yönetici rolünde
   const hizmetKart = document.getElementById('ds-hizmet-card');
-  if (hizmetKart) hizmetKart.style.display = (hesapTipi === 'sirket') ? '' : 'none';
+  if (hizmetKart) hizmetKart.style.display = (hesapTipi === 'sirket' && effectiveRole === 'yonetici') ? '' : 'none';
   // Section labels: boşsa gizle
   document.querySelectorAll('#sb .sb-sec').forEach(sec => {
     const visible = Array.from(sec.querySelectorAll('.ni[data-role]')).filter(n => n.style.display !== 'none');
