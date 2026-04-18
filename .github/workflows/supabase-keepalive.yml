@@ -9,16 +9,24 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Supabase REST API
+      - name: Ping Supabase
         env:
           SUPABASE_URL: https://ohantorzzbxjkkgtspgn.supabase.co
           SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9oYW50b3J6emJ4amtrZ3RzcGduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3OTcwMDQsImV4cCI6MjA5MDM3MzAwNH0.cDby1HJcvWu5XBCUSSJiOGncHk51rIzCpoMRO3toebI
         run: |
           set -e
-          HTTP=$(curl -sS -o /dev/null -w "%{http_code}" -H "apikey: $SUPABASE_ANON_KEY" -H "Authorization: Bearer $SUPABASE_ANON_KEY" "$SUPABASE_URL/rest/v1/")
-          echo "REST -> HTTP $HTTP"
-          [ "$HTTP" = "200" ] || exit 1
-          HTTP=$(curl -sS -o /dev/null -w "%{http_code}" -H "apikey: $SUPABASE_ANON_KEY" "$SUPABASE_URL/auth/v1/settings")
-          echo "Auth -> HTTP $HTTP"
-          [ "$HTTP" = "200" ] || exit 1
-          echo "Keep-alive OK."
+          # Tablo sorgusu: DB aktivitesi kaydeder. RLS nedeniyle bos array doner ama DB ping'i yapilmistir.
+          HTTP=$(curl -sS -o /tmp/body.txt -w "%{http_code}"             -H "apikey: $SUPABASE_ANON_KEY"             -H "Authorization: Bearer $SUPABASE_ANON_KEY"             "$SUPABASE_URL/rest/v1/syp_data?select=id&limit=0")
+          echo "REST /syp_data -> HTTP $HTTP"
+          cat /tmp/body.txt | head -c 200 || true
+          echo
+          # Auth health endpoint: auth gerektirmez, her zaman 200 doner
+          HTTP2=$(curl -sS -o /dev/null -w "%{http_code}" "$SUPABASE_URL/auth/v1/health")
+          echo "Auth /health -> HTTP $HTTP2"
+          # Keep-alive icin: projede 2xx veya 4xx cevap gelmesi yeterli (sunucu yanit verdi = aktif).
+          # 5xx veya baglanti hatasi ise gercek sorun vardir.
+          if [ "$HTTP" -ge 500 ] && [ "$HTTP2" -ge 500 ]; then
+            echo "Her iki endpoint de 5xx dondu, proje sorunu olabilir."
+            exit 1
+          fi
+          echo "Keep-alive OK (sunucu yanit verdi)."
