@@ -8435,6 +8435,29 @@ function saveGelir() {
   S.finansIslemler = S.finansIslemler||[];
   S.finansIslemler.unshift(rec);
   if (kasaId) _kasaGirisEkle(kasaId, rec.toplamTutar, `${kat} — ${rec.aciklama||rec.donem||tarih}`, tarih);
+  // Ledger income (CREDIT) kaydı
+  try {
+    if (typeof LedgerService !== 'undefined' && rec.aptId) {
+      LedgerService.recordIncome({
+        siteId: rec.aptId,
+        refId: rec.id,
+        amount: rec.toplamTutar,
+        category: rec.kat,
+        period: rec.donem || null,
+        docNo: rec.belge || null,
+        date: rec.tarih,
+        description: `Gelir — ${rec.kat}${rec.aciklama ? ' · '+rec.aciklama : ''}`,
+        source: rec.kaynak || 'manuel'
+      });
+    }
+  } catch(e) { console.warn('[Gelir] Ledger:', e.message); }
+  // Audit
+  try {
+    if (typeof AuditService !== 'undefined') {
+      AuditService.log({ action:'GELIR_EKLE', entityType:'finansIslemler', entityId:rec.id,
+        newValues:{ aptId:rec.aptId, kat:rec.kat, tutar:rec.toplamTutar } });
+    }
+  } catch(e) {}
   save();
   toast('✓ Gelir kaydedildi: ' + kat + ' — ₺' + fmt(rec.toplamTutar),'ok');
   gelirFormTemizle();
@@ -8562,6 +8585,42 @@ function saveGider() {
   };
   S.finansIslemler = S.finansIslemler||[];
   S.finansIslemler.unshift(rec);
+  // Eğer anında ödendi olarak işaretlendiyse kasa hareketini de oluştur
+  const kasaId = document.getElementById('gg-hesap')?.value || '';
+  if (rec.odemeDurum === 'odendi' && kasaId) {
+    if (!S.kasaHareketler) S.kasaHareketler = [];
+    const h = (S.accounts||[]).find(a=>a.id==kasaId);
+    S.kasaHareketler.push({
+      id: Date.now()+1, hesapId:+kasaId, hesapAd: h?.ad || '',
+      tarih: rec.odemeTarih || rec.tarih,
+      tutar: rec.toplamTutar, tur:'cikis',
+      aciklama: `${rec.kat} — ${rec.tedarikci || rec.faturaNo || ''}`.trim(),
+      kategori: rec.kat, aptId: rec.aptId
+    });
+    rec.kasaId = +kasaId;
+  }
+  // Ledger expense (DEBIT) kaydı — sadece ödendi ise (bekleyen faturayı ledger'a yazmayız)
+  try {
+    if (typeof LedgerService !== 'undefined' && rec.aptId && rec.odemeDurum === 'odendi') {
+      LedgerService.recordExpense({
+        siteId: rec.aptId,
+        refId: rec.id,
+        amount: rec.toplamTutar,
+        category: rec.kat,
+        docNo: rec.faturaNo || null,
+        date: rec.odemeTarih || rec.tarih,
+        description: `Gider — ${rec.kat}${rec.tedarikci ? ' · '+rec.tedarikci : ''}`,
+        source: rec.kaynak || 'manuel'
+      });
+    }
+  } catch(e) { console.warn('[Gider] Ledger:', e.message); }
+  // Audit
+  try {
+    if (typeof AuditService !== 'undefined') {
+      AuditService.log({ action:'GIDER_EKLE', entityType:'finansIslemler', entityId:rec.id,
+        newValues:{ aptId:rec.aptId, kat:rec.kat, tutar:rec.toplamTutar, durum:rec.odemeDurum } });
+    }
+  } catch(e) {}
   save();
   toast('✓ Gider kaydedildi: ' + kat + ' — ₺' + fmt(rec.toplamTutar),'ok');
   giderFormTemizle();
@@ -9144,6 +9203,21 @@ function saveGiderOde() {
       kategori:f.kat||'Gider', aptId:f.aptId||null });
   }
 
+  // Ledger expense (DEBIT) kaydı — gider artık gerçekten ödendiği için
+  try {
+    if (typeof LedgerService !== 'undefined' && f.aptId) {
+      LedgerService.recordExpense({
+        siteId: f.aptId,
+        refId: f.id,
+        amount: f.toplamTutar || f.tutar || 0,
+        category: f.kat,
+        docNo: f.faturaNo || null,
+        date: odemeTarih,
+        description: `Gider ödeme — ${f.kat || ''}${f.tedarikci ? ' · '+f.tedarikci : ''}`,
+        source: 'fatura_ode'
+      });
+    }
+  } catch(e) { console.warn('[GiderOde] Ledger:', e.message); }
   AuditService.log({ action:'GIDER_ODE', entityType:'finansIslemler', entityId:+id,
     newValues:{ odemeDurum:'odendi', odemeTarih, yontem } });
   save();
@@ -9244,6 +9318,21 @@ function saveHizliMakbuz() {
 
   if (!S.finansIslemler) S.finansIslemler = [];
   S.finansIslemler.unshift(rec);
+  // Ledger expense kaydı — hızlı makbuz de bir giderdir
+  try {
+    if (typeof LedgerService !== 'undefined' && rec.aptId) {
+      LedgerService.recordExpense({
+        siteId: rec.aptId,
+        refId: rec.id,
+        amount: tutar,
+        category: kat,
+        docNo: rec.faturaNo,
+        date: tarih,
+        description: `Hızlı makbuz — ${kat}${ted ? ' · '+ted : ''}`,
+        source: 'hizli_makbuz'
+      });
+    }
+  } catch(e) { console.warn('[HızlıMakbuz] Ledger:', e.message); }
   AuditService.log({ action:'HIZLI_MAKBUZ_EKLE', entityType:'finansIslemler', newValues:{kat,tutar,aptId:+apt} });
   save();
   ['hm-apt','hm-tarih','hm-tutar','hm-tedarikci','hm-aciklama'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
@@ -14552,6 +14641,74 @@ const LedgerService = {
     if (_supabase && _currentUser) {
       _supabase.from('ledger_entries').insert(entry)
         .then(({ error }) => { if (error) console.warn('[Ledger] collection write:', error.message); });
+    }
+    return entry;
+  },
+
+  /**
+   * Gelir kaydı → site-seviyesi CREDIT kaydı (kişi bağımsız)
+   * Örn: kira geliri, banka faizi, diğer gelirler
+   */
+  recordIncome(p) {
+    const entry = {
+      id:          this._uid(),
+      site_id:     p.siteId,
+      person_id:   p.personId   || null,
+      unit_no:     p.unitNo     || null,
+      entry_type:  'income',
+      ref_type:    p.refType    || 'finansIslemler',
+      ref_id:      p.refId      || null,
+      debit:       0,
+      credit:      Math.abs(p.amount),
+      period:      p.period     || null,
+      doc_no:      p.docNo      || null,
+      category:    p.category   || null,
+      description: p.description || `Gelir — ${p.category || ''}`.trim(),
+      date:        p.date       || today(),
+      source:      p.source     || 'manuel',
+      created_by:  _currentUser?.id || 'local',
+      created_at:  new Date().toISOString(),
+      status:      'active'
+    };
+    S.ledgerEntries = S.ledgerEntries || [];
+    S.ledgerEntries.push(entry);
+    if (_supabase && _currentUser) {
+      _supabase.from('ledger_entries').insert(entry)
+        .then(({ error }) => { if (error) console.warn('[Ledger] income write:', error.message); });
+    }
+    return entry;
+  },
+
+  /**
+   * Gider kaydı → site-seviyesi DEBIT kaydı
+   * Örn: elektrik, su, temizlik, tedarikçi ödemesi
+   */
+  recordExpense(p) {
+    const entry = {
+      id:          this._uid(),
+      site_id:     p.siteId,
+      person_id:   p.personId   || null,
+      unit_no:     p.unitNo     || null,
+      entry_type:  'expense',
+      ref_type:    p.refType    || 'finansIslemler',
+      ref_id:      p.refId      || null,
+      debit:       Math.abs(p.amount),
+      credit:      0,
+      period:      p.period     || null,
+      doc_no:      p.docNo      || null,
+      category:    p.category   || null,
+      description: p.description || `Gider — ${p.category || ''}`.trim(),
+      date:        p.date       || today(),
+      source:      p.source     || 'manuel',
+      created_by:  _currentUser?.id || 'local',
+      created_at:  new Date().toISOString(),
+      status:      'active'
+    };
+    S.ledgerEntries = S.ledgerEntries || [];
+    S.ledgerEntries.push(entry);
+    if (_supabase && _currentUser) {
+      _supabase.from('ledger_entries').insert(entry)
+        .then(({ error }) => { if (error) console.warn('[Ledger] expense write:', error.message); });
     }
     return entry;
   },
