@@ -5028,20 +5028,44 @@ function saveSeciliOdeme(){
   if(!makbuzNo)makbuzNo=5000;
   checked.forEach(id=>{
     const sk=S.sakinler.find(x=>x.id===id);if(!sk)return;
-    if((sk.aidat||0)<=0)return;
+    const odeme = sk.aidat || 0;
+    if (odeme <= 0) return;
     const apt=S.apartmanlar.find(a=>a.id==sk.aptId);
     makbuzNo++;
+    const _no = 'M-'+makbuzNo;
+    const tahsilatId = Date.now()+ok;
     S.tahsilatlar.push({
-      id:Date.now()+ok,no:'M-'+makbuzNo,sakId:sk.id,sakAd:sk.ad,
-      aptId:+aptId,aptAd:apt?apt.ad:(sk.aptAd||''),daire:sk.daire,
-      tip:'aidat',donem:donemStr,tutar:sk.aidat||0,tarih,yontem,not:'Toplu tahsilat',
+      id:tahsilatId, no:_no, sakId:sk.id, sakAd:sk.ad,
+      aptId:+aptId, aptAd:apt?apt.ad:(sk.aptAd||''), daire:sk.daire,
+      tip:'aidat', donem:donemStr, tutar:odeme, tarih, yontem, not:'Toplu tahsilat',
       kasaId:kasaId||null
     });
-    if((sk.borc||0)>0)sk.borc=Math.max(0,(sk.borc||0)-(sk.aidat||0));
-    if(kasaId) _kasaGirisEkle(kasaId, sk.aidat||0, `${sk.ad} — ${donemStr} toplu tahsilat`, tarih);
+    // Borç düşümü: tam odeme miktarı kadar (overpayment durumunda borç 0'a iner)
+    if ((sk.borc||0) > 0) sk.borc = Math.max(0, (sk.borc||0) - odeme);
+    if (kasaId) _kasaGirisEkle(kasaId, odeme, `${sk.ad} — ${donemStr} toplu tahsilat`, tarih);
+    // Ledger CREDIT
+    try {
+      if (typeof LedgerService !== 'undefined') {
+        LedgerService.recordCollection({
+          siteId: +aptId, personId: sk.id, unitNo: sk.daire || null,
+          refId: tahsilatId, amount: odeme, period: donemStr,
+          receiptNo: _no, date: tarih,
+          description: `Toplu tahsilat — ${sk.ad} (${donemStr})`,
+          source: 'toplu'
+        });
+      }
+    } catch(e) { console.warn('[ToplutTahsilat] Ledger:', e.message); }
     ok++;
   });
-  if(ok){save();refreshCariIfOpen();if(typeof renderTahsilat==='function')try{renderTahsilat();}catch(e){}}
+  if(ok){
+    try {
+      if (typeof AuditService !== 'undefined') {
+        AuditService.log({ action:'TOPLU_TAHSILAT', entityType:'tahsilatlar',
+          newValues:{ aptId:+aptId, donem:donemStr, count:ok } });
+      }
+    } catch(e) {}
+    save();refreshCariIfOpen();if(typeof renderTahsilat==='function')try{renderTahsilat();}catch(e){}
+  }
   document.querySelectorAll('.tah-chk').forEach(c=>c.checked=false);
   updateTahSecili();
   toast(ok+' sakin için ödeme kaydedildi.','ok');
@@ -5077,18 +5101,38 @@ function topluAidatOlustur(){
   if(!confirm(`${aidatliSakinler.length} sakin için ${donemLabel} aidatı borçlandırılsın mı?`))return;
 
   const kayitId = Date.now();
+  const _bTarih = today();
   aidatliSakinler.forEach((sk,i)=>{
     const aidat=sk.aidat||aptAidat;
     if(aidat>0){
       sk.borc=(sk.borc||0)+aidat;
       toplamBorc+=aidat;
       sakinSayisi++;
-      detaylar.push({id:kayitId+i,sakId:sk.id,ad:sk.ad,daire:sk.daire,tutar:aidat,kategori:'Aidat',aciklama:'',tarih:today()});
+      detaylar.push({id:kayitId+i,sakId:sk.id,ad:sk.ad,daire:sk.daire,tutar:aidat,kategori:'Aidat',aciklama:'',tarih:_bTarih});
+      // Ledger ACCRUAL — her sakin için borç tahakkuku
+      try {
+        if (typeof LedgerService !== 'undefined') {
+          LedgerService.recordAccrual({
+            siteId: +aptId, personId: sk.id, unitNo: sk.daire || null,
+            amount: aidat, period: donemStr, category: 'aidat',
+            description: `Aidat tahakkuk — ${sk.ad} (${donemLabel})`,
+            date: _bTarih
+          });
+        }
+      } catch(e) { console.warn('[ToplutAidat] Ledger accrual:', e.message); }
     }
   });
 
   // Borçlandırma kaydını tut
-  S.aidatBorclandir.push({id:kayitId,aptId:aptId,aptAd:apt?apt.ad:'',donem:donemStr,tarih:today(),sonOdeme:'',kategori:'Aidat',aciklama:'',sakinSayisi:sakinSayisi,toplamBorc:toplamBorc,detaylar:detaylar});
+  S.aidatBorclandir.push({id:kayitId,aptId:aptId,aptAd:apt?apt.ad:'',donem:donemStr,tarih:_bTarih,sonOdeme:'',kategori:'Aidat',aciklama:'',sakinSayisi:sakinSayisi,toplamBorc:toplamBorc,detaylar:detaylar});
+
+  // Audit log
+  try {
+    if (typeof AuditService !== 'undefined') {
+      AuditService.log({ action:'TOPLU_AIDAT', entityType:'aidatBorclandir',
+        entityId:kayitId, newValues:{ aptId:+aptId, donem:donemStr, sakinSayisi, toplamBorc } });
+    }
+  } catch(e) {}
 
   save();
   toast(`${sakinSayisi} sakin için ${donemLabel} aidatı borçlandırıldı. Toplam: ₺${fmt(toplamBorc)}`,'ok');
@@ -5640,12 +5684,67 @@ function hizliOdeme(sakId) {
 }
 
 function borcGuncelle(sakId) {
-  const sk=S.sakinler.find(x=>x.id===sakId); if(!sk) return;
-  const yeni=prompt(`${sk.ad} - Mevcut borç: ₺${sk.borc||0}
-Yeni borç tutarı girin (₺):`);
-  if(yeni===null) return;
-  sk.borc=parseFloat(yeni)||0;
-  save(); toast('Borç güncellendi.','ok');
+  const sk = S.sakinler.find(x => x.id === sakId);
+  if (!sk) return;
+  const eski = sk.borc || 0;
+  const girdi = prompt(
+    `${sk.ad}${sk.daire ? ' — Daire ' + sk.daire : ''}\n` +
+    `Mevcut borç: ₺${fmt(eski)}\n\n` +
+    `Yeni borç tutarını girin (₺):\n(Negatif değer kabul edilmez; düzeltme nedeni bir sonraki adımda sorulur)`,
+    String(eski)
+  );
+  if (girdi === null) return;
+  const yeni = parseFloat(girdi);
+  if (isNaN(yeni) || yeni < 0) {
+    toast('Geçersiz tutar. Pozitif bir sayı girin.', 'err');
+    return;
+  }
+  if (yeni === eski) return; // değişiklik yok
+  const fark = yeni - eski;
+  const sebep = prompt(
+    `Borç ${fark > 0 ? 'artırılıyor' : 'azaltılıyor'}: ${fark > 0 ? '+' : ''}₺${fmt(Math.abs(fark))}\n\n` +
+    `Düzeltme nedenini yazın (zorunlu — denetim kaydı tutulur):`, ''
+  );
+  if (!sebep || !sebep.trim()) {
+    toast('Sebep belirtilmedi, işlem iptal edildi.', 'warn');
+    return;
+  }
+  sk.borc = Math.round(yeni * 100) / 100;
+  // Ledger düzeltme kaydı
+  try {
+    if (typeof LedgerService !== 'undefined' && sk.aptId) {
+      if (fark > 0) {
+        LedgerService.recordAccrual({
+          siteId: +sk.aptId, personId: sk.id, unitNo: sk.daire || null,
+          amount: fark, category: 'manuel_duzelt',
+          description: `Manuel borç düzeltme (+) — ${sebep.trim()}`,
+          date: today()
+        });
+      } else {
+        LedgerService.recordReversal({
+          siteId: +sk.aptId, personId: sk.id, unitNo: sk.daire || null,
+          credit: Math.abs(fark), debit: 0,
+          description: `Manuel borç düzeltme (−) — ${sebep.trim()}`,
+          refType: 'manuel'
+        });
+      }
+    }
+  } catch(e) { console.warn('[BorçGüncelle] Ledger:', e.message); }
+  // Audit log
+  try {
+    if (typeof AuditService !== 'undefined') {
+      AuditService.log({
+        action: 'BORC_DUZELT',
+        entityType: 'sakinler',
+        entityId: sk.id,
+        oldValues: { borc: eski },
+        newValues: { borc: yeni, sebep: sebep.trim() }
+      });
+    }
+  } catch(e) {}
+  save();
+  refreshCariIfOpen();
+  toast(`Borç güncellendi: ₺${fmt(eski)} → ₺${fmt(yeni)}`, 'ok');
 }
 
 function saveOdeme() {
@@ -5669,19 +5768,52 @@ function saveOdeme() {
   const _makbuzNo = genMakbuzNo('M');
   const aptId=document.getElementById('tah-o-apt')?.value;
   const apt=S.apartmanlar.find(a=>a.id==aptId);
+  const _tarih = document.getElementById('tah-o-tarih')?.value||today();
+  const _donem = document.getElementById('tah-o-donem')?.value||'';
+  const _tip = document.getElementById('tah-o-tip')?.value;
+  const _yontem = document.getElementById('tah-o-yontem')?.value;
+  const _not = document.getElementById('tah-o-not')?.value||'';
+  const tahsilatId = Date.now();
   S.tahsilatlar.push({
-    id:Date.now(), no:_makbuzNo,
+    id:tahsilatId, no:_makbuzNo,
     sakId:+sakId, sakAd:sk?sk.ad:'—',
     aptId:aptId?+aptId:null, aptAd:apt?apt.ad:'—',
     daire:sk?sk.daire:'—',
-    tip:document.getElementById('tah-o-tip')?.value,
-    donem:document.getElementById('tah-o-donem')?.value||'',
-    tutar, tarih:document.getElementById('tah-o-tarih')?.value||today(),
-    yontem:document.getElementById('tah-o-yontem')?.value,
-    not:document.getElementById('tah-o-not')?.value||'',
+    tip:_tip,
+    donem:_donem,
+    tutar, tarih:_tarih,
+    yontem:_yontem,
+    not:_not,
     collection_allocations: _allocation.allocations,
     unallocated: _allocation.unallocated
   });
+  // Ledger: çift taraflı muhasebe — tahsilat CREDIT kaydı
+  try {
+    if (typeof LedgerService !== 'undefined' && aptId) {
+      LedgerService.recordCollection({
+        siteId: +aptId,
+        personId: +sakId,
+        unitNo: sk?.daire || null,
+        refId: tahsilatId,
+        amount: tutar,
+        period: _donem,
+        receiptNo: _makbuzNo,
+        description: `Tahsilat — ${sk?.ad || ''} ${_donem ? '('+_donem+')' : ''}`.trim(),
+        date: _tarih
+      });
+    }
+  } catch(e) { console.warn('[Tahsilat] Ledger kaydı başarısız:', e.message); }
+  // Audit log
+  try {
+    if (typeof AuditService !== 'undefined') {
+      AuditService.log({
+        action: 'TAHSILAT_EKLE',
+        entityType: 'tahsilatlar',
+        entityId: tahsilatId,
+        newValues: { sakId:+sakId, tutar, makbuz:_makbuzNo, donem:_donem }
+      });
+    }
+  } catch(e) {}
   ['tah-o-tutar','tah-o-donem','tah-o-not'].forEach(i=>{ const el=document.getElementById(i); if(el) el.value=''; });
   save(); goTab('tah-liste'); toast('Ödeme kaydedildi. Makbuz: '+_makbuzNo,'ok');
   refreshCariIfOpen();
@@ -11613,9 +11745,27 @@ function saveHizliOdeme() {
   if (!S.tahsilatlar) S.tahsilatlar = [];
   if (!makbuzNo) makbuzNo = 5000; makbuzNo++;
   const apt = S.apartmanlar.find(a => a.id == sk.aptId);
-  S.tahsilatlar.push({ id: Date.now(), no: 'M-'+makbuzNo, sakId, sakAd: sk.ad, aptId: sk.aptId, aptAd: apt ? apt.ad : (sk.aptAd||''), daire: sk.daire, tip: 'aidat', donem, tutar, tarih, yontem, not, kasaId: kasaId||null });
+  const _no = 'M-'+makbuzNo;
+  const tahsilatId = Date.now();
+  S.tahsilatlar.push({ id: tahsilatId, no: _no, sakId, sakAd: sk.ad, aptId: sk.aptId, aptAd: apt ? apt.ad : (sk.aptAd||''), daire: sk.daire, tip: 'aidat', donem, tutar, tarih, yontem, not, kasaId: kasaId||null });
   if (borcDus && (sk.borc || 0) > 0) sk.borc = Math.max(0, (sk.borc || 0) - tutar);
   if (kasaId) _kasaGirisEkle(kasaId, tutar, `${sk.ad} — ${donem||tarih} tahsilatı`, tarih);
+  // Ledger CREDIT kaydı
+  try {
+    if (typeof LedgerService !== 'undefined' && sk.aptId) {
+      LedgerService.recordCollection({
+        siteId: +sk.aptId, personId: sakId, unitNo: sk.daire || null,
+        refId: tahsilatId, amount: tutar, period: donem,
+        receiptNo: _no, date: tarih,
+        description: `Hızlı tahsilat — ${sk.ad} ${donem?'('+donem+')':''}`.trim()
+      });
+    }
+  } catch(e) { console.warn('[HızlıÖdeme] Ledger:', e.message); }
+  try {
+    if (typeof AuditService !== 'undefined') {
+      AuditService.log({ action:'HIZLI_ODEME', entityType:'tahsilatlar', entityId:tahsilatId, newValues:{ sakId, tutar, makbuz:_no } });
+    }
+  } catch(e) {}
   save();
   closeModal('mod-hizli-odeme');
   toast('Ödeme kaydedildi! ₺' + fmt(tutar), 'ok');
