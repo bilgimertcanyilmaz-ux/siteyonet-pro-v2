@@ -4007,6 +4007,148 @@ input[type="number"].fi { text-align: left; font-variant-numeric: tabular-nums; 
 .tw table tbody tr:hover { background: var(--s1); }
 .tw table tbody tr:last-child td { border-bottom: none; }
 
+/* ── AUTO-MIGRATION: Mevcut .fbc.mb12 filter pattern'ini
+   otomatik olarak .filter-row gorunumune donustur.
+   :has() ile sadece gercek filter row'lar hedeflenir. ──────── */
+.fbc.mb12:has(> .fc.g8 > .srch),
+.fbc.mb12:has(> .fc.g8 > .fi.sm),
+.fbc.mb12:has(> .fc.g8 > .fs.sm),
+.fbc.mb12:has(> .srch) {
+  padding: 10px 12px;
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: var(--r8);
+  margin-bottom: 14px;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.fbc.mb12:has(> .fc.g8 > .srch) > .fc.g8,
+.fbc.mb12:has(> .fc.g8 > .fi.sm) > .fc.g8,
+.fbc.mb12:has(> .fc.g8 > .fs.sm) > .fc.g8 {
+  gap: 8px;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+}
+.fbc.mb12:has(> .fc.g8 > .srch) .srch,
+.fbc.mb12:has(> .fc.g8 > .fi.sm) .srch {
+  box-shadow: none;
+  background: var(--surface);
+}
+
+/* Filter row icindeki "X kayit" sayaci .t3 span */
+.fbc.mb12:has(.srch) > .t3,
+.fbc.mb12:has(.srch) > span.t3 {
+  font-size: 12px !important;
+  color: var(--tx-3);
+  font-weight: 500;
+  padding: 4px 10px;
+  background: var(--surface);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+/* AUTO-MIGRATION: Card icindeki filter satirlarinin
+   her seferinde manuel "padding:6px 10px" yazilmasi gereksiz.
+   Sayfa basinda card olmayan filter'lari da yakala. */
+.pg > .fbc.mb12 {
+  margin-bottom: 14px;
+}
+
+/* Mobile filter row auto-migration */
+@media (max-width: 768px) {
+  .fbc.mb12:has(> .fc.g8 > .srch) {
+    padding: 8px 10px;
+  }
+  .fbc.mb12:has(.srch) .srch {
+    width: 100% !important;
+    min-width: 100%;
+  }
+  .fbc.mb12:has(.srch) .fi.sm,
+  .fbc.mb12:has(.srch) .fs.sm {
+    flex: 1;
+    min-width: 120px;
+  }
+}
+
+/* ── BUTON UNIFORM: Modal footer butonlari ────────────────
+   Modal icindeki ".fc g8 mt12" aksiyon cubugu */
+.modal > .fc.g8.mt12 {
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  margin-top: 18px !important;
+  justify-content: flex-end;
+}
+.modal > .fc.g8.mt12 .btn { min-width: 90px; }
+
+/* ── CARD HEADER: action alanlari tutarli ───────────────── */
+.card-h .fc.g8 .btn.sm { flex-shrink: 0; }
+
+/* ── TABS EŞIT DAĞILIM — mobilde full width ─────────────── */
+@media (max-width: 600px) {
+  .tabs .tab { flex: 1 1 auto; text-align: center; justify-content: center; }
+}
+
+/* ── TUM SAYFALARDA CARD PADDING TUTARLI ─────────────────
+   Bazi card'lar ".card mb16" ".card mb12" karisiyor.
+   Ana padding'i hepsinde eşitle. */
+.pg .card { padding: 18px 20px; }
+.pg .card.card-sm { padding: 14px 16px; }
+@media (max-width: 768px) {
+  .pg .card { padding: 14px 16px; }
+  .pg .card.card-sm { padding: 12px 14px; }
+}
+
+/* ── CARD HEADER ICINDE BUTONLAR TUTARLI BOYUT ─────────── */
+.card-h .btn:not(.sm):not(.xs) { padding: 7px 14px; min-height: 34px; font-size: 12.5px; }
+
+/* ── TABLO SATIRLARI — daha rahat okunur ────────────────── */
+.tw table th, .tw table td {
+  padding: 10px 12px;
+  vertical-align: middle;
+}
+.tw table th:first-child, .tw table td:first-child { padding-left: 16px; }
+.tw table th:last-child, .tw table td:last-child { padding-right: 16px; }
+
+/* Iyilestirme: Action buton hucresi (son kolon) sabit min-width */
+.tw table td:last-child { white-space: nowrap; }
+
+/* ── FORM LABEL VURGU ──────────────────────────────────── */
+.lbl { line-height: 1.4; margin-bottom: 2px; }
+
+/* ── MODAL PADDING MOBILE ─────────────────────────────── */
+@media (max-width: 480px) {
+  .modal { padding: 16px; }
+  .modal .fg { gap: 10px; }
+  .modal .f2.fg, .modal .f3.fg { grid-template-columns: 1fr; }
+}
+
+/* ── TAB MAX-WIDTH — tasmayi onle ──────────────────────── */
+.tabs { max-width: 100%; }
+
+/* ── EPILL (aşağıda 3 büyük stat) — mobile küçülsün ────── */
+@media (max-width: 600px) {
+  .ep { padding: 10px 12px; min-width: 0; flex: 1 1 calc(50% - 5px); }
+  .ep-n { font-size: 22px; }
+}
+@media (max-width: 400px) {
+  .ep { flex: 1 1 100%; }
+}
+
+/* ── AI-WRAP (AI çıktı kartı) tutarlı padding ────────────── */
+.ai-wrap { padding: 18px 20px; border-radius: var(--r12);
+           background: var(--surface); border: 1px solid var(--border);
+           box-shadow: var(--sh-sm); }
+.ai-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.ai-out { background: var(--s1); border: 1px solid var(--border); border-radius: var(--r8);
+          padding: 14px; font-size: 12.5px; color: var(--tx); line-height: 1.6; min-height: 140px; }
+
+/* ── GENEL: sayfa içeriği sağa soldan taşmasın ─────────── */
+#content { overflow-x: hidden; }
+.pg { max-width: 100%; }
+
 /* HARMONY OVERRIDES — sik goren kucuk sorunlari gider */
 /* 1) srch icinde input uzun yazilsa taşmasin */
 .srch input { min-width: 0; }
