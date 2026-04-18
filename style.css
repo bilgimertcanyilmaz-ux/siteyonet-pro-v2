@@ -4169,3 +4169,187 @@ input[type="number"].fi { text-align: left; font-variant-numeric: tabular-nums; 
   .ds-welcome .dwel-t { font-size: 17px; }
   .ds-welcome .dwel-date { width: 100%; font-size: 12px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   DASHBOARD POLISH v2 — KPI & Hero normalization
+   Token tutarliligi + premium hover + mobile responsive
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Hero: subtle iyileştirme + date upper-case daha ince */
+.ds-hero {
+  border-radius: var(--r16, 16px);
+  padding: 28px 32px 24px;
+}
+.ds-hero-date { font-weight: 600; opacity: .55; font-size: 11px; }
+.ds-hero-title { letter-spacing: -.4px; font-weight: 300; }
+.ds-hero-title strong { letter-spacing: -.5px; }
+
+/* KPI Grid — gerçekten responsive */
+.ds-kpi-grid {
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+@media (max-width: 1200px) { .ds-kpi-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 900px)  { .ds-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px)  { .ds-kpi-grid { grid-template-columns: 1fr; gap: 10px; } }
+
+/* KPI kartı: token tabanlı + daha kurumsal hover */
+.ds-kpi {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r12);
+  padding: 18px 18px 14px;
+  box-shadow: var(--sh-xs);
+  transition: box-shadow .2s var(--ease), transform .2s var(--ease), border-color .18s;
+}
+.ds-kpi::before {
+  height: 3px;
+  border-radius: var(--r12) var(--r12) 0 0;
+  opacity: .85;
+}
+.ds-kpi:hover {
+  box-shadow: var(--sh-md);
+  border-color: var(--border-h);
+  transform: translateY(-1px);
+}
+.ds-kpi:active { transform: translateY(0); }
+.ds-kpi-ico {
+  width: 36px; height: 36px;
+  border-radius: var(--r8);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.03);
+}
+.ds-kpi-val {
+  color: var(--tx);
+  font-family: 'DM Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.4px;
+  font-weight: 700;
+}
+.ds-kpi-lbl { color: var(--tx-3); font-weight: 600; letter-spacing: .02em; }
+.ds-kpi-sub { color: var(--tx-4); }
+
+@media (max-width: 480px) {
+  .ds-kpi { padding: 14px 14px 12px; }
+  .ds-kpi-val { font-size: 22px; }
+}
+
+/* Quick Actions responsive iyileştirme */
+.ds-qa-grid {
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+}
+@media (max-width: 1100px) { .ds-qa-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 700px)  { .ds-qa-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 420px)  { .ds-qa-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.ds-qa-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r10, 10px);
+  padding: 14px 10px 12px;
+  box-shadow: var(--sh-xs);
+  gap: 8px;
+}
+.ds-qa-item:hover {
+  border-color: var(--brand);
+  box-shadow: 0 4px 14px rgba(37,99,235,.08), var(--sh-xs);
+}
+.ds-qa-ico { width: 40px; height: 40px; border-radius: var(--r8); }
+.ds-qa-lbl { font-size: 11.5px; font-weight: 600; color: var(--tx-2); line-height: 1.2; }
+
+/* Hero chips mobilde daha küçük */
+@media (max-width: 480px) {
+  .ds-hero { padding: 22px 18px 20px; }
+  .ds-hero-title { font-size: 20px; }
+  .ds-hero-sub { font-size: 12.5px; margin-bottom: 14px; }
+  .ds-hero-chip { padding: 4px 10px 4px 8px; font-size: 11.5px; }
+  .ds-hero-chip svg { width: 11px; height: 11px; }
+}
+
+/* Data cards (ds-card) token normalization */
+.ds-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r12);
+  box-shadow: var(--sh-xs);
+}
+.ds-card-head {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Data row inside dashboard — tutarlı */
+.ds-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--border);
+  transition: background .12s;
+}
+.ds-row:last-child { border-bottom: none; }
+.ds-row:hover { background: var(--s1); }
+.ds-row-info { flex: 1; min-width: 0; }
+.ds-row-name { font-weight: 600; color: var(--tx); font-size: 13px; margin-bottom: 2px; }
+.ds-row-sub { font-size: 11.5px; color: var(--tx-3); }
+.ds-row-val { font-size: 13.5px; font-weight: 700;
+              font-family: 'DM Mono', monospace; font-variant-numeric: tabular-nums;
+              white-space: nowrap; }
+
+/* Dashboard empty state daha sade */
+.ds-empty {
+  display: flex; align-items: center; gap: 8px;
+  padding: 20px 16px;
+  color: var(--tx-4);
+  font-size: 12.5px;
+  justify-content: center;
+  border: 1px dashed var(--border);
+  border-radius: var(--r8);
+  background: var(--s1);
+  margin: 4px 0;
+}
+.ds-empty svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; opacity: .55; }
+
+/* ── SAKIN / PERSONEL durum kartları daha iyi hizalama ──── */
+.sakin-durum-kart {
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--r12);
+  box-shadow: var(--sh-xs);
+  transition: box-shadow .18s, transform .18s;
+}
+.sakin-durum-kart:hover { box-shadow: var(--sh-sm); transform: translateY(-1px); }
+.sakin-durum-kart .sdk-val {
+  font-family: 'DM Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.4px;
+}
+
+/* ── PARA BIRIM RAKAM CELLS — tüm tablolarda ─────────────── */
+.tw table td.money,
+.tw table td.num {
+  font-family: 'DM Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* ── ICON CIRCLE HELPER — daire içine ikon ──────────────── */
+.ds-ico {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.ds-ico svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+/* ── AVATAR — sakin/sitede görünen baş harfler ─────────── */
+.ds-av, .ds-av-ico {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: var(--brand-10);
+  color: var(--brand);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+  flex-shrink: 0;
+  letter-spacing: -.3px;
+}
+.ds-av-ico svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
