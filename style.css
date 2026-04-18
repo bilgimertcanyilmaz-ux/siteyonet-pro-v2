@@ -3718,3 +3718,312 @@ body { overflow-x: hidden; }
   .bottom-bar { padding: 8px 10px; gap: 6px; }
   .bottom-bar .btn { padding: 7px 10px; font-size: 11.5px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   DESIGN SYSTEM v2 — Kurumsal Tutarlilik Katmani
+   Mevcut sistemi kirmaz; yeni utility'ler + eksik component'ler.
+   Yaygin inline style kaliplarini class'larla degistirir.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* FORM FIELD SIZE VARYANTLARI (eksikti) */
+.fi.sm, .fs.sm {
+  padding: 7px 11px;
+  font-size: 12.5px;
+  border-radius: var(--r4);
+  width: auto;        /* sm/xs filter-chip kullanim icin */
+  min-width: 120px;
+}
+/* Ancak fgp icindeki sm alanlar tam genislik */
+.fgp .fi.sm, .fgp .fs.sm { width: 100%; min-width: 0; }
+select.fs.sm, select.fi.sm {
+  padding-right: 28px !important;
+  background-position: right 8px center !important;
+}
+.fi.xs, .fs.xs {
+  padding: 5px 9px;
+  font-size: 11.5px;
+  border-radius: var(--r4);
+  border-width: 1px;
+  width: auto;
+  min-width: 100px;
+}
+.fgp .fi.xs, .fgp .fs.xs { width: 100%; min-width: 0; }
+select.fs.xs, select.fi.xs {
+  padding-right: 24px !important;
+  background-position: right 6px center !important;
+}
+
+/* TIPOGRAFI SKALASI — inline font-size'lere alternatif */
+.t-xs   { font-size: 11px;   line-height: 1.45; }
+.t-sm   { font-size: 12px;   line-height: 1.5; }
+.t-md   { font-size: 13px;   line-height: 1.55; }
+.t-lg   { font-size: 14px;   line-height: 1.55; }
+.t-xl   { font-size: 16px;   line-height: 1.45; font-weight: 600; }
+.t-2xl  { font-size: 20px;   line-height: 1.3;  font-weight: 700; letter-spacing: -.2px; }
+.t-3xl  { font-size: 24px;   line-height: 1.25; font-weight: 800; letter-spacing: -.3px; }
+.t-muted { color: var(--tx-3); }
+.t-bold  { font-weight: 700; }
+.t-semi  { font-weight: 600; }
+.t-mono  { font-family: 'DM Mono', monospace; font-feature-settings: 'tnum' 1; }
+
+/* SEMANTIC RENKLER */
+.c-brand { color: var(--brand); }
+.c-ok    { color: var(--ok); }
+.c-err   { color: var(--err); }
+.c-warn  { color: var(--warn); }
+
+/* PAGE HEAD — sayfa tepesi birligi */
+.page-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.page-head-l { min-width: 0; flex: 1; }
+.page-head-r { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.page-head-t {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--tx);
+  letter-spacing: -.3px;
+  line-height: 1.2;
+  margin-bottom: 3px;
+}
+.page-head-s {
+  font-size: 12.5px;
+  color: var(--tx-3);
+  line-height: 1.5;
+}
+
+/* FILTER ROW — filtre bari birligi */
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: var(--r8);
+  margin-bottom: 14px;
+}
+.filter-row .srch { box-shadow: none; background: var(--surface); }
+.filter-row .fi.sm, .filter-row .fs.sm { min-width: 0; width: auto; }
+.filter-row-spacer { flex: 1; }
+
+/* TAG / PILL — durum rozetleri birligi */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  line-height: 1.5;
+}
+.tag-ok    { background: var(--ok-bg);    color: var(--ok);    border-color: var(--ok-bd); }
+.tag-err   { background: var(--err-bg);   color: var(--err);   border-color: var(--err-bd); }
+.tag-warn  { background: var(--warn-bg);  color: var(--warn);  border-color: var(--warn-bd); }
+.tag-info  { background: var(--info-bg);  color: var(--info);  border-color: var(--info-bd); }
+.tag-brand { background: var(--brand-10); color: var(--brand); border-color: transparent; }
+.tag-muted { background: var(--s2);       color: var(--tx-3);  border-color: var(--border); }
+
+/* INFO BANNER — varyantlar */
+.info-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--r8);
+  border: 1px solid var(--info-bd);
+  background: var(--info-bg);
+  color: var(--tx-2);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+.info-banner-ok   { border-color: var(--ok-bd);   background: var(--ok-bg);   color: var(--ok); }
+.info-banner-warn { border-color: var(--warn-bd); background: var(--warn-bg); color: var(--warn); }
+.info-banner-err  { border-color: var(--err-bd);  background: var(--err-bg);  color: var(--err); }
+.info-banner .ib-ico {
+  width: 20px; height: 20px; flex-shrink: 0;
+  stroke: currentColor; fill: none; stroke-width: 2;
+  margin-top: 1px;
+}
+
+/* KPI MINI STAT — dashboard disi sayfalar icin */
+.kpi {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r12);
+  padding: 14px 16px;
+  box-shadow: var(--sh-xs);
+}
+.kpi-lbl { font-size: 10.5px; font-weight: 600; color: var(--tx-3);
+           text-transform: uppercase; letter-spacing: .08em; margin-bottom: 4px; }
+.kpi-val { font-size: 22px; font-weight: 800; color: var(--tx);
+           line-height: 1.1; letter-spacing: -.3px; }
+.kpi-sub { font-size: 11.5px; color: var(--tx-3); margin-top: 2px; }
+.kpi-ok  .kpi-val { color: var(--ok); }
+.kpi-err .kpi-val { color: var(--err); }
+
+/* STANDART TABLO DENSITY */
+.tw table { border-collapse: separate; border-spacing: 0; }
+.tw table th {
+  font-weight: 600;
+  font-size: 11.5px;
+  color: var(--tx-3);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  background: var(--s1);
+}
+.tw table td { font-size: 12.5px; }
+.tw.dense table th { padding: 8px 10px; }
+.tw.dense table td { padding: 8px 10px; }
+
+/* EMPTY STATE — pattern iyilestirme */
+.empty-state {
+  text-align: center;
+  padding: 36px 20px;
+  border: 1.5px dashed var(--border);
+  border-radius: var(--r12);
+  background: var(--s1);
+}
+.empty-state .es-ico { font-size: 32px; margin-bottom: 8px; display: block; opacity: .5; }
+.empty-state .es-t { font-size: 14px; font-weight: 700; color: var(--tx-2); margin-bottom: 4px; }
+.empty-state .es-s { font-size: 12.5px; color: var(--tx-3); line-height: 1.5; }
+
+/* BOSLUK & AYIRMA UTILITY'LER */
+.gap-xs { gap: 4px; } .gap-sm { gap: 8px; } .gap-md { gap: 12px; } .gap-lg { gap: 16px; }
+.m-0 { margin: 0; }
+.mb-0 { margin-bottom: 0; } .mb-xs { margin-bottom: 4px; } .mb-sm { margin-bottom: 8px; }
+.mb-md { margin-bottom: 12px; } .mb-lg { margin-bottom: 20px; }
+.mt-sm { margin-top: 8px; } .mt-md { margin-top: 12px; } .mt-lg { margin-top: 20px; }
+.p-sm { padding: 8px; } .p-md { padding: 12px; } .p-lg { padding: 16px; }
+
+/* FLEX UTILITY EKLEMELERI */
+.flex-wrap { flex-wrap: wrap; }
+.flex-1 { flex: 1; min-width: 0; }
+.items-start { align-items: flex-start; }
+.justify-end { justify-content: flex-end; }
+
+/* MODAL GENISLIK VARYANTLARI */
+.modal.xs { max-width: 380px; }
+.modal.sm { max-width: 480px; }
+
+/* CARD VARYANTLARI */
+.card.card-sm { padding: 14px 16px; }
+.card.card-flat { box-shadow: none; }
+.card.card-muted { background: var(--s1); }
+.card-divider { height: 1px; background: var(--border); margin: 14px -22px; }
+.card.card-sm .card-divider { margin-left: -16px; margin-right: -16px; }
+
+/* SECTION TITLE — card icinde alt-baslik */
+.sec-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--tx-3);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin: 4px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* BUTON GRUP — aksiyon cubuklari */
+.btn-group {
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.btn-group.btn-group-e { justify-content: flex-end; }
+
+/* RESPONSIVE POLISH */
+@media (max-width: 768px) {
+  .page-head { margin-bottom: 14px; gap: 10px; }
+  .page-head-t { font-size: 16px; }
+  .page-head-s { font-size: 12px; }
+  .page-head-r { width: 100%; justify-content: flex-start; }
+
+  .filter-row { padding: 8px 10px; gap: 6px; }
+  .filter-row .srch { min-width: 100%; width: 100%; }
+
+  .card { padding: 16px 16px; border-radius: var(--r8); }
+  .card-h { flex-wrap: wrap; }
+
+  .modal { max-width: 94vw; padding: 18px 18px 16px; border-radius: var(--r12); }
+  .modal.lg, .modal.xl { max-width: 94vw; }
+
+  .sg { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+
+  .tw { border-radius: var(--r8); position: relative; }
+  .tw::after {
+    content: '';
+    position: absolute; right: 0; top: 0; bottom: 0;
+    width: 20px;
+    background: linear-gradient(to right, transparent, var(--surface));
+    pointer-events: none;
+    opacity: 0.7;
+  }
+
+  .filter-row > * { min-width: 0; }
+}
+@media (max-width: 480px) {
+  .sg { grid-template-columns: 1fr; }
+  .g2 { grid-template-columns: 1fr; }
+  .modal-h { flex-wrap: wrap; }
+  .modal-t { font-size: 15px; }
+  .tabs { width: 100%; }
+  .tab { flex: 1; justify-content: center; padding: 8px 10px; font-size: 12px; }
+}
+
+/* FOCUS-VISIBLE — erisilebilirlik */
+.btn:focus-visible,
+.fi:focus-visible, .fs:focus-visible, .fta:focus-visible,
+.tab:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* HIZALAMA DUZELTMESI — sik rastlanan statik kalinti gizleme */
+#page-dashboard #ds-stats:empty { display: none !important; }
+
+/* NUMBER INPUTS */
+input[type="number"].fi { text-align: left; font-variant-numeric: tabular-nums; }
+
+/* SCROLLBAR */
+.tw::-webkit-scrollbar { height: 6px; }
+.tw::-webkit-scrollbar-track { background: transparent; }
+.tw::-webkit-scrollbar-thumb { background: var(--border-h); border-radius: 3px; }
+.tw::-webkit-scrollbar-thumb:hover { background: var(--tx-5); }
+
+/* TABLE HOVER */
+.tw table tbody tr { transition: background .12s var(--ease); }
+.tw table tbody tr:hover { background: var(--s1); }
+.tw table tbody tr:last-child td { border-bottom: none; }
+
+/* HARMONY OVERRIDES — sik goren kucuk sorunlari gider */
+/* 1) srch icinde input uzun yazilsa taşmasin */
+.srch input { min-width: 0; }
+
+/* 2) .fgp icinde fs/fi width her zaman tam */
+.fgp .fi, .fgp .fs, .fgp .fta { width: 100%; }
+
+/* 3) Card'da .tw ardisik satir boşluğu */
+.card > .tw:not(:first-child) { margin-top: 10px; }
+
+/* 4) Modal form iceriğinde .fg fg2 arası daha kompakt boşluk */
+.modal .fg { gap: 12px; }
+.modal .f2.fg, .modal .f3.fg { gap: 10px; }
+
+/* 5) Dashboard welcome banner mobilde daha kompakt */
+@media (max-width: 600px) {
+  .ds-welcome { padding: 14px 16px; }
+  .ds-welcome .dwel-t { font-size: 17px; }
+  .ds-welcome .dwel-date { width: 100%; font-size: 12px; }
+}
