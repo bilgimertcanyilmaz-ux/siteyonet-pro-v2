@@ -349,6 +349,10 @@ function initApp() {
   checkTekrarlayanIslemler();
   checkOtomatikBorc();
   updateGlobalSiteBar();
+  // Hesap tipine göre UI kısıtlarını uygula (Apartmanlar menüsü, Hizmet Bedelleri kartı)
+  if (typeof applyRole === 'function') {
+    try { applyRole(currentRole || 'yonetici'); } catch(e) {}
+  }
   // Sprint 1A: Mevcut veriyi ledger'a tek seferlik aktar
   migrateLegacyDataToLedger();
   // Davet linki kontrolü: #davet-kayit/TOKEN
@@ -515,25 +519,37 @@ function updateGlobalSiteBar() {
   const acikAriza = S.arizalar.filter(x => x.aptId == apt.id && x.durum === 'acik').length;
   const daireSayisi = apt.daireSayisi || S.sakinler.filter(x => x.aptId == apt.id).length;
 
-  // Dropdown items
+  // Dropdown items — her apartman için rol rozeti de göster
   const items = apts.map(a => {
     const sc = S.sakinler.filter(x => x.aptId == a.id).length;
+    const rolKey = a.benimRolum || 'yonetici';
+    const rolMeta = ROL_META[rolKey] || ROL_META.yonetici;
     return `<div class="gsb-apt-item ${a.id == apt.id ? 'active' : ''}" onclick="switchGlobalSite(${a.id})">
-      <span class="gsb-dot" style="background:var(--ok)"></span>
+      <span class="gsb-dot" style="background:${rolMeta.renk}"></span>
       <div style="flex:1;min-width:0">
-        <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.ad}</div>
-        <div class="gsb-apt-meta">${a.adres || a.il || ''}${a.il && a.adres ? ' · ' + a.il : ''} · ${sc} sakin</div>
+        <div style="display:flex;align-items:center;gap:6px;overflow:hidden">
+          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${he(a.ad)}</span>
+          <span class="gsb-rol-mini" style="background:${rolMeta.bg};color:${rolMeta.renk}">${rolMeta.ad}</span>
+        </div>
+        <div class="gsb-apt-meta">${he(a.adres || a.il || '')}${a.il && a.adres ? ' · ' + he(a.il) : ''} · ${sc} sakin</div>
       </div>
       ${a.id == apt.id ? '<svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:var(--brand);stroke-width:2.5;fill:none;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
     </div>`;
   }).join('');
 
+  // Seçili apartmandaki rolüm
+  const myRolKey = apt.benimRolum || 'yonetici';
+  const myRolMeta = ROL_META[myRolKey] || ROL_META.yonetici;
+
   bar.innerHTML = `
     <span class="gsb-label">Aktif Site</span>
     <div class="gsb-selector" id="gsb-selector">
-      <button class="gsb-btn" onclick="toggleGsbDropdown(event)" id="gsb-btn">
+      <button class="gsb-btn" onclick="toggleGsbDropdown(event)" id="gsb-btn" title="${he(apt.ad)} — ${myRolMeta.ad}">
         <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-4h6v4"/></svg>
-        <span class="gsb-btn-name">${apt.ad}</span>
+        <span class="gsb-btn-text">
+          <span class="gsb-btn-name">${he(apt.ad)}</span>
+          <span class="gsb-btn-rol" style="color:${myRolMeta.renk}">${myRolMeta.ad}</span>
+        </span>
         <svg class="gsb-btn-arrow" id="gsb-arrow" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
       <div class="gsb-dropdown" id="gsb-dropdown">${items}</div>
@@ -634,8 +650,40 @@ function loadState() {
   if (!S.accounts)        S.accounts = [];
   if (!S.tekrarKontrol)   S.tekrarKontrol = {};
   if (S._ledgerMigrated === undefined) S._ledgerMigrated = false;
+  // ── Hesap Tipi & Rol Sistemi ────────────────────────
+  // hesapTipi:
+  //   'bireysel' — Bireysel apartman yöneticisi (1-2 apt, Apartmanlar menüsü gizli)
+  //   'sirket'   — Yönetim şirketi (çok apt, Apartmanlar menüsü görünür)
+  //   'sakin'    — Kat sakini (kısıtlı UI: rapor, gelir/gider, kendi cari)
+  //   'personel' — Site personeli (kısıtlı UI)
+  // Geriye dönük: varsayılan 'sirket' — mevcut kullanıcılarda UI değişmesin.
+  if (!S.ayarlar.hesapTipi) S.ayarlar.hesapTipi = 'sirket';
+  // Her apartmana benimRolum ekle (kullanıcının bu apartmandaki rolü)
+  if (S.apartmanlar && S.apartmanlar.length) {
+    S.apartmanlar.forEach(a => {
+      if (!a.benimRolum) {
+        // Mevcut apartmanlar için hesap tipine göre default rol
+        if (S.ayarlar.hesapTipi === 'sakin') a.benimRolum = 'sakin';
+        else if (S.ayarlar.hesapTipi === 'personel') a.benimRolum = 'personel';
+        else a.benimRolum = 'yonetici';
+      }
+    });
+  }
   initTanimlar();
 }
+
+// Hesap tipi etiketleri (UI)
+const HESAP_TIPI_META = {
+  'bireysel': { ad: 'Bireysel Yönetici', ico: '👤', aciklama: 'Kendi apartmanınızı yönetiyorsunuz' },
+  'sirket':   { ad: 'Yönetim Şirketi',    ico: '🏢', aciklama: 'Birden çok apartmanı profesyonel yönetiyorsunuz' },
+  'sakin':    { ad: 'Kat Sakini',         ico: '🏠', aciklama: 'Dairenizin durumunu takip ediyorsunuz' },
+  'personel': { ad: 'Personel',           ico: '🛠️', aciklama: 'Site personeli olarak çalışıyorsunuz' }
+};
+const ROL_META = {
+  'yonetici': { ad: 'Yönetici',  renk: 'var(--brand)',        bg: 'var(--brand-10)' },
+  'sakin':    { ad: 'Kat Sakini', renk: 'var(--ok)',          bg: 'var(--ok-bg)' },
+  'personel': { ad: 'Personel',   renk: '#f59e0b',            bg: 'rgba(245,158,11,.10)' }
+};
 let _saveDebounceTimer = null;
 function save() {
   // localStorage'a anında yaz (offline backup)
@@ -1208,6 +1256,8 @@ function openAptModal(id = null) {
     Object.entries(fMap).forEach(([fid, key]) => document.getElementById(fid).value = a[key]||'');
     document.getElementById('apt-durum').value = a.durum||'aktif';
     document.getElementById('apt-asansor').value = a.asansor||'evet';
+    const rolSel = document.getElementById('apt-rol');
+    if (rolSel) rolSel.value = a.benimRolum || 'yonetici';
     drRows = a.daireler ? [...a.daireler] : [];
     // Blok bilgilerini yükle
     blokRows = a.bloklar ? JSON.parse(JSON.stringify(a.bloklar)) : [];
@@ -1217,6 +1267,13 @@ function openAptModal(id = null) {
     Object.keys(fMap).forEach(fid => document.getElementById(fid).value = '');
     document.getElementById('apt-durum').value = 'aktif';
     document.getElementById('apt-asansor').value = 'evet';
+    const rolSel = document.getElementById('apt-rol');
+    if (rolSel) {
+      const defRol = (S.ayarlar?.hesapTipi === 'sakin') ? 'sakin'
+                   : (S.ayarlar?.hesapTipi === 'personel') ? 'personel'
+                   : 'yonetici';
+      rolSel.value = defRol;
+    }
     blokRows = [{ ad: 'A Blok', asansorSayisi: 1 }];
     document.getElementById('apt-blok-sayi').value = 1;
     document.getElementById('apt-hizmet-ozet').style.display = 'none';
@@ -1248,6 +1305,11 @@ function saveApt() {
       daireSayisi: dsEl ? parseInt(dsEl.value)||0 : (b.daireSayisi||0)
     };
   });
+  // Kullanıcının bu apartmandaki rolü (default: hesap tipine göre)
+  const defaultRol = (S.ayarlar?.hesapTipi === 'sakin') ? 'sakin'
+                   : (S.ayarlar?.hesapTipi === 'personel') ? 'personel'
+                   : 'yonetici';
+  const mevcutApt = editId ? S.apartmanlar.find(a=>a.id===editId) : null;
   const apt = {
     id: editId || Date.now(), ad, adres,
     mahalle:document.getElementById('apt-mahalle').value, ilce:document.getElementById('apt-ilce').value,
@@ -1260,7 +1322,9 @@ function saveApt() {
     asansor:document.getElementById('apt-asansor').value,
     durum:document.getElementById('apt-durum').value,
     bloklar: bloklar,
-    daireler:drRows.filter(d=>d.no)
+    daireler:drRows.filter(d=>d.no),
+    // Formdan seçilen rol; yoksa default
+    benimRolum: (document.getElementById('apt-rol')?.value) || (mevcutApt && mevcutApt.benimRolum) || defaultRol
   };
   if (editId) { const i=S.apartmanlar.findIndex(a=>a.id===editId); if(i>=0) S.apartmanlar[i]=apt; }
   else S.apartmanlar.push(apt);
@@ -9103,6 +9167,11 @@ function renderFinansRapor() {
 // ===================================================
 function loadSettings() {
   const ay = S.ayarlar || {};
+  // Hesap tipi kartlarını güncelle
+  const tip = ay.hesapTipi || 'sirket';
+  document.querySelectorAll('.hesap-tipi-kart').forEach(k => {
+    k.classList.toggle('active', k.getAttribute('data-tip') === tip);
+  });
   document.getElementById('set-firma').value = ay.firma||'';
   document.getElementById('set-yonetici').value = ay.yonetici||'';
   document.getElementById('set-unvan').value = ay.unvan||'';
@@ -9141,13 +9210,16 @@ function loadSettings() {
 }
 
 function saveSettings() {
+  const mevcutHesapTipi = (S.ayarlar && S.ayarlar.hesapTipi) || 'sirket';
   S.ayarlar = {
+    ...(S.ayarlar || {}),
     firma: document.getElementById('set-firma').value,
     yonetici: document.getElementById('set-yonetici').value,
     unvan: document.getElementById('set-unvan').value,
     tel: document.getElementById('set-tel').value,
     mail: document.getElementById('set-mail').value,
     adres: document.getElementById('set-adres').value,
+    hesapTipi: mevcutHesapTipi,
   };
   save();
   // Update sidebar
@@ -9160,6 +9232,25 @@ function saveSettings() {
     if(roleEl) roleEl.textContent = S.ayarlar.unvan||'Sistem Admini';
   }
   toast('Ayarlar kaydedildi.','ok');
+}
+
+// Hesap tipini değiştir — UI'yi anında yansıtır
+function setHesapTipi(tip) {
+  if (!['bireysel','sirket','sakin','personel'].includes(tip)) return;
+  S.ayarlar = S.ayarlar || {};
+  const eski = S.ayarlar.hesapTipi || 'sirket';
+  if (eski === tip) return;
+  S.ayarlar.hesapTipi = tip;
+  // UI'yi güncelle
+  document.querySelectorAll('.hesap-tipi-kart').forEach(k => {
+    k.classList.toggle('active', k.getAttribute('data-tip') === tip);
+  });
+  // Rol filtreleme + menü görünürlüğü
+  applyRole(currentRole || 'yonetici');
+  updateGlobalSiteBar();
+  save();
+  const meta = HESAP_TIPI_META[tip] || {};
+  toast(`Hesap tipi: ${meta.ad}. Ekran yeniden düzenlendi.`, 'ok');
 }
 
 function saveApiKey() {
@@ -13376,11 +13467,22 @@ function selectRole(role) {
 }
 
 function applyRole(role) {
+  // Hesap tipi (bireysel / sirket / sakin / personel) — default sirket
+  const hesapTipi = (S.ayarlar && S.ayarlar.hesapTipi) || 'sirket';
+
   // Sidebar menülerini role göre filtrele
   document.querySelectorAll('#sb .ni[data-role]').forEach(el => {
     const roles = el.getAttribute('data-role');
-    el.style.display = roles.includes(role) ? '' : 'none';
+    let visible = roles.includes(role);
+    // Hesap tipine göre ek kısıtlar:
+    const page = el.getAttribute('data-p');
+    // "Apartmanlar" menüsü yalnızca yönetim şirketi hesabında görünür
+    if (page === 'apartmanlar' && hesapTipi !== 'sirket' && role !== 'superadmin') visible = false;
+    el.style.display = visible ? '' : 'none';
   });
+  // Dashboard'daki "Apartman Hizmet Bedelleri" kartı — sadece yönetim şirketinde
+  const hizmetKart = document.getElementById('ds-hizmet-card');
+  if (hizmetKart) hizmetKart.style.display = (hesapTipi === 'sirket') ? '' : 'none';
   // Section labels: boşsa gizle
   document.querySelectorAll('#sb .sb-sec').forEach(sec => {
     const visible = Array.from(sec.querySelectorAll('.ni[data-role]')).filter(n => n.style.display !== 'none');
@@ -13403,7 +13505,10 @@ function applyRole(role) {
   } else {
     const nm = (S.ayarlar?.yonetici) || 'Yönetici';
     if (nameEl) nameEl.textContent = nm;
-    if (roleEl) roleEl.textContent = S.ayarlar?.unvan || 'Site Yöneticisi';
+    // Rol satırında hesap tipini göster (örn: "Yönetim Şirketi")
+    const tip = S.ayarlar?.hesapTipi || 'sirket';
+    const tipAd = HESAP_TIPI_META[tip]?.ad || 'Site Yöneticisi';
+    if (roleEl) roleEl.textContent = S.ayarlar?.unvan || tipAd;
     if (avEl) { avEl.textContent = nm.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); avEl.style.background = ''; avEl.style.color = ''; }
   }
 }

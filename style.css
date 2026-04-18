@@ -1721,6 +1721,80 @@ select.fi,select.fs{
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.gsb-btn-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.15;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+.gsb-btn-text .gsb-btn-name {
+  font-weight: 700;
+  font-size: 13px;
+  width: 100%;
+}
+.gsb-btn-rol {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  opacity: .92;
+  margin-top: 1px;
+}
+.gsb-rol-mini {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 10px;
+  letter-spacing: .02em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Hesap Tipi kartları (Ayarlar) */
+.hesap-tipi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+.hesap-tipi-kart {
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 14px 12px;
+  cursor: pointer;
+  transition: all .15s;
+  background: var(--surface);
+  text-align: left;
+}
+.hesap-tipi-kart:hover {
+  border-color: var(--brand);
+  background: var(--brand-10);
+}
+.hesap-tipi-kart.active {
+  border-color: var(--brand);
+  background: var(--brand-10);
+  box-shadow: 0 0 0 3px rgba(37,99,235,.08);
+}
+.hesap-tipi-kart.active .htk-ad {
+  color: var(--brand);
+}
+.htk-ico {
+  font-size: 22px;
+  margin-bottom: 6px;
+  line-height: 1;
+}
+.htk-ad {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--tx);
+  margin-bottom: 4px;
+}
+.htk-desc {
+  font-size: 11.5px;
+  color: var(--tx-3);
+  line-height: 1.4;
+}
 .gsb-btn-arrow {
   transition: transform .2s;
   flex-shrink: 0;
