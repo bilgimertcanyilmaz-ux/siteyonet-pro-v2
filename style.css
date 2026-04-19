@@ -1666,6 +1666,36 @@ select.fi,select.fs{
   line-height:1.7;text-align:center;
 }
 .auth-setup-info a{color:rgba(26,86,219,.8);text-decoration:none;}
+
+/* Süperadmin giriş linki — auth ekran altı, belirgin ama amber */
+.auth-admin-link {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(251,191,36,.14);
+  text-align: center;
+}
+.auth-admin-link a {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 16px;
+  background: rgba(251,191,36,.08);
+  border: 1px solid rgba(251,191,36,.22);
+  border-radius: 10px;
+  color: #fbbf24;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  text-decoration: none;
+  transition: all .15s;
+}
+.auth-admin-link a:hover {
+  background: rgba(251,191,36,.15);
+  border-color: rgba(251,191,36,.4);
+  color: #fcd34d;
+  transform: translateY(-1px);
+}
+
 .auth-form{display:none;}
 .auth-form.active{display:block;}
 
