@@ -1743,11 +1743,92 @@ function toggleApt(id) {
  if (a) { a.durum = a.durum==='aktif'?'pasif':'aktif'; save(); toast('Durum güncellendi.','ok'); }
 }
 function delApt(id) {
-  if (!confirm('Bu apartmanı silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz.')) return;
-  S.apartmanlar = S.apartmanlar.filter(a=>a.id!==id);
+  const apt = S.apartmanlar.find(a => a.id === id);
+  if (!apt) return;
+
+  // İlişkili kayıt sayımı
+  const counts = {
+    Sakin:          (S.sakinler         || []).filter(x => x.aptId == id).length,
+    Personel:       (S.personel         || []).filter(x => x.aptId == id).length,
+    Tahsilat:       (S.tahsilatlar      || []).filter(x => x.aptId == id).length,
+    'Borçlandırma': (S.aidatBorclandir  || []).filter(x => x.aptId == id).length,
+    'Gelir/Gider':  (S.finansIslemler   || []).filter(x => x.aptId == id).length,
+    Arıza:          (S.arizalar         || []).filter(x => x.aptId == id).length,
+    Duyuru:         (S.duyurular        || []).filter(x => x.aptId == id).length,
+    Karar:          (S.kararlar         || []).filter(x => x.aptId == id).length,
+    Denetim:        (S.denetimler       || []).filter(x => x.aptId == id).length,
+    İcra:           (S.icralar          || []).filter(x => x.aptId == id).length,
+    Asansör:        (S.asansorler       || []).filter(x => x.aptId == id).length,
+    Teklif:         (S.teklifler        || []).filter(x => x.aptId == id).length,
+    Görev:          (S.gorevler         || []).filter(x => x.aptId == id).length,
+    'İşletme Projesi': (S.isletmeProjeler || []).filter(x => x.aptId == id).length,
+    Proje:          (S.projeler         || []).filter(x => x.aptId == id).length,
+    Toplantı:       (S.toplantılar      || []).filter(x => x.aptId == id).length,
+    Sigorta:        (S.sigortalar       || []).filter(x => x.aptId == id).length,
+    Fatura:         (S.faturalar        || []).filter(x => x.aptId == id).length,
+    'Kasa Hareketi': (S.kasaHareketler  || []).filter(x => x.aptId == id).length,
+    'Banka Hesabı':  (S.accounts        || []).filter(x => x.aptId == id).length,
+    'Bekleyen Kayıt': (S.bekleyenKayitlar || []).filter(x => x.aptId == id).length,
+    'Ledger Kaydı':  (S.ledgerEntries   || []).filter(x => x.site_id == id).length
+  };
+
+  const toplam = Object.values(counts).reduce((s, n) => s + n, 0);
+  const detayLines = Object.entries(counts)
+    .filter(([, n]) => n > 0)
+    .map(([ad, n]) => `  • ${ad}: ${n}`)
+    .join('\n');
+
+  const mesaj = toplam > 0
+    ? `"${apt.ad}" apartmanını ve TÜM ilişkili kayıtları silmek üzeresiniz:\n\n${detayLines}\n\nToplam ${toplam} kayıt birlikte silinecek. Bu işlem GERİ ALINAMAZ.\n\nSilmek istediğinize emin misiniz?`
+    : `"${apt.ad}" apartmanını silmek istediğinize emin misiniz?\n\nBu işlem geri alınamaz.`;
+
+  if (!confirm(mesaj)) return;
+  if (toplam > 20 && !confirm(`SON ONAY: ${toplam} kayıt silinecek. Devam edilsin mi?`)) return;
+
+  // Audit log (silme öncesi snapshot)
+  try {
+    if (typeof AuditService !== 'undefined') {
+      AuditService.log({
+        action: 'APT_CASCADE_DELETE',
+        entityType: 'apartmanlar',
+        entityId: id,
+        oldValues: { ad: apt.ad, counts }
+      });
+    }
+  } catch(e) {}
+
+  // Cascade: ilişkili arrays
+  S.sakinler         = (S.sakinler         || []).filter(x => x.aptId != id);
+  S.personel         = (S.personel         || []).filter(x => x.aptId != id);
+  S.tahsilatlar      = (S.tahsilatlar      || []).filter(x => x.aptId != id);
+  S.aidatBorclandir  = (S.aidatBorclandir  || []).filter(x => x.aptId != id);
+  S.finansIslemler   = (S.finansIslemler   || []).filter(x => x.aptId != id);
+  S.arizalar         = (S.arizalar         || []).filter(x => x.aptId != id);
+  S.duyurular        = (S.duyurular        || []).filter(x => x.aptId != id);
+  S.kararlar         = (S.kararlar         || []).filter(x => x.aptId != id);
+  S.denetimler       = (S.denetimler       || []).filter(x => x.aptId != id);
+  S.icralar          = (S.icralar          || []).filter(x => x.aptId != id);
+  S.asansorler       = (S.asansorler       || []).filter(x => x.aptId != id);
+  S.teklifler        = (S.teklifler        || []).filter(x => x.aptId != id);
+  S.gorevler         = (S.gorevler         || []).filter(x => x.aptId != id);
+  S.isletmeProjeler  = (S.isletmeProjeler  || []).filter(x => x.aptId != id);
+  S.projeler         = (S.projeler         || []).filter(x => x.aptId != id);
+  S.toplantılar      = (S.toplantılar      || []).filter(x => x.aptId != id);
+  S.sigortalar       = (S.sigortalar       || []).filter(x => x.aptId != id);
+  S.faturalar        = (S.faturalar        || []).filter(x => x.aptId != id);
+  S.kasaHareketler   = (S.kasaHareketler   || []).filter(x => x.aptId != id);
+  S.accounts         = (S.accounts         || []).filter(x => x.aptId != id);
+  S.bekleyenKayitlar = (S.bekleyenKayitlar || []).filter(x => x.aptId != id);
+  S.ledgerEntries    = (S.ledgerEntries    || []).filter(x => x.site_id != id);
+
+  // Seçili apt bu ise sıfırla
+  if (selectedAptId == id) selectedAptId = null;
+
+  // Apartmanı sil
+  S.apartmanlar = S.apartmanlar.filter(a => a.id !== id);
   closeModal('mod-detay');
   save();
-  toast('Apartman silindi.','warn');
+  toast(`"${apt.ad}" ve ilişkili ${toplam} kayıt silindi.`, 'warn');
 }
 
 function viewApt(id) {
