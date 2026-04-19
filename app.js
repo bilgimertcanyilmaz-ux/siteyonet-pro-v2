@@ -265,6 +265,19 @@ async function authCikis() {
   toast('Çıkış yapıldı.', 'warn');
 }
 
+// Süperadmin (yazılım sahibi) e-posta whitelist'i.
+// Bu listedeki bir e-posta ile giriş yapan kullanıcı otomatik
+// olarak süperadmin rolüne elevate edilir — rol seçim ekranı atlanır.
+const SUPERADMIN_EMAILS = [
+  'admin@biaidat.com',
+  'superadmin@biaidat.com'
+];
+
+function isSuperadminEmail(email) {
+  if (!email) return false;
+  return SUPERADMIN_EMAILS.includes(String(email).toLowerCase().trim());
+}
+
 async function onAuthSuccess(user) {
   _currentUser = user;
   document.getElementById('auth-screen').classList.add('hidden');
@@ -272,6 +285,17 @@ async function onAuthSuccess(user) {
   updateConnBadge('ok', user.email.split('@')[0]);
   const loaded = await loadFromSupabase();
   if (!loaded) { S = { ...DEF_STATE, icralar:[], finansIslemler:[], ayarlar:{} }; }
+
+  // E-posta whitelist kontrolü — süperadmin ise rol seçim atlanır
+  if (isSuperadminEmail(user.email)) {
+    currentRole = 'superadmin';
+    sessionStorage.setItem('syp_role', 'superadmin');
+    try { applyRole('superadmin'); } catch(e) {}
+    initApp();
+    goPage('superadmin');
+    toast('✓ Süper Admin olarak giriş yapıldı', 'ok');
+    return;
+  }
   initApp();
 }
 
