@@ -14424,6 +14424,40 @@ function saveDaireNot(sakId) {
 // ── ROL SİSTEMİ ────────────────────────────────
 let currentRole = sessionStorage.getItem('syp_role') || '';
 
+// Rol seçim ekranından "Süper Admin" kartına tıklayınca:
+// Email whitelist kontrolü yapar, yetkili değilse bilgilendirir.
+function trySelectSuperadmin() {
+  const email = _currentUser?.email || '';
+  if (!email) {
+    toast('Önce giriş yapmalısınız.', 'err');
+    return;
+  }
+  if (!isSuperadminEmail(email)) {
+    // Yetkisiz kullanıcı — net mesaj + admin giriş linki yönlendirmesi
+    const onay = confirm(
+      `Bu hesap (${email}) süper admin yetkisine sahip değil.\n\n` +
+      `Yazılım sahibi (süper admin) olarak giriş yapmak için:\n` +
+      `1. Bu hesaptan çıkış yapın\n` +
+      `2. Yetkili süperadmin hesabıyla tekrar giriş yapın\n\n` +
+      `Çıkış yapıp süper admin giriş sayfasına yönlendirilmek ister misiniz?`
+    );
+    if (onay) {
+      // Çıkış yap ve admin login ekranına git
+      (async () => {
+        try { await _supabase?.auth.signOut(); } catch(e) {}
+        _currentUser = null;
+        currentRole = '';
+        sessionStorage.removeItem('syp_role');
+        window.location.hash = '#admin-giris';
+        location.reload();
+      })();
+    }
+    return;
+  }
+  // Yetkili — rolü seç
+  selectRole('superadmin');
+}
+
 function selectRole(role) {
   currentRole = role;
   window._initialHash = window.location.hash;
