@@ -1,4 +1,6 @@
-# SiteYönet Pro V3 — CLAUDE.md
+# biaidat — CLAUDE.md
+
+**Domain:** biaidat.com
 
 ## Proje Özeti
 

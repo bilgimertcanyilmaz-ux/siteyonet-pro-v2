@@ -7,7 +7,9 @@
 <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co https://generativelanguage.googleapis.com https://api.anthropic.com https://api.openai.com; img-src 'self' data: blob:;">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>SiteYönet Pro</title>
+<title>biaidat — Apartman & Site Yönetim Sistemi</title>
+<link rel="icon" type="image/svg+xml" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="%233b82f6"/><stop offset="1" stop-color="%231d4ed8"/></linearGradient></defs><rect width="40" height="40" rx="9" fill="url(%23g)"/><path d="M10 30V16l10-5 10 5v14z" fill="none" stroke="%23fff" stroke-width="1.6" stroke-linejoin="round"/><rect x="13" y="19" width="3.2" height="3.2" fill="%23fff"/><rect x="18.4" y="19" width="3.2" height="3.2" fill="%23fff"/><rect x="23.8" y="19" width="3.2" height="3.2" fill="%23fff"/><rect x="17.6" y="25" width="4.8" height="5" rx=".5" fill="%23fff"/><circle cx="30" cy="30" r="6" fill="%23fbbf24"/><text x="30" y="32.5" text-anchor="middle" font-size="8" font-weight="800" fill="%23713f12" font-family="sans-serif">%E2%82%BA</text></svg>'>
+<meta name="description" content="biaidat — Türk apartmanları ve siteleri için aidat, tahsilat, muhasebe ve yönetim yazılımı. biaidat.com">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -22,8 +24,8 @@
 <div id="supabase-setup-screen" class="hidden" style="display:none!important">
   <div class="setup-box">
     <div class="auth-logo" style="margin-bottom:6px">
-      <div class="auth-logo-icon"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-4h6v4"/></svg></div>
-      <div class="auth-logo-text">SiteYönet Pro</div>
+      <div class="brand-icon brand-icon-md"><svg viewBox="0 0 40 40"><defs><linearGradient id="bgrad1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b82f6"/><stop offset="1" stop-color="#1d4ed8"/></linearGradient></defs><rect width="40" height="40" rx="9" fill="url(#bgrad1)"/><path d="M10 30V16l10-5 10 5v14z" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><rect x="13" y="19" width="3.2" height="3.2" fill="#fff"/><rect x="18.4" y="19" width="3.2" height="3.2" fill="#fff"/><rect x="23.8" y="19" width="3.2" height="3.2" fill="#fff"/><rect x="17.6" y="25" width="4.8" height="5" rx=".5" fill="#fff"/><circle cx="30" cy="30" r="6" fill="#fbbf24"/><text x="30" y="32.5" text-anchor="middle" font-size="8" font-weight="800" fill="#713f12" font-family="sans-serif">₺</text></svg></div>
+      <div class="auth-logo-text">biaidat</div>
     </div>
     <div class="auth-subtitle" style="margin-bottom:20px">Veritabanı Kurulumu — Supabase Bağlantısı</div>
     <div class="setup-step">
@@ -55,10 +57,10 @@
 <div id="auth-screen" class="hidden">
   <div class="auth-box">
     <div class="auth-logo">
-      <div class="auth-logo-icon"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-4h6v4"/></svg></div>
-      <div class="auth-logo-text">SiteYönet Pro</div>
+      <div class="brand-icon brand-icon-lg"><svg viewBox="0 0 40 40"><defs><linearGradient id="bgrad2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b82f6"/><stop offset="1" stop-color="#1d4ed8"/></linearGradient></defs><rect width="40" height="40" rx="9" fill="url(#bgrad2)"/><path d="M10 30V16l10-5 10 5v14z" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><rect x="13" y="19" width="3.2" height="3.2" fill="#fff"/><rect x="18.4" y="19" width="3.2" height="3.2" fill="#fff"/><rect x="23.8" y="19" width="3.2" height="3.2" fill="#fff"/><rect x="17.6" y="25" width="4.8" height="5" rx=".5" fill="#fff"/><circle cx="30" cy="30" r="6" fill="#fbbf24"/><text x="30" y="32.5" text-anchor="middle" font-size="8" font-weight="800" fill="#713f12" font-family="sans-serif">₺</text></svg></div>
+      <div class="auth-logo-text">biaidat</div>
     </div>
-    <div class="auth-subtitle">Apartman & Site Yönetim Sistemi</div>
+    <div class="auth-subtitle">Apartman &amp; Site Yönetim Sistemi · biaidat.com</div>
     <div class="auth-tabs">
       <button class="auth-tab active" onclick="switchAuthTab('giris')">Giriş Yap</button>
       <button class="auth-tab" onclick="switchAuthTab('kayit')">Kayıt Ol</button>
@@ -98,9 +100,9 @@
 <!-- ROL SEÇİM EKRANI -->
 <div id="role-screen" class="hidden">
   <div class="role-box">
-    <div style="margin-bottom:20px"><svg viewBox="0 0 24 24" style="width:44px;height:44px;stroke:#60a5fa;stroke-width:1.5;fill:none"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-4h6v4M9 11h1m5 0h-1M9 15h1m5 0h-1"/></svg></div>
-    <h1>SiteYönet Pro</h1>
-    <p>Sisteme nasıl giriş yapmak istiyorsunuz?</p>
+    <div class="brand-icon brand-icon-xl" style="margin:0 auto 18px"><svg viewBox="0 0 40 40"><defs><linearGradient id="bgrad3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b82f6"/><stop offset="1" stop-color="#1d4ed8"/></linearGradient></defs><rect width="40" height="40" rx="9" fill="url(#bgrad3)"/><path d="M10 30V16l10-5 10 5v14z" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><rect x="13" y="19" width="3.2" height="3.2" fill="#fff"/><rect x="18.4" y="19" width="3.2" height="3.2" fill="#fff"/><rect x="23.8" y="19" width="3.2" height="3.2" fill="#fff"/><rect x="17.6" y="25" width="4.8" height="5" rx=".5" fill="#fff"/><circle cx="30" cy="30" r="6" fill="#fbbf24"/><text x="30" y="32.5" text-anchor="middle" font-size="8" font-weight="800" fill="#713f12" font-family="sans-serif">₺</text></svg></div>
+    <h1>biaidat</h1>
+    <p>Apartman &amp; Site Yönetim Sistemi — Sisteme nasıl giriş yapmak istiyorsunuz?</p>
     <div class="role-cards">
       <div class="role-card rc-yonetici" onclick="selectRole('yonetici')">
         <div class="rc-ico"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
@@ -123,8 +125,8 @@
 <!-- SIDEBAR -->
 <aside id="sb">
   <div class="sb-logo">
-    <div class="sb-logo-ico"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-4h6v4M9 11h1m5 0h-1M9 15h1m5 0h-1"/></svg></div>
-    <div><div class="sb-logo-name">SiteYönet Pro</div><div class="sb-logo-tag">Apartman Yönetim Sistemi</div></div>
+    <div class="sb-logo-ico"><svg viewBox="0 0 40 40"><defs><linearGradient id="bgrad4" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b82f6"/><stop offset="1" stop-color="#1d4ed8"/></linearGradient></defs><rect width="40" height="40" rx="9" fill="url(#bgrad4)"/><path d="M10 30V16l10-5 10 5v14z" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><rect x="13" y="19" width="3.2" height="3.2" fill="#fff"/><rect x="18.4" y="19" width="3.2" height="3.2" fill="#fff"/><rect x="23.8" y="19" width="3.2" height="3.2" fill="#fff"/><rect x="17.6" y="25" width="4.8" height="5" rx=".5" fill="#fff"/><circle cx="30" cy="30" r="6" fill="#fbbf24"/><text x="30" y="32.5" text-anchor="middle" font-size="8" font-weight="800" fill="#713f12" font-family="sans-serif">₺</text></svg></div>
+    <div><div class="sb-logo-name">biaidat</div><div class="sb-logo-tag">Apartman Yönetim Sistemi</div></div>
   </div>
   <div class="sb-sec">
     <div class="sb-sec-lbl" onclick="toggleSbSec(this)">Genel<svg class="sb-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>

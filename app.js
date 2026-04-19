@@ -6,7 +6,7 @@
 // ══════════════════════════════════════════════════════════
 window.addEventListener('error', function(e) {
   if (e.error && e.error.message && e.error.message.includes('ResizeObserver')) return;
-  console.error('[SYP Hata]', e.filename, e.lineno, e.error ? e.error.message : e.message);
+  console.error('[biaidat Hata]', e.filename, e.lineno, e.error ? e.error.message : e.message);
   if (typeof toast === 'function') {
     toast('Beklenmeyen bir hata oluştu. Sayfayı yenileyebilirsiniz.', 'err');
   }
@@ -14,7 +14,7 @@ window.addEventListener('error', function(e) {
 
 window.addEventListener('unhandledrejection', function(e) {
   const msg = (e.reason && e.reason.message) ? e.reason.message : String(e.reason || '');
-  console.error('[SYP Promise Hata]', msg);
+  console.error('[biaidat Promise Hata]', msg);
   if (msg.toLowerCase().includes('supabase') || msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network')) {
     if (typeof toast === 'function') toast('Sunucu bağlantısı kesildi. Veriler lokal kaydedildi.', 'warn');
   }
@@ -158,13 +158,13 @@ async function saveToSupabase() {
         if (typeof authCikis === 'function') setTimeout(authCikis, 2000);
         return;
       }
-      console.warn('[SYP] Supabase save attempt ' + attempt + ' failed:', error.message);
+      console.warn('[biaidat] Supabase save attempt ' + attempt + ' failed:', error.message);
     } catch(e) {
-      console.warn('[SYP] Supabase save network error attempt ' + attempt + ':', e.message);
+      console.warn('[biaidat] Supabase save network error attempt ' + attempt + ':', e.message);
     }
     if (attempt < MAX_RETRY) await new Promise(function(r) { setTimeout(r, 1000 * attempt); });
   }
-  console.error('[SYP] Supabase save başarısız (3 deneme). localStorage backup aktif.');
+  console.error('[biaidat] Supabase save başarısız (3 deneme). localStorage backup aktif.');
 }
 
 async function loadFromSupabase() {
@@ -2462,7 +2462,7 @@ function dlIsl() {
   const aptAd = getIslAptAd();
   const ay = getIslAyCount();
   const rows = document.getElementById('isl-tbody').querySelectorAll('tr');
-  let csv = `SiteYönet Pro - İşletme Projesi\n${aptAd} - ${getIslDonemLabel()} (${ay} ay)\n\nDaire,Tür,Sakin,Blok,Aylık Aidat,Dönem Aidatı\n`;
+  let csv = `biaidat - İşletme Projesi\n${aptAd} - ${getIslDonemLabel()} (${ay} ay)\n\nDaire,Tür,Sakin,Blok,Aylık Aidat,Dönem Aidatı\n`;
   rows.forEach(r => { csv += Array.from(r.querySelectorAll('td')).map((c,i)=>i===4?'':c.textContent).filter((_,i)=>i!==4).join(',') + '\n'; });
   csv += `\nGider Kalemleri\nKalem,Aylık,Dönem Toplam\n`;
   GK.forEach(g => { csv += `${g.ad},₺${fmt(g.tutar||0,2)},₺${fmt((g.tutar||0)*ay,2)}\n`; });
@@ -3906,7 +3906,7 @@ function indirExcelSablon() {
   // Başlık satırı stil (SheetJS community sürümünde sınırlı stil desteği)
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Daire Listesi');
-  XLSX.writeFile(wb, 'SiteYonet_Sakin_Sablonu.xlsx');
+  XLSX.writeFile(wb, 'biaidat_Sakin_Sablonu.xlsx');
   toast('Excel şablonu indirildi.', 'ok');
 }
 
@@ -7216,7 +7216,7 @@ function clearAiChat() {
 // ===================================================
 // PDF İNDİR — Profesyonel Kurumsal PDF Sistemi
 // ===================================================
-function _pdfFirma() { return (S.ayarlar&&S.ayarlar.firma)||'SiteYönet Pro'; }
+function _pdfFirma() { return (S.ayarlar&&S.ayarlar.firma)||'biaidat'; }
 function _pdfTarih() { return new Date().toLocaleDateString('tr-TR',{day:'2-digit',month:'long',year:'numeric'}); }
 function _pdfSaat() { return new Date().toLocaleString('tr-TR'); }
 
@@ -8066,7 +8066,7 @@ function downloadPDF(tip) {
     const bodyContent = bodyMatch ? bodyMatch[1] : htmlStr;
 
     // Dosya adı: firma_sayfa_YYYY-MM-DD.pdf
-    const firma = (_pdfFirma() || 'SiteYonet').replace(/[^\w\u00C0-\u024F]/g, '_').replace(/_+/g, '_');
+    const firma = (_pdfFirma() || 'biaidat').replace(/[^\w\u00C0-\u024F]/g, '_').replace(/_+/g, '_');
     const dateStr = new Date().toISOString().slice(0, 10);
     const filename = `${firma}_${tip}_${dateStr}.pdf`;
 
@@ -9302,7 +9302,7 @@ function giderOdemeMakbuzPdf(id) {
     <tr class="paid-row"><td>Ödeme Tarihi</td><td>${f.odemeTarih||'—'} ✓</td></tr>
     ${f.odemNot?`<tr><td>Not</td><td>${he(f.odemNot)}</td></tr>`:''}
   </table>
-  <div class="footer">SiteYönet Pro V3 · ${new Date().toLocaleDateString('tr-TR')}</div>
+  <div class="footer">biaidat · ${new Date().toLocaleDateString('tr-TR')}</div>
   <script>window.onload=function(){window.print();}<\/script></body></html>`;
 
   const w = window.open('','_blank','width=720,height=650');
@@ -9942,7 +9942,7 @@ function exportData() {
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `siteyonet-yedek-${new Date().toISOString().slice(0,10)}.json`;
+  a.download = `biaidat-yedek-${new Date().toISOString().slice(0,10)}.json`;
   a.click(); URL.revokeObjectURL(a.href);
   toast('Yedek dosyası indirildi.','ok');
 }
@@ -11599,7 +11599,7 @@ function downloadHesapEkstresi(sakId) {
   </table>
 
   <div class="footer">
-    <span>Bu belge ${bugunStr} tarihinde SiteYönet Pro sistemi tarafından oluşturulmuştur.</span>
+    <span>Bu belge ${bugunStr} tarihinde biaidat sistemi tarafından oluşturulmuştur.</span>
     <span>${firmaAd} – ${yonetici}</span>
   </div>
 
@@ -12449,7 +12449,7 @@ function tbpExcelSablonIndir() {
 
   // sakId sütununu gizle (yorum ekle)
   if (!ws['A1'].c) ws['A1'].c = [];
-  ws['A1'].c.push({a:'SiteYönet', t:'Bu sütunu silmeyin — eşleştirme için kullanılır.'});
+  ws['A1'].c.push({a:'biaidat', t:'Bu sütunu silmeyin — eşleştirme için kullanılır.'});
 
   // İlk satırı dondur (freeze)
   ws['!freeze'] = {xSplit:0, ySplit:1};
@@ -13383,7 +13383,7 @@ function aylikRaporPdf() {
     <div class="net-val" style="color:${d.netDurum>=0?'#86efac':'#fca5a5'}">${d.netDurum>=0?'+':''}₺${fmtMoney(d.netDurum)}</div>
   </div>
 
-  <div class="footer">SiteYönet Pro V3 · ${he(firma)} · ${d.ayLabel} Raporu · ${new Date().toLocaleDateString('tr-TR')}</div>
+  <div class="footer">biaidat · ${he(firma)} · ${d.ayLabel} Raporu · ${new Date().toLocaleDateString('tr-TR')}</div>
   <script>window.onload=function(){window.print();}<\/script></body></html>`;
 
   const w=window.open('','_blank','width=900,height=750');

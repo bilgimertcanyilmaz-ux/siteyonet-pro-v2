@@ -147,12 +147,12 @@ img{display:block;max-width:100%;}
 .sb-logo-ico{
   width:36px;height:36px;min-width:36px;
   border-radius:10px;
-  background:linear-gradient(145deg,var(--brand) 0%,#4f46e5 100%);
   display:flex;align-items:center;justify-content:center;
   box-shadow:var(--sh-brand);
   flex-shrink:0;
+  overflow:hidden;
 }
-.sb-logo-ico svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.sb-logo-ico svg{width:100%;height:100%;display:block;}
 .sb-logo-name{
   font-family:'Nunito','DM Sans',sans-serif;
   font-size:14.5px;font-weight:800;
@@ -3724,6 +3724,23 @@ body { overflow-x: hidden; }
    Mevcut sistemi kirmaz; yeni utility'ler + eksik component'ler.
    Yaygin inline style kaliplarini class'larla degistirir.
    ═══════════════════════════════════════════════════════════════ */
+
+/* BRAND ICON — biaidat logo için kapsayıcı */
+.brand-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 10px;
+  box-shadow: var(--sh-brand);
+  overflow: hidden;
+}
+.brand-icon svg { width: 100%; height: 100%; display: block; }
+.brand-icon-xs { width: 28px; height: 28px; }
+.brand-icon-sm { width: 36px; height: 36px; }
+.brand-icon-md { width: 48px; height: 48px; border-radius: 12px; }
+.brand-icon-lg { width: 56px; height: 56px; border-radius: 14px; }
+.brand-icon-xl { width: 72px; height: 72px; border-radius: 16px; }
 
 /* FORM FIELD SIZE VARYANTLARI (eksikti) */
 .fi.sm, .fs.sm {
