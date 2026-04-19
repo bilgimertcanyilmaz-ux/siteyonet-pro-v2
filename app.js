@@ -724,23 +724,34 @@ function refreshUI() {
   try { renderDashboard(); } catch(e) {}
   try {
     const ap = document.querySelector('.ni.on')?.dataset?.p;
-    if (ap === 'apartmanlar') { renderApts(); renderAptKart(); }
-    else if (ap === 'gorevler') renderGov();
-    else if (ap === 'asansor') renderAsan();
-    else if (ap === 'teklifler') { renderTek(); renderKarsil(); }
-    else if (ap === 'icra') { renderIcra(); renderIcraRapor(); }
-    else if (ap === 'finans') { renderFinans(); renderFinansRapor(); finGelirOdemeDurumChange && finGiderFormuHazirla && finGiderFormuHazirla(); }
-    else if (ap === 'denetim') renderDen();
-    else if (ap === 'karar') renderKararlar();
-    else if (ap === 'isletme') renderIslKayitli();
-    else if (ap === 'sakinler') renderSakinler();
-    else if (ap === 'personel') renderPersonel();
-    else if (ap === 'duyurular') renderDuyurular();
-    else if (ap === 'ariza') renderAriza();
-    else if (ap === 'tahsilat') renderTahsilat();
-    else if (ap === 'raporlar') renderRaporlar();
-    else if (ap === 'sigorta') renderSigorta();
-    else if (ap === 'toplanti') renderToplanti();
+    // Her sayfa için ilgili render fonksiyonunu tetikle (try ile güvenli)
+    const safe = fn => { try { fn(); } catch(e) {} };
+    if      (ap === 'apartmanlar')    { safe(()=>renderApts()); safe(()=>renderAptKart()); }
+    else if (ap === 'gorevler')       safe(()=>renderGov());
+    else if (ap === 'asansor')        safe(()=>renderAsan());
+    else if (ap === 'teklifler')      { safe(()=>renderTek()); safe(()=>renderKarsil()); }
+    else if (ap === 'icra')           { safe(()=>renderIcra()); safe(()=>renderIcraRapor()); }
+    else if (ap === 'finans')         { safe(()=>renderFinans()); safe(()=>renderFinansRapor()); }
+    else if (ap === 'finansal-durum') safe(()=>renderFinansalDurum());
+    else if (ap === 'cari-hesabim')   safe(()=>renderCariHesabim());
+    else if (ap === 'makbuzlar')      safe(()=>renderTahsilatMakbuz());
+    else if (ap === 'davet-yonetim')  safe(()=>renderDavetYonetim());
+    else if (ap === 'davet-bekleyen') safe(()=>renderDavetBekleyen());
+    else if (ap === 'aylik-rapor')    safe(()=>typeof renderAylikRapor === 'function' && renderAylikRapor());
+    else if (ap === 'kasa')           safe(()=>typeof renderKasa === 'function' && renderKasa());
+    else if (ap === 'toplu-borc')     safe(()=>renderTopluBorcGecmis());
+    else if (ap === 'devir-bakiye')   safe(()=>typeof renderDevirBakiye === 'function' && renderDevirBakiye());
+    else if (ap === 'denetim')        safe(()=>renderDen());
+    else if (ap === 'karar')          safe(()=>renderKararlar());
+    else if (ap === 'isletme')        safe(()=>renderIslKayitli());
+    else if (ap === 'sakinler')       safe(()=>renderSakinler());
+    else if (ap === 'personel')       safe(()=>renderPersonel());
+    else if (ap === 'duyurular')      safe(()=>renderDuyurular());
+    else if (ap === 'ariza')          safe(()=>renderAriza());
+    else if (ap === 'tahsilat')       safe(()=>renderTahsilat());
+    else if (ap === 'raporlar')       safe(()=>renderRaporlar());
+    else if (ap === 'sigorta')        safe(()=>renderSigorta());
+    else if (ap === 'toplanti')       safe(()=>renderToplanti());
   } catch(e) {}
   try { syncDropdowns(); } catch(e) {}
   // Apt ctx topbar her save'de güncelle
@@ -1056,6 +1067,12 @@ function renderDashboard() {
     if (pg) [...pg.children].forEach(c => { if (c !== root) c.style.display = 'none'; });
     const tip = S.ayarlar?.hesapTipi || 'sirket';
     const tipMeta = HESAP_TIPI_META[tip] || {};
+    // Eski verilerden arta kalan var mı? (sakin, finans, borçlandırma vs.)
+    const kalintiVar = (S.sakinler||[]).length > 0
+                    || (S.finansIslemler||[]).length > 0
+                    || (S.aidatBorclandir||[]).length > 0
+                    || (S.tahsilatlar||[]).length > 0
+                    || (S.bekleyenKayitlar||[]).length > 0;
     root.innerHTML = `
       <div class="card" style="padding:40px 32px;text-align:center;max-width:560px;margin:40px auto;border:1.5px dashed var(--border)">
         <div style="font-size:48px;margin-bottom:12px">${tipMeta.ico || '🏢'}</div>
@@ -1068,10 +1085,18 @@ function renderDashboard() {
           <svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-4h6v4"/><line x1="12" y1="1" x2="12" y2="5"/><line x1="9" y1="3" x2="15" y2="3"/></svg>
           İlk Apartmanı Ekle
         </button>
+        ${kalintiVar ? `
+        <div style="margin-top:24px;padding:14px 16px;background:var(--warn-bg);border:1px solid var(--warn-bd);border-radius:10px;text-align:left">
+          <div style="font-size:12.5px;font-weight:700;color:var(--warn);margin-bottom:4px">⚠️ Önceki verilerden kalıntı var</div>
+          <div style="font-size:11.5px;color:var(--tx-2);line-height:1.5;margin-bottom:10px">
+            Hiç apartmanınız yok ama sistemde ${(S.sakinler||[]).length} sakin, ${(S.finansIslemler||[]).length} finans, ${(S.tahsilatlar||[]).length} tahsilat, ${(S.aidatBorclandir||[]).length} borçlandırma kaydı bulunuyor. Temiz başlamak için tümünü silin.
+          </div>
+          <button class="btn brd sm" onclick="clearAllData()">🗑️ Tüm Verileri Temizle</button>
+        </div>` : `
         <div style="margin-top:24px;padding-top:18px;border-top:1px solid var(--border);font-size:12px;color:var(--tx-4)">
           Sistemi denemek ister misiniz?
           <button class="btn btl sm" onclick="loadDemoData()" style="margin-left:8px">Demo Veri Yükle</button>
-        </div>
+        </div>`}
       </div>`;
     return;
   }
@@ -4963,7 +4988,10 @@ function renderTahsilat() {
   const topBorc=list.reduce((s,x)=>s+(x.borc||0),0);
   const borclu=list.filter(x=>(x.borc||0)>0).length;
   const topAidat=list.reduce((s,x)=>s+(x.aidat||0),0);
-  const tahsilat=S.tahsilatlar.filter(x=>x.aptId==aptId).reduce((s,x)=>s+(x.tutar||0),0);
+  // İptal edilen tahsilatlar hariç — ledger-first helper kullan
+  const tahsilat = (typeof reportCollection === 'function')
+    ? reportCollection({ siteId: aptId })
+    : (S.tahsilatlar || []).filter(x => x.aptId == aptId && x.status !== 'cancelled').reduce((s,x) => s + (x.tutar || 0), 0);
 
   const stats=document.getElementById('tah-stats');
   if(stats) stats.innerHTML=`
@@ -9021,8 +9049,8 @@ function renderFinans() {
     katEl.innerHTML = '<option value="">Tüm Kategoriler</option>' + kats.map(k=>`<option value="${k}"${k===fk?' selected':''}>${k}</option>`).join('');
   }
 
-  // İstatistik kartları
-  const allFin = S.finansIslemler||[];
+  // İstatistik kartları — iptal kayıtları hariç + apt filtresine saygılı
+  const allFin = (S.finansIslemler || []).filter(f => f.status !== 'cancelled' && (!fa || f.aptId == fa));
   const gelir    = allFin.filter(f=>f.tur==='gelir').reduce((s,f)=>s+(f.toplamTutar||f.tutar||0),0);
   const gider    = allFin.filter(f=>f.tur==='gider').reduce((s,f)=>s+(f.toplamTutar||f.tutar||0),0);
   const net      = gelir - gider;
@@ -9377,6 +9405,18 @@ function renderFinansalDurum() {
   const aptId = (document.getElementById('fd-f-apt')||{}).value||'';
   const durumF = (document.getElementById('fd-f-durum')||{}).value||'';
   const srch = ((document.getElementById('fd-srch')||{}).value||'').toLowerCase();
+
+  // Boş sistem → empty state + widgetler sıfır
+  if (!S.apartmanlar || S.apartmanlar.length === 0 || !S.sakinler || S.sakinler.length === 0) {
+    _renderFdStats(0, 0, 0, 0, 0);
+    _renderFdChart(0, 0);
+    const tbody = document.getElementById('fd-tbody');
+    if (tbody) tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:36px;color:var(--tx-3)">
+      <div style="font-size:13px;font-weight:600;margin-bottom:4px">Henüz kayıt yok</div>
+      <div style="font-size:12px">Apartman ve sakin ekledikten sonra finansal durum burada görünecek.</div>
+    </td></tr>`;
+    return;
+  }
 
   // Sakin verisini zenginleştir
   let sakinler = (S.sakinler||[]).map(sk=>{
@@ -15741,6 +15781,15 @@ function renderDavetYonetim() {
   const root = document.getElementById('dav-root');
   if (!root) return;
   if (!S.bekleyenKayitlar) S.bekleyenKayitlar = [];
+  // Boş sistem → empty state
+  if (!S.apartmanlar || S.apartmanlar.length === 0) {
+    root.innerHTML = `<div class="empty-state" style="margin:24px 0">
+      <span class="es-ico">🔗</span>
+      <div class="es-t">Henüz apartman veya sakin yok</div>
+      <div class="es-s">Davet göndermek için önce en az bir apartman ve sakin eklemelisiniz.</div>
+    </div>`;
+    return;
+  }
   const sakinler = S.sakinler || [];
   const srch = (document.getElementById('dav-srch')?.value || '').toLowerCase();
   const filtre = document.getElementById('dav-filtre')?.value || '';
