@@ -1502,6 +1502,104 @@ select.fi,select.fs{
   font-family:'DM Sans',sans-serif;
 }
 #auth-screen.hidden{display:none;}
+
+/* ADMIN (SÜPERADMIN) GİRİŞ EKRANI — özel dark tema */
+#admin-login-screen {
+  position: fixed; inset: 0; z-index: 9999;
+  background:
+    radial-gradient(ellipse at top, rgba(251,191,36,.08) 0%, transparent 50%),
+    linear-gradient(135deg, #0a0a1a 0%, #111827 50%, #1a0f2e 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'DM Sans', sans-serif;
+  padding: 20px;
+}
+#admin-login-screen.hidden { display: none; }
+.admin-login-box {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(251,191,36,.2);
+  border-radius: 20px;
+  padding: 36px 38px;
+  width: 100%; max-width: 440px;
+  box-shadow: 0 32px 100px rgba(0,0,0,.7),
+              0 0 0 1px rgba(251,191,36,.05) inset;
+  backdrop-filter: blur(20px);
+  position: relative;
+  text-align: center;
+}
+.admin-login-badge {
+  position: absolute;
+  top: -12px; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(135deg, #fbbf24, #d97706);
+  color: #1a0f0f;
+  font-size: 11px; font-weight: 800;
+  letter-spacing: .08em;
+  padding: 4px 14px; border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(251,191,36,.3);
+}
+.admin-login-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 24px; font-weight: 700;
+  color: #fff;
+  margin-bottom: 6px;
+  letter-spacing: -.3px;
+}
+.admin-login-sub {
+  font-size: 12.5px;
+  color: rgba(255,255,255,.5);
+  margin-bottom: 24px;
+  line-height: 1.55;
+}
+.admin-login-box .auth-field { text-align: left; }
+.admin-login-box .auth-field label {
+  color: rgba(255,255,255,.7);
+}
+.admin-login-box .auth-field input {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+  color: #fff;
+}
+.admin-login-box .auth-field input:focus {
+  border-color: rgba(251,191,36,.5);
+  box-shadow: 0 0 0 3px rgba(251,191,36,.1);
+}
+.admin-login-box .auth-btn {
+  width: 100%;
+  margin-top: 6px;
+  padding: 12px;
+  font-weight: 700;
+  font-size: 13.5px;
+  letter-spacing: .02em;
+}
+.admin-login-footer {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+.admin-login-footer a:hover { color: #fff !important; }
+.admin-login-box .auth-err, .admin-login-box .auth-ok {
+  font-size: 12px; padding: 10px 12px; border-radius: 8px;
+  text-align: left;
+}
+.admin-login-box .auth-err.show {
+  background: rgba(239,68,68,.1);
+  border: 1px solid rgba(239,68,68,.25);
+  color: #fca5a5;
+  display: block;
+}
+.admin-login-box .auth-ok.show {
+  background: rgba(34,197,94,.1);
+  border: 1px solid rgba(34,197,94,.25);
+  color: #86efac;
+  display: block;
+}
+.admin-login-box .auth-err:not(.show), .admin-login-box .auth-ok:not(.show) {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .admin-login-box { padding: 28px 22px; }
+  .admin-login-title { font-size: 20px; }
+}
 .auth-box{
   background:rgba(255,255,255,.04);
   border:1px solid rgba(255,255,255,.1);

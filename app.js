@@ -254,6 +254,50 @@ async function authKayit() {
   finally { btn.disabled = false; btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;stroke-width:2;fill:none"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg> Hesap Oluştur'; }
 }
 
+// Süperadmin özel giriş — whitelist ön kontrol + Supabase auth
+async function authAdminGiris() {
+  if (!_supabase) { showAdminErr('Supabase bağlantısı yok.'); return; }
+  const email = (document.getElementById('admin-email').value || '').trim().toLowerCase();
+  const sifre = document.getElementById('admin-sifre').value;
+  if (!email || !sifre) { showAdminErr('E-posta ve şifre gerekli.'); return; }
+  // Whitelist ön kontrol — yetkisiz e-posta Supabase'e istek bile göndermesin
+  if (!isSuperadminEmail(email)) {
+    showAdminErr('Bu e-posta süperadmin listesinde kayıtlı değil.');
+    return;
+  }
+  const btn = document.getElementById('admin-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span>Doğrulanıyor…</span>';
+  try {
+    const { data, error } = await _supabase.auth.signInWithPassword({ email, password: sifre });
+    if (error) {
+      showAdminErr(error.message === 'Invalid login credentials' ? 'E-posta veya şifre hatalı.' : error.message);
+      return;
+    }
+    // Başarılı — onAuthSuccess zaten whitelist'i görüp süperadmin'e yükseltecek
+    showAdminOk('Giriş başarılı, yönlendiriliyor…');
+    document.getElementById('admin-login-screen').classList.add('hidden');
+    await onAuthSuccess(data.user);
+  } catch(e) {
+    showAdminErr('Bağlantı hatası. İnternet bağlantınızı kontrol edin.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;stroke-width:2;fill:none"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Güvenli Giriş';
+  }
+}
+function showAdminErr(msg) {
+  const el = document.getElementById('admin-err');
+  if (!el) return;
+  el.textContent = msg; el.classList.add('show');
+  const ok = document.getElementById('admin-ok'); if (ok) ok.classList.remove('show');
+}
+function showAdminOk(msg) {
+  const el = document.getElementById('admin-ok');
+  if (!el) return;
+  el.textContent = msg; el.classList.add('show');
+  const err = document.getElementById('admin-err'); if (err) err.classList.remove('show');
+}
+
 async function authCikis() {
   if (!_supabase) return;
   await _supabase.auth.signOut();
@@ -336,19 +380,44 @@ function showSetupScreen() {
 
 async function checkExistingSession() {
   if (!_supabase) return;
+  // URL hash'i #admin-giris ise süperadmin ekranını göster (oturum yoksa)
+  const isAdminRoute = (window.location.hash || '').toLowerCase() === '#admin-giris';
   try {
     const { data: { session } } = await _supabase.auth.getSession();
     if (session && session.user) {
       await onAuthSuccess(session.user);
+    } else if (isAdminRoute) {
+      document.getElementById('auth-screen').classList.add('hidden');
+      document.getElementById('admin-login-screen')?.classList.remove('hidden');
+      document.getElementById('main').style.display = 'none';
     } else {
       document.getElementById('auth-screen').classList.remove('hidden');
       document.getElementById('main').style.display = 'none';
     }
   } catch(e) {
-    document.getElementById('auth-screen').classList.remove('hidden');
+    if (isAdminRoute) {
+      document.getElementById('admin-login-screen')?.classList.remove('hidden');
+    } else {
+      document.getElementById('auth-screen').classList.remove('hidden');
+    }
     document.getElementById('main').style.display = 'none';
   }
 }
+
+// Hash değişince kontrol — kullanıcı URL'e manuel #admin-giris yazarsa
+window.addEventListener('hashchange', () => {
+  const isAdminRoute = (window.location.hash || '').toLowerCase() === '#admin-giris';
+  const authScreen = document.getElementById('auth-screen');
+  const adminScreen = document.getElementById('admin-login-screen');
+  const main = document.getElementById('main');
+  // Zaten giriş yapmışsa bir şey yapma
+  if (_currentUser) return;
+  if (isAdminRoute) {
+    authScreen?.classList.add('hidden');
+    adminScreen?.classList.remove('hidden');
+    if (main) main.style.display = 'none';
+  }
+});
 
 // APP INIT
 function initApp() {

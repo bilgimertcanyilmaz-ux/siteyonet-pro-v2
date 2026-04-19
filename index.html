@@ -97,6 +97,29 @@
   </div>
 </div>
 
+<!-- ADMIN (SÜPERADMIN) GİRİŞ EKRANI — #admin-giris hash'i ile açılır -->
+<div id="admin-login-screen" class="hidden">
+  <div class="admin-login-box">
+    <div class="admin-login-badge">🔒 Yazılım Sahibi</div>
+    <div class="brand-icon brand-icon-lg" style="margin:0 auto 14px">
+      <svg viewBox="0 0 40 40"><defs><linearGradient id="bgradAdmin" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b82f6"/><stop offset="1" stop-color="#1d4ed8"/></linearGradient></defs><rect width="40" height="40" rx="9" fill="url(#bgradAdmin)"/><path d="M10 30V16l10-5 10 5v14z" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><rect x="13" y="19" width="3.2" height="3.2" fill="#fff"/><rect x="18.4" y="19" width="3.2" height="3.2" fill="#fff"/><rect x="23.8" y="19" width="3.2" height="3.2" fill="#fff"/><rect x="17.6" y="25" width="4.8" height="5" rx=".5" fill="#fff"/><circle cx="30" cy="30" r="6" fill="#fbbf24"/><text x="30" y="32.5" text-anchor="middle" font-size="8" font-weight="800" fill="#713f12" font-family="sans-serif">₺</text></svg>
+    </div>
+    <div class="admin-login-title">Süper Admin Girişi</div>
+    <div class="admin-login-sub">Sadece yazılım sahibi erişimine yetkili hesaplar giriş yapabilir</div>
+    <div class="auth-err" id="admin-err" style="margin-bottom:12px"></div>
+    <div class="auth-ok" id="admin-ok" style="margin-bottom:12px"></div>
+    <div class="auth-field"><label>E-posta</label><input id="admin-email" type="email" placeholder="admin@biaidat.com" autocomplete="email"></div>
+    <div class="auth-field"><label>Şifre</label><input id="admin-sifre" type="password" placeholder="Şifreniz" autocomplete="current-password"></div>
+    <button class="auth-btn" id="admin-btn" onclick="authAdminGiris()" style="background:linear-gradient(135deg,#1e3a8a,#1e40af);box-shadow:0 4px 16px rgba(30,58,138,.35)">
+      <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;stroke-width:2;fill:none"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Güvenli Giriş
+    </button>
+    <div class="admin-login-footer">
+      <a href="#" onclick="window.location.hash='';location.reload();return false;" style="color:rgba(255,255,255,.55);font-size:12px">← Normal girişe dön</a>
+    </div>
+  </div>
+</div>
+
 <!-- ROL SEÇİM EKRANI -->
 <div id="role-screen" class="hidden">
   <div class="role-box">
