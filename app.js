@@ -333,6 +333,14 @@ function initApp() {
     const ilkApt = S.apartmanlar.find(a => a.durum === 'aktif');
     if (ilkApt) selectedAptId = ilkApt.id;
   }
+  // Seçili apt onay bekliyor veya pasif ise sıfırla
+  if (selectedAptId) {
+    const seciliApt = S.apartmanlar.find(a => a.id == selectedAptId);
+    if (!seciliApt || seciliApt.durum !== 'aktif') {
+      const yedekApt = S.apartmanlar.find(a => a.durum === 'aktif');
+      selectedAptId = yedekApt ? yedekApt.id : null;
+    }
+  }
   syncDropdowns();
   renderDashboard();
   if (S.ayarlar) {
@@ -503,6 +511,7 @@ function switchApt(aptId, bannerId) {
 function updateGlobalSiteBar() {
   const bar = document.getElementById('global-site-bar');
   if (!bar) return;
+  // Sadece aktif (süperadmin tarafından onaylanmış) apartmanlar üst bar'da görünür
   const apts = S.apartmanlar.filter(a => a.durum === 'aktif');
   if (!apts.length) { bar.classList.add('gsb-empty'); bar.innerHTML = ''; return; }
   bar.classList.remove('gsb-empty');
@@ -1061,6 +1070,34 @@ function renderDashboard() {
   if (myRol === 'sakin') { renderSakinDashboard(); return; }
   if (myRol === 'personel') { renderPersonelDashboard(); return; }
 
+  // Sadece ONAY BEKLEYEN apartmanları var mı? → onay bekliyor ekranı
+  const aktifler = (S.apartmanlar || []).filter(a => a.durum === 'aktif');
+  const bekleyenler = (S.apartmanlar || []).filter(a => a.durum === 'beklemede');
+  if (S.apartmanlar && S.apartmanlar.length > 0 && aktifler.length === 0 && bekleyenler.length > 0) {
+    const pg = root.parentElement;
+    if (pg) [...pg.children].forEach(c => { if (c !== root) c.style.display = 'none'; });
+    root.innerHTML = `
+      <div class="card" style="padding:40px 32px;text-align:center;max-width:600px;margin:40px auto;border:1.5px dashed var(--warn-bd);background:var(--warn-bg)">
+        <div style="font-size:48px;margin-bottom:12px">⏳</div>
+        <div style="font-size:20px;font-weight:700;color:var(--warn);margin-bottom:6px;letter-spacing:-.3px">Süperadmin Onayı Bekleniyor</div>
+        <div class="t-muted" style="font-size:13px;margin-bottom:18px;line-height:1.6">
+          ${bekleyenler.length} apartman başvurunuz süperadmin incelemesinde.
+          Onaylandıktan sonra yönetim ekranları aktif olacak.
+        </div>
+        <div style="background:var(--surface);border-radius:10px;padding:12px;margin-bottom:14px;text-align:left">
+          ${bekleyenler.map(a => `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+              <div>
+                <div style="font-weight:700;color:var(--tx)">${he(a.ad)}</div>
+                <div class="t-muted" style="font-size:11.5px">${he(a.adres||'')}${a.il?' · '+he(a.il):''} · ${a.daireSayisi||0} daire</div>
+              </div>
+              <span class="b b-am" style="font-size:10.5px">⏳ Bekliyor</span>
+            </div>`).join('')}
+        </div>
+        <button class="btn bg sm" onclick="goPage('apartmanlar')">Apartmanları Görüntüle</button>
+      </div>`;
+    return;
+  }
   // Boş state — hiç apartman yoksa, onboarding ekranı göster
   if (!S.apartmanlar || S.apartmanlar.length === 0) {
     const pg = root.parentElement;
@@ -1619,14 +1656,73 @@ function renderApts() {
  const s = (document.getElementById('apt-srch')?.value||'').toLowerCase();
  const fd = document.getElementById('apt-f-durum')?.value||'';
  const fil = document.getElementById('apt-f-il')?.value||'';
+
+ // WIDGET KARTLARI — toplam değerler
+ const widgetEl = document.getElementById('apt-stats-grid');
+ if (widgetEl) {
+   const aktifs = (S.apartmanlar||[]).filter(a => a.durum === 'aktif');
+   const bekleyenler = (S.apartmanlar||[]).filter(a => a.durum === 'beklemede');
+   const pasifler = (S.apartmanlar||[]).filter(a => a.durum === 'pasif');
+   const toplamDaire = (S.apartmanlar||[]).reduce((s,a) => s + (+a.daireSayisi||0), 0);
+   const toplamHizmet = aktifs.reduce((s,a) => s + (+a.hizmetBedeli||0), 0);
+   widgetEl.innerHTML = `
+     <div class="kpi kpi-ok">
+       <div class="kpi-lbl">Aktif Apartman</div>
+       <div class="kpi-val">${aktifs.length}</div>
+       <div class="kpi-sub">${S.apartmanlar?.length || 0} toplam</div>
+     </div>
+     <div class="kpi">
+       <div class="kpi-lbl">Toplam Daire</div>
+       <div class="kpi-val">${toplamDaire}</div>
+       <div class="kpi-sub">Tüm apartmanlar</div>
+     </div>
+     <div class="kpi kpi-ok">
+       <div class="kpi-lbl">Aylık Hizmet Bedeli</div>
+       <div class="kpi-val">₺${fmt(toplamHizmet)}</div>
+       <div class="kpi-sub">Aktif apartmanlar</div>
+     </div>
+     <div class="kpi${bekleyenler.length ? '' : ' kpi-ok'}">
+       <div class="kpi-lbl">Onay Bekleyen</div>
+       <div class="kpi-val" style="color:${bekleyenler.length ? 'var(--warn)' : 'var(--ok)'}">${bekleyenler.length}</div>
+       <div class="kpi-sub">${pasifler.length} pasif</div>
+     </div>`;
+ }
+
  let list = S.apartmanlar;
  if (fd) list = list.filter(a=>a.durum===fd);
  if (fil) list = list.filter(a=>a.il===fil);
  if (s) list = list.filter(a=>(a.ad+' '+a.adres+' '+(a.ilce||'')).toLowerCase().includes(s));
- document.getElementById('apt-count').textContent = `${list.length} / ${S.apartmanlar.length} sonuç`;
+ const cntEl = document.getElementById('apt-count');
+ if (cntEl) cntEl.textContent = `${list.length} / ${S.apartmanlar.length} sonuç`;
  const tb = document.getElementById('apt-tbody');
- if (!list.length) { tb.innerHTML = `<tr><td colspan="8">${emp('️','Apartman bulunamadı')}</td></tr>`; return; }
- tb.innerHTML = list.map(a => `<tr> <td><span style="cursor:pointer;font-weight:600;color:var(--brand)" onclick="goAptDetay(${a.id})">${he(a.ad)}</span></td> <td class="t2" style="font-size:11.5px">${he(a.adres)}${a.ilce?', '+he(a.ilce):''}${a.il?', '+he(a.il):''}</td> <td>${a.daireSayisi}</td> <td>${a.yon||'—'}</td> <td style="font-weight:700;color:var(--ok)">${a.aidat?'₺'+fmt(a.aidat):'—'}</td> <td style="font-weight:700;color:var(--brand)">${a.hizmetBedeli?'₺'+fmt(a.hizmetBedeli):'—'}</td> <td><span class="b ${a.asansor==='evet'?'b-gr':'b-gy'}">${a.asansor==='evet'?'Var':'Yok'}</span></td> <td><span class="b ${a.durum==='aktif'?'b-gr':'b-rd'}">${a.durum==='aktif'?' Aktif':' Pasif'}</span></td> <td><div class="act"> <button class="btn bg xs" onclick="goAptDetay(${a.id})" title="Sayfayı Aç" style="color:var(--brand)"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button> <button class="btn bg xs" onclick="openAptModal(${a.id})" title="Düzenle"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button> <button class="btn ${a.durum==='aktif'?'brd':'bgn'} xs" onclick="toggleApt(${a.id})" title="${a.durum==='aktif'?'Pasife Al':'Aktif Et'}">${a.durum==='aktif'?'Pasif':'Aktif'}</button> <button class="btn xs" style="background:var(--err-bg);color:var(--err);border:1px solid var(--err)" onclick="delApt(${a.id})" title="Sil"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button> </div></td> </tr>`).join('');
+ if (!tb) return;
+ if (!list.length) { tb.innerHTML = `<tr><td colspan="9">${emp('🏢','Apartman bulunamadı')}</td></tr>`; return; }
+ const isSuperadmin = (currentRole === 'superadmin');
+ tb.innerHTML = list.map(a => {
+   const durumCls = a.durum === 'aktif' ? 'b-gr'
+                  : a.durum === 'beklemede' ? 'b-am'
+                  : 'b-rd';
+   const durumLbl = a.durum === 'aktif' ? '✓ Aktif'
+                  : a.durum === 'beklemede' ? '⏳ Onay Bekliyor'
+                  : 'Pasif';
+   const isBekliyor = a.durum === 'beklemede';
+   return `<tr${isBekliyor ? ' style="opacity:.75;background:var(--warn-bg)"' : ''}>
+     <td><span style="cursor:pointer;font-weight:600;color:var(--brand)" onclick="goAptDetay(${a.id})">${he(a.ad)}</span>${isBekliyor ? '<div class="t3" style="font-size:10.5px;margin-top:2px">Süperadmin onayı bekliyor</div>' : ''}</td>
+     <td class="t2" style="font-size:11.5px">${he(a.adres)}${a.ilce?', '+he(a.ilce):''}${a.il?', '+he(a.il):''}</td>
+     <td>${a.daireSayisi}</td>
+     <td>${a.yon||'—'}</td>
+     <td style="font-weight:700;color:var(--ok)">${a.aidat?'₺'+fmt(a.aidat):'—'}</td>
+     <td style="font-weight:700;color:var(--brand)">${a.hizmetBedeli?'₺'+fmt(a.hizmetBedeli):'—'}</td>
+     <td><span class="b ${a.asansor==='evet'?'b-gr':'b-gy'}">${a.asansor==='evet'?'Var':'Yok'}</span></td>
+     <td><span class="b ${durumCls}">${durumLbl}</span></td>
+     <td><div class="act">
+       <button class="btn bg xs" onclick="goAptDetay(${a.id})" title="Sayfayı Aç" style="color:var(--brand)"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+       ${(isSuperadmin || isBekliyor) ? `<button class="btn bg xs" onclick="openAptModal(${a.id})" title="Düzenle"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>` : ''}
+       ${isSuperadmin ? `<button class="btn ${a.durum==='aktif'?'brd':'bgn'} xs" onclick="toggleApt(${a.id})" title="${a.durum==='aktif'?'Pasife Al':'Aktif Et'}">${a.durum==='aktif'?'Pasif':'Aktif'}</button>` : ''}
+       ${(isSuperadmin || isBekliyor) ? `<button class="btn xs" style="background:var(--err-bg);color:var(--err);border:1px solid var(--err)" onclick="delApt(${a.id})" title="${isBekliyor?'Başvuruyu İptal Et':'Sil'}"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;stroke-width:2;fill:none"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>` : ''}
+     </div></td>
+   </tr>`;
+ }).join('');
 }
 
 function renderAptKart() {
@@ -1732,10 +1828,39 @@ function saveApt() {
     // Kat sakini veya personel rolü ise "dairem" bilgisi (bağımsız bölüm)
     benimDaireNo: (document.getElementById('apt-dairem')?.value || '').trim() || (mevcutApt && mevcutApt.benimDaireNo) || ''
   };
-  if (editId) { const i=S.apartmanlar.findIndex(a=>a.id===editId); if(i>=0) S.apartmanlar[i]=apt; }
-  else S.apartmanlar.push(apt);
-  save(); closeModal('mod-apt');
-  toast(editId?'Apartman güncellendi.':'Apartman eklendi.','ok');
+  // Süperadmin hariç, yeni apartman süperadmin onayına düşer
+  const isSuperadmin = (currentRole === 'superadmin');
+  if (!editId && !isSuperadmin) {
+    apt.durum = 'beklemede';               // Onay bekliyor
+    apt.eklenmeTarih = today();
+    apt.eklenenKullanici = _currentUser?.email || 'local';
+  }
+  if (editId) {
+    const i = S.apartmanlar.findIndex(a => a.id === editId);
+    if (i >= 0) S.apartmanlar[i] = apt;
+  } else {
+    S.apartmanlar.push(apt);
+  }
+  // Audit
+  try {
+    if (typeof AuditService !== 'undefined') {
+      AuditService.log({
+        action: editId ? 'APT_GUNCELLE' : 'APT_BASVURU',
+        entityType: 'apartmanlar',
+        entityId: apt.id,
+        newValues: { ad: apt.ad, durum: apt.durum, daireSayisi: apt.daireSayisi }
+      });
+    }
+  } catch(e) {}
+  save();
+  closeModal('mod-apt');
+  if (editId) {
+    toast('Apartman güncellendi.', 'ok');
+  } else if (apt.durum === 'beklemede') {
+    toast(`"${apt.ad}" başvurusu süperadmin onayına gönderildi. Onaylandığında aktif olacak.`, 'warn');
+  } else {
+    toast('Apartman eklendi.', 'ok');
+  }
 }
 
 function toggleApt(id) {
@@ -15520,8 +15645,9 @@ function renderSuperAdmin() {
       <div style="font-weight:600;color:var(--ok)">₺${fmt(ucret)}/ay</div>
       <div><span class="b ${cls}">${lbl}</span></div>
       <div class="act">
-        ${durum==='beklemede'?`<button class="btn bg xs" onclick="saOnaylaSite(${a.id})" style="font-size:11px">✓ Onayla</button>`:''}
-        <button class="btn xs" style="font-size:11px;background:var(--err-bg);color:var(--err);border:1px solid var(--err)" onclick="saToggleSite(${a.id})">${durum==='pasif'?'Aktifle':'Durdur'}</button>
+        ${durum==='beklemede'?`<button class="btn bgn xs" onclick="saOnaylaSite(${a.id})" style="font-size:11px">✓ Onayla</button>
+        <button class="btn brd xs" onclick="saReddetSite(${a.id})" style="font-size:11px">✗ Reddet</button>`:''}
+        ${durum!=='beklemede'?`<button class="btn xs" style="font-size:11px;background:var(--err-bg);color:var(--err);border:1px solid var(--err)" onclick="saToggleSite(${a.id})">${durum==='pasif'?'Aktifle':'Durdur'}</button>`:''}
       </div>
     </div>`;
   }).join('');
@@ -15537,7 +15663,39 @@ function calcAbonelik(daire) {
 
 function saOnaylaSite(id) {
   const a = S.apartmanlar.find(x=>x.id===id);
-  if (a) { a.durum = 'aktif'; save(); renderSuperAdmin(); toast(a.ad+' onaylandı!','ok'); }
+  if (!a) return;
+  a.durum = 'aktif';
+  a.onayTarih = today();
+  a.onayVeren = _currentUser?.email || 'superadmin';
+  try {
+    if (typeof AuditService !== 'undefined') {
+      AuditService.log({ action:'APT_ONAYLA', entityType:'apartmanlar', entityId:a.id,
+        newValues:{ ad:a.ad, onayTarih:a.onayTarih, onayVeren:a.onayVeren } });
+    }
+  } catch(e) {}
+  save();
+  renderSuperAdmin();
+  toast(`✓ "${a.ad}" onaylandı — artık aktif.`, 'ok');
+}
+
+/** Süperadmin: apartman başvurusunu reddet */
+function saReddetSite(id) {
+  const a = S.apartmanlar.find(x=>x.id===id);
+  if (!a) return;
+  const sebep = prompt(`"${a.ad}" başvurusu neden reddediliyor?\n(Bu not kayda geçer, kullanıcıya görünür)`);
+  if (!sebep) return;
+  a.durum = 'pasif';
+  a.redSebep = sebep.trim();
+  a.redTarih = today();
+  try {
+    if (typeof AuditService !== 'undefined') {
+      AuditService.log({ action:'APT_REDDET', entityType:'apartmanlar', entityId:a.id,
+        newValues:{ ad:a.ad, redSebep:a.redSebep, redTarih:a.redTarih } });
+    }
+  } catch(e) {}
+  save();
+  renderSuperAdmin();
+  toast(`"${a.ad}" reddedildi.`, 'warn');
 }
 
 function saToggleSite(id) {
